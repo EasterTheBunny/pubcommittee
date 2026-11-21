@@ -1,1 +1,107 @@
-contacts
+# Private outreach data: names, phone numbers, call notes. Never commit.
+contacts/
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.csr
+id_rsa*
+id_ed25519*
+*.keystore
+*.jks
+.htpasswd
+.npmrc.local
+credentials*.json
+service-account*.json
+secrets.*
+!secrets.example.*
+
+# Infrastructure as code state and per-environment values
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+.terraform/
+.terraform.lock.hcl.bak
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.pulumi/
+Pulumi.*.yaml
+!Pulumi.example.yaml
+
+# Dependencies
+node_modules/
+.pnpm-store/
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+.npm/
+
+# Build output and framework caches
+build/
+dist/
+.output/
+.svelte-kit/
+.vite/
+.cache/
+.turbo/
+*.tsbuildinfo
+vite.config.*.timestamp-*
+
+# Hosting tool state
+.netlify/
+.vercel/
+.wrangler/
+
+# Test and coverage output
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# Editors and IDEs
+.idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+*.sublime-workspace
+
+# Operating systems
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Local agent and tool settings (may hold personal paths or tokens)
+.claude/settings.local.json
+
+# Scratch
+tmp/
+*.tmp
+*.bak
