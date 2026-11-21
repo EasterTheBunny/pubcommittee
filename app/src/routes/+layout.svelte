@@ -7,6 +7,8 @@
 	import PlaceholderDialog from '#lib/components/PlaceholderDialog.svelte';
 	import ShareDialog from '#lib/components/ShareDialog.svelte';
 	import SignInDialog from '#lib/components/SignInDialog.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import { repoHref } from '#lib/links.ts';
 	import { demo } from '#lib/state/demo.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import type { LayoutProps } from './$types';
@@ -22,6 +24,21 @@
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-paper">
+	<div
+		role="region"
+		aria-label="About this demo"
+		class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-ink px-4 py-2 text-center text-[13px] text-white"
+	>
+		<span>Proof of concept on mock data. PubCommittee is open source.</span>
+		<a
+			href={repoHref}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="inline-flex min-h-8 items-center gap-1 font-semibold text-white underline hover:text-[#d6d9de]"
+		>
+			View the code on GitHub <Icon name="arrowRight" size={14} />
+		</a>
+	</div>
 	<Header />
 	<main class="flex-1">
 		{@render children()}

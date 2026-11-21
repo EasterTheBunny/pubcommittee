@@ -45,3 +45,6 @@ export const issuesHref = () => resolve('/issues');
 export const issueHref = (issueId: string) => resolve('/issues/[issue]', { issue: issueId });
 export const briefsHref = () => resolve('/briefs');
 export const briefHref = (billId: string) => resolve('/briefs/[bill]', { bill: billId });
+
+/** Public source repository (design/09: the code is open source). */
+export const repoHref = 'https://github.com/EasterTheBunny/pubcommittee';
