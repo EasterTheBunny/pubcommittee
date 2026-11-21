@@ -8,7 +8,7 @@ These docs are deliberately **stack-agnostic**. They name no languages, framewor
 
 | # | Doc | Covers |
 | --- | --- | --- |
-| 01 | [Bill Ingestion and Display](01-bill-ingestion-and-display.md) | Pulling official versions, addressable sections and lines, linking to existing law, change explanations |
+| 01 | [Bill Ingestion and Display](01-bill-ingestion-and-display.md) | Selecting which bills enter review, the public bill catalog and markup requests, pulling official versions, addressable sections and lines, linking to existing law, change explanations |
 | 02 | [Versions, Amendments, and Review Lifecycle](02-versions-and-review-lifecycle.md) | Bill review states, new official versions, stale and re-anchored items |
 | 03 | [Review Features and Support](03-review-features-and-support.md) | Line comments, suggested edits, bill-level signal, rider tags, support rules |
 | 04 | [Bill Lineage and Competing Bills](04-bill-lineage-and-competing-bills.md) | Reintroduced copies, cross-chamber renames, issue pages, candidate detection |
@@ -23,6 +23,8 @@ These docs are deliberately **stack-agnostic**. They name no languages, framewor
 ## Delivery
 
 See [MILESTONES.md](MILESTONES.md): M0 proof of concept on mocked data through M6 additional jurisdictions.
+
+Stack, hosting, and storage choices live outside these docs, in [architecture/](../architecture/README.md).
 
 ## Dependency sketch
 

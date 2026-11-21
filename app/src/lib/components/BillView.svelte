@@ -9,8 +9,8 @@
 		rangeLabel,
 		type HashSelection
 	} from '#lib/anchors.ts';
-	import { billHref, issueHref, sectionSuggestionsHref } from '#lib/links.ts';
-	import { billById, issueById, latestVersion } from '#lib/mock/index.ts';
+	import { billHref, catalogHref, issueHref, sectionSuggestionsHref } from '#lib/links.ts';
+	import { billById, catalogForBill, issueById, latestVersion } from '#lib/mock/index.ts';
 	import { demo, pct } from '#lib/state/demo.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import type { Anchor, Bill, BillVersion } from '#lib/types.ts';
@@ -41,6 +41,7 @@
 		issue ? issue.billIds.filter((id) => id !== bill.id).map((id) => billById(id)!) : []
 	);
 	const totals = $derived(demo.billTotals(bill.id));
+	const selection = $derived(catalogForBill(bill.id)?.tracked);
 	const threads = $derived(demo.threadsFor(bill.id, version.n));
 
 	// --- Line selection, mirrored in the URL hash so any selection is shareable ---
@@ -200,6 +201,12 @@
 			<p class="m-0 text-base leading-normal text-ink-2" data-content-class="platform">
 				{bill.summary}
 			</p>
+			{#if selection}
+				<p class="m-0 text-sm text-muted" data-content-class="platform">
+					In review because: {selection.reasons.join(' · ')} · selection policy v{selection.policy} ·
+					<a href={catalogHref() + '#' + bill.id}>catalog entry</a>
+				</p>
+			{/if}
 			{#if version.sourceBill}
 				<p class="m-0 text-sm text-muted">
 					This version is the text of <strong>{version.sourceBill}</strong>, the other chamber’s
@@ -227,6 +234,7 @@
 					<Icon name="share" /> Share bill
 				</button>
 				<FutureButton id="ingestion">Source feed</FutureButton>
+				<FutureButton id="official-links">Official page</FutureButton>
 				<FutureButton id="machine-access">Data for machines</FutureButton>
 			</div>
 		</div>

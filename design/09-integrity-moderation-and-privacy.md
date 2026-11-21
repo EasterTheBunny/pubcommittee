@@ -33,6 +33,17 @@ The signal is only worth sending if legislators believe it. Every supporter must
 | Automated submissions (bots, agents driving a person's browser) | No programmatic write path; presence checks and rate limits; suspected automation disclosed in the brief ([10](10-machine-access.md)) |
 | Inferring individual signals from public data | Batched counts, small-count suppression, complementary suppression; see [Inference threats](#inference-threats) |
 | Profiling and re-identifying reviewers | No cross-bill activity listings, coarse public timestamps, no district or tier on public content ([11](11-ai-security.md)) |
+| Selective coverage | Choosing which bills enter review is editorial power. Published, versioned selection policy using only process signals and the legislature's subject indexing; two-party sign-off on nominations; no manual removals; party balance of the tracked set published ([01](01-bill-ingestion-and-display.md#bill-selection)) |
+
+## Coverage neutrality
+
+Which bills are reviewable shapes what legislators hear. Selection follows [01](01-bill-ingestion-and-display.md#bill-selection) with these safeguards:
+- Every change to the selection policy is recorded in the public moderation log with its reason.
+- Rules may not use sponsor party, a bill's position, or its predicted outcome.
+- Nominated bills need sign-off by stewards from two parties.
+- Bills selected directly by an administrator are logged with the administrator's name and reason, and the share of the tracked set selected this way is published with the party balance. After the early-pilot phase, administrator selection needs two-party steward sign-off ([05](05-roles-and-stewardship.md#platform-administration)).
+- No bill is removed from the tracked set by hand, except to correct an ingestion error, and each correction is logged.
+- The tracked set's balance by sponsor party is published. Imbalance is disclosed, not corrected by hand.
 
 ## Campaign and spike disclosure
 
@@ -121,6 +132,7 @@ Individual signals can leak without any private data being read. Full catalogue 
 
 - What auditing method can verify counts while keeping individual signals private, and who is the independent auditor?
 - What thresholds define a "spike" worth disclosing?
+- If the rules produce a tracked set heavily weighted to one party's bills, is disclosure enough, or should the topic list be revisited?
 - Add calibrated noise (differential privacy) to published counts, or rely on exact counts with batching and suppression?
 - How is demographic coverage measured without collecting sensitive data most users will not give?
 - How is the community panel elected, sized, and protected from capture?

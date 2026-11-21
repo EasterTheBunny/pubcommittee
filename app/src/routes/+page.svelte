@@ -1,5 +1,12 @@
 <script lang="ts">
-	import { billHref, briefHref, issueHref, linesHref, sectionSuggestionsHref } from '#lib/links.ts';
+	import {
+		billHref,
+		briefHref,
+		catalogHref,
+		issueHref,
+		linesHref,
+		sectionSuggestionsHref
+	} from '#lib/links.ts';
 	import { bills, issues, latestVersion } from '#lib/mock/index.ts';
 	import { demo, fmt, pct } from '#lib/state/demo.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
@@ -22,6 +29,7 @@
 			text: 'Compare competing bills on the issue page',
 			href: issueHref('rural-clinic-inspections')
 		},
+		{ text: 'Browse the catalog and request markup of a bill', href: catalogHref() },
 		{ text: 'Read the brief and respond as an office', href: briefHref('hr-4127') }
 	];
 </script>
@@ -37,7 +45,10 @@
 
 	<div class="flex flex-wrap items-start gap-6">
 		<section aria-label="Active bills" class="flex min-w-0 flex-[999_1_560px] flex-col gap-4">
-			<h2 class="m-0 font-display text-xl font-semibold">Active bills</h2>
+			<div class="flex flex-wrap items-baseline gap-3">
+				<h2 class="m-0 font-display text-xl font-semibold">Bills in review</h2>
+				<a class="text-sm font-semibold" href={catalogHref()}>Browse every bill in the catalog</a>
+			</div>
 			{#each bills as bill (bill.id)}
 				{@const t = demo.billTotals(bill.id)}
 				{@const v = latestVersion(bill)}

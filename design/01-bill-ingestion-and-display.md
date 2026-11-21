@@ -7,6 +7,9 @@ Turn each official bill version into reviewable, addressable text, and show it i
 ## Scope
 
 **In scope**
+- Selecting which bills enter review (the tracked set)
+- Publishing the bill catalog, linked to the legislature's own pages
+- Markup requests: people asking for a catalog bill to be brought into review
 - Detecting and pulling official bill versions from the legislature's publication feed
 - Parsing text into addressable sections and lines
 - Loading and keeping current a consolidated copy of existing law
@@ -26,6 +29,81 @@ Turn each official bill version into reviewable, addressable text, and show it i
 | Bill text | Official XML published by Congress for each bill version, collected automatically | Other legislatures' feeds; steward manual entry where no feed exists |
 | Bill metadata | Same feed: number, title, chamber, sponsors, co-sponsors, status, actions | Same per jurisdiction |
 | Existing law | US Code, published as XML | Each jurisdiction's consolidated code |
+
+## Bill selection
+
+Most bills never move past referral to a committee, and many measures are poor candidates for line-by-line public markup. The system therefore separates a **catalog** from a **tracked set**:
+
+- **Catalog:** lightweight status metadata for every bill in the jurisdiction (identity, titles, sponsors, subject indexing, committee activity, related bills). Cheap to keep; nothing is reviewed.
+- **Tracked set:** the bills that go through full ingestion, explanations, and review. Only tracked bills have review pages, comments, suggestions, signals, and briefs.
+
+### What makes a good candidate
+Public markup works on bills whose exact wording matters and can be improved line by line: bills and joint resolutions that create or amend law. It does not suit:
+- simple and concurrent resolutions that are commemorative or procedural;
+- war powers and similar privileged resolutions, which are essentially a yes-or-no question rather than drafting;
+- other measures whose text is too short or fixed for line edits to mean anything.
+
+These kinds are excluded from tracking by default. A bill-level signal could apply to them, but the product is not built for them (see open questions).
+
+### Selection rules
+1. **Committee action, not referral.** Nearly every bill is referred to a committee on introduction, so referral alone does not count. A bill qualifies once the legislature records committee activity beyond referral (a hearing, markup, a report, or discharge), a floor action, or placement on a calendar.
+2. **Companions follow.** A bill identical to, or the other chamber's companion of, a tracked bill is tracked too ([04](04-bill-lineage-and-competing-bills.md)).
+3. **Topic focus (pilot).** During the pilot, a qualifying bill must also match a focus topic, judged from the legislature's own subject indexing and the bill's title, never from our reading of its politics. Pilot topics: **healthcare, deficit reduction, and affordability**.
+4. **Nominations.** Pilot offices and stewards may nominate a bill that the rules miss. Adding it needs sign-off by stewards from two parties ([05](05-roles-and-stewardship.md)) and is logged publicly.
+5. **Administrator selection.** An administrator may add an allowed bill directly, through privileged system access rather than the product. Before stewards from two parties are active, this needs no other sign-off; afterwards it needs two-party steward sign-off like a nomination ([05](05-roles-and-stewardship.md#platform-administration)). Each selection is logged publicly with the administrator's name and a reason, and the bill shows "selected by an administrator" among its reasons.
+6. **Once tracked, stays tracked** for the rest of its session. Changing the rules never removes a bill people are already reviewing.
+
+### Modes
+| Mode | Tracked when | Use |
+| --- | --- | --- |
+| Pilot | Committee action **and** a focus topic, plus companions and nominations | Pilot: small, focused data set |
+| General | Committee action, plus companions and nominations | Public launch and after |
+
+### Transparency
+- The selection rules are a single, versioned, published policy. Every change is logged publicly with its reason ([09](09-integrity-moderation-and-privacy.md)).
+- Every tracked bill records which policy version and which rules selected it.
+- The site states the current scope plainly (for example, "bills with committee action on healthcare, deficit reduction, and affordability").
+- Rules use only process signals and the legislature's own subject indexing. Sponsor party, position, and predicted outcome are never inputs.
+
+## Public catalog
+
+The catalog is published, so anyone can find any bill, see whether it is open for markup, and read its official text where the legislature publishes it.
+
+**Each catalog entry shows**
+- Number, title, chamber, session, sponsor, status, latest action, and the legislature's subject indexing.
+- **Links to the legislature's own pages:** the bill's page and each published text version. The catalog never hosts or re-renders the text of an untracked bill; the official site is the source.
+- **Markup status:**
+  - *In review*: tracked; links to the bill's review page here.
+  - *Eligible*: meets the measure-kind rule but not yet the rest of the policy (for example, no committee action yet, or outside the pilot topics). Can be requested.
+  - *Not a markup candidate*: an excluded measure kind, with the reason (for example, "privileged resolution: a yes-or-no question rather than drafting").
+- Why a tracked bill was selected (policy version and rules), and the public outcome of any markup request.
+
+**Browsing.** Filter by status, chamber, committee activity, and subject; search by number or title. Catalog entries have stable addresses and are available to machines like every public page ([10](10-machine-access.md)).
+
+## Markup requests
+
+People can ask for an eligible catalog bill to be brought into review. Requests feed the steward nomination path in rule 4 of [Selection rules](#selection-rules); they never track a bill automatically.
+
+**Making a request**
+- Any eligible reviewer ([08](08-onboarding-and-verification.md)) can request markup of an *eligible* bill, once per bill, with an optional short reason ("why this bill would benefit from line-by-line review").
+- Requests are withdrawable until a decision is made.
+- *Not a markup candidate* bills cannot be requested; *in review* bills need no request.
+
+**Privacy and counts**
+- Who requested a bill is private, like a signal ([09](09-integrity-moderation-and-privacy.md)). Only the total is public.
+- Request totals follow the same publication rules as support counts: published in batches, small totals shown as "fewer than N" ([11](11-ai-security.md)).
+- Request reasons are shown to stewards without names. They are not published.
+
+**Review**
+- A bill enters the steward review queue when its requests reach a threshold, or when a pilot office or steward nominates it directly.
+- Stewards decide against the published policy only: is the text suited to line-by-line markup, does it fall within the current scope, is there capacity. Acceptance needs sign-off by stewards from two parties ([05](05-roles-and-stewardship.md)).
+- Every decision is public with its reason: *accepted* (the bill becomes tracked, with "requested" among its selection reasons) or *declined* (with the rule that applied). A declined bill can be requested again if its status changes, for example after committee action.
+- Requesters are told the outcome if they asked to be notified.
+
+**Integrity**
+- Request surges are campaigns like any other: allowed, and disclosed with the decision ([09](09-integrity-moderation-and-privacy.md)). A surge alone never forces acceptance, and a decision never weighs who is likely to be requesting.
+- Requests are writes by people; automated requests are handled as in [10](10-machine-access.md).
+- Request totals are not a signal about the bill's merits and are not sent to legislators.
 
 ## Domain concepts
 
@@ -79,6 +157,11 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 - Every change explanation shows its provenance (automatic, steward-checked, bill-only).
 - An as-amended preview is never presented as official law.
 - Steward corrections to explanations are attributed and logged (see [05](05-roles-and-stewardship.md)).
+- Only tracked bills enter review; the catalog is never reviewed.
+- The catalog links to the legislature's own text for untracked bills and never republishes it.
+- A markup request never tracks a bill by itself; acceptance is a two-party steward decision against the published policy, with a public reason.
+- Who requested a bill is never shown to anyone, including stewards.
+- Selection never uses sponsor party, position, or predicted outcome, and a tracked bill is never untracked by a rule change.
 
 ## Dependencies
 
@@ -93,3 +176,10 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 - How are explanations generated at scale (rules, templates, assisted drafting), and what accuracy bar must they meet before display without steward review?
 - How quickly must a new version appear after publication? The product doc marks speed as low priority at launch.
 - How are tables, formulas, and other non-prose bill content made addressable?
+- Should excluded measure kinds (privileged resolutions, simple resolutions) offer a bill-level signal only, or stay out of the product entirely?
+- The legislature's subject indexing often arrives days or weeks after introduction. Is title matching enough in the meantime, or do pilot bills wait for indexing?
+- Which subject terms define each focus topic, and who maintains that list?
+- When exactly does the administrator phase rule end: the first two-party steward pair, or a fixed pilot date?
+- What request threshold puts a bill in the steward queue, and should it scale with the number of reviewers?
+- How many bills can stewards and the pilot absorb, and how is a capacity decline explained so it does not read as a judgment on the bill?
+- When does the pilot topic filter end: at public launch, or when volume allows?

@@ -4,6 +4,15 @@ import { issues } from './issues';
 
 export { bills } from './bills';
 export { issues } from './issues';
+export {
+	catalog,
+	catalogEntry,
+	catalogForBill,
+	REQUEST_THRESHOLD,
+	seedRequestReasons,
+	selectionPolicy,
+	topicLabel
+} from './catalog';
 export { personas, personaById } from './personas';
 export { seedThreads, seedSuggestions, seedSignals, BRIEF_MINIMUM, SMALL_COUNT } from './seed';
 

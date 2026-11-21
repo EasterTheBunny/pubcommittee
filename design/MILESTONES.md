@@ -45,6 +45,7 @@ High-level delivery plan for PubCommittee. Each milestone has a goal, what is in
 | [07 Brief and responses](07-legislator-brief-and-responses.md) | Static brief page for one bill built from mocked data; office persona can set Adopted / Under consideration / Declined | Email delivery, export, cadence and event triggers, responsiveness record, amendment matching |
 | [08 Onboarding and verification](08-onboarding-and-verification.md) | Fake "Sign in" that picks a persona | **Social sign-in buttons open a pop-up** describing tiers and location checks |
 | [09 Integrity and privacy](09-integrity-moderation-and-privacy.md) | "Flag" button; canned spike disclosure in the brief | Moderation queue, public log, appeals, audit |
+| [01 Bill selection and catalog](01-bill-ingestion-and-display.md#bill-selection) | Catalog page listing every mock bill with markup status, scope statement, and coverage breakdown (topic, sponsor party, administrator-selected); markup requests on eligible bills with private requests and "fewer than N" totals; steward queue with anonymous reasons; "in review because" line on bill pages | Official bill and text links (mock bills have none), steward accept/decline with two-party sign-off, outcome email |
 | [10 Machine access](10-machine-access.md) | Path-based addresses for sections and line ranges alongside in-page fragments; user content marked as `user` in page markup | Structured forms, bulk exports, change feed, agent tool interface |
 | [11 AI security](11-ai-security.md) | Bill-signal comments never shown with their author; small counts shown as "fewer than N"; seeded authors do not auto-support; no district or tier on public content | Batched count publishing, automation disclosure |
 
@@ -55,7 +56,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 - A presenter can demo the full cycle in under 15 minutes: read bill, see explanation, comment, suggest, support, oppose with rider tag, share a line, switch versions and see stale, view issue page, view brief, respond as an office.
 - Every placeholder pop-up names the feature doc it refers to.
 - Feedback gathered from at least a handful of outside viewers, including at least one person with legislative staff experience.
-- Stack decision recorded for M1.
+- Stack decision recorded for M1 in [architecture/](../architecture/README.md).
 
 ---
 
@@ -65,6 +66,9 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 
 **In scope**
 - Automatic ingestion of bills and versions from the official feed ([01](01-bill-ingestion-and-display.md)).
+- Bill catalog for the current Congress; tracked set selected by the published policy in pilot mode (committee action and a focus topic) ([01](01-bill-ingestion-and-display.md#bill-selection)).
+- Privileged administration (system access only, no product screens): select a catalog bill for review directly, correct ingestion errors, re-run ingestion, parsing, and generation, publish selection policy versions; every action in the public log ([05](05-roles-and-stewardship.md#platform-administration)).
+- Public catalog: browse and search every bill, with links to the legislature's bill page and text versions, and markup status (*in review*, *eligible*, *not a markup candidate*) ([01](01-bill-ingestion-and-display.md#public-catalog)).
 - Stable anchors on real text; line-level deep links ([06](06-sharing.md), without social cards).
 - Citation resolution against the US Code; unresolved citations listed.
 - Change explanations for a target set of bills; quality measured.
@@ -96,6 +100,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 **In scope**
 - Social sign-in, tier 1 only, test users ([08](08-onboarding-and-verification.md)).
 - Comments, suggested edits, support, bill-level signal persisted ([03](03-review-features-and-support.md)).
+- Markup requests on eligible catalog bills: one per reviewer, withdrawable, private, batched totals ([01](01-bill-ingestion-and-display.md#markup-requests)).
 - Basic steward actions: mark well formed, wording fix, re-anchor ([05](05-roles-and-stewardship.md)).
 - Generated brief from live data, viewable as a page ([07](07-legislator-brief-and-responses.md)).
 - Real share links with preview cards ([06](06-sharing.md)).
@@ -122,7 +127,10 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 
 **In scope**
 - 2–3 recruited legislative offices receiving briefs and responding.
+- Pilot scope: bills with committee action on healthcare, deficit reduction, and affordability, plus companions and two-party-approved nominations ([01](01-bill-ingestion-and-display.md#bill-selection)). Party balance of the tracked set published ([09](09-integrity-moderation-and-privacy.md#coverage-neutrality)).
 - Steward program with staff from both parties; two-party sign-off; conflict rule; appeals ([05](05-roles-and-stewardship.md)).
+- Steward review of markup requests and office nominations, with public accept or decline reasons ([01](01-bill-ingestion-and-display.md#markup-requests)).
+- Administrator direct selection moves under two-party steward sign-off once stewards from two parties are active; role grants for stewards, moderators, and offices through privileged administration ([05](05-roles-and-stewardship.md#platform-administration)).
 - Brief delivery by email on weekly cadence and before markup/floor events; export ([07](07-legislator-brief-and-responses.md)).
 - Responses and responsiveness record.
 - Lineage linking and issue pages with real competing bills ([04](04-bill-lineage-and-competing-bills.md)).
@@ -136,6 +144,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 - Measured office response rate and time to respond.
 - Measured share of suggestions marked well formed.
 - Decisions on: delivery minimum, rider-tag threshold, brief recipients, and whether to show line-comment concerns beside suggestions.
+- Decisions on: markup request threshold and steward capacity for accepted requests.
 - Decisions on: AI-drafted text policy, when presence checks apply, per-bill pseudonyms on public pages, and export licence ([10](10-machine-access.md), [11](11-ai-security.md)).
 
 ---
@@ -146,6 +155,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 
 **In scope**
 - Everything from M3 hardened for public scale.
+- Selection policy moves to general mode (committee action, no topic filter), or the topic list widens, as volume allows.
 - Full moderation: elected community moderators, public log, appeals panel.
 - Amendment matching and supporter notifications ("closing the loop").
 - Independent audit of counts for the session, using per-bill unlinkable tokens and coarse timestamps ([09](09-integrity-moderation-and-privacy.md)).

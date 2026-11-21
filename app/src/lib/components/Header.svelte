@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { briefsHref, homeHref, issuesHref } from '#lib/links.ts';
+	import { briefsHref, catalogHref, homeHref, issuesHref } from '#lib/links.ts';
 	import { demo } from '#lib/state/demo.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from './Icon.svelte';
@@ -11,6 +11,7 @@
 			label: 'Bills',
 			active: page.url.pathname === homeHref() || page.url.pathname.includes('/bills/')
 		},
+		{ href: catalogHref(), label: 'Catalog', active: page.url.pathname.includes('/catalog') },
 		{ href: issuesHref(), label: 'Issues', active: page.url.pathname.includes('/issues') },
 		{ href: briefsHref(), label: 'Briefs', active: page.url.pathname.includes('/briefs') }
 	]);

@@ -177,3 +177,46 @@ export type ShareTarget =
 	| { kind: 'lines'; anchor: Anchor }
 	| { kind: 'suggestion'; suggestionId: string }
 	| { kind: 'thread'; threadId: string };
+
+// --- Bill selection and the public catalog (design/01) ---------------------
+
+export type MarkupStatus = 'in_review' | 'eligible' | 'not_candidate';
+export type Topic = 'healthcare' | 'deficit' | 'affordability';
+
+export interface SelectionPolicy {
+	version: number;
+	mode: 'pilot' | 'general';
+	/** early_pilot: administrators may select bills alone; afterwards two-party sign-off. */
+	phase: 'early_pilot' | 'steward_signoff';
+	topics: Topic[];
+}
+
+export interface MarkupDecision {
+	outcome: 'accepted' | 'declined';
+	reason: string;
+	date: string;
+}
+
+export interface CatalogEntry {
+	id: string;
+	number: string;
+	chamber: 'House' | 'Senate';
+	title: string;
+	sponsor: string;
+	sponsorParty: 'A' | 'B';
+	latestAction: string;
+	/** Committee activity beyond referral; empty when only referred. */
+	committeeActivity: string[];
+	subjects: string[];
+	topic?: Topic;
+	markupStatus: MarkupStatus;
+	/** Why an excluded measure kind is not a markup candidate. */
+	exclusionReason?: string;
+	/** Set when tracked: the review page's bill id and why it was selected. */
+	tracked?: { billId: string; policy: number; reasons: string[]; byAdministrator?: boolean };
+	/** Official text versions on the legislature's site (labels only in the mock). */
+	officialVersions: string[];
+	/** Seeded markup-request total, before demo personas act. */
+	seedRequests: number;
+	decision?: MarkupDecision;
+}

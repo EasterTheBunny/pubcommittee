@@ -177,6 +177,24 @@ export const placeholders = {
 		doc: 'design/10-machine-access.md',
 		body: 'Suspected automated support is disclosed in the brief like a campaign spike: the item, the window, the size, and the share suspected. It is never silently discounted, and detection never looks at a position.'
 	},
+	'official-links': {
+		title: 'Official bill page and text',
+		milestone: 'M1',
+		doc: 'design/01-bill-ingestion-and-display.md',
+		body: 'Opens the legislature’s own page for the bill, or the official text of the chosen version. The catalog never republishes text of bills that are not in review. These mock bills have no official page.'
+	},
+	'markup-decision': {
+		title: 'Steward decision on a markup request',
+		milestone: 'M3',
+		doc: 'design/01-bill-ingestion-and-display.md',
+		body: 'A steward accepts or declines against the published selection policy only. Acceptance needs a second steward from another party. Every decision is public with its reason; requesters stay private.'
+	},
+	'request-notify': {
+		title: 'Tell me the outcome',
+		milestone: 'M2',
+		doc: 'design/01-bill-ingestion-and-display.md',
+		body: 'Optional. You see the outcome on your own requests when signed in. An email is sent only if you add one for this request, and the record is deleted once sent.'
+	},
 	'district-breakdown': {
 		title: 'District breakdowns',
 		milestone: 'M5',

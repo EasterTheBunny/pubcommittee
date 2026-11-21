@@ -6,7 +6,9 @@ import {
 	seedSignals,
 	seedSuggestions,
 	seedThreads,
-	SMALL_COUNT
+	SMALL_COUNT,
+	catalogEntry,
+	REQUEST_THRESHOLD
 } from '#lib/mock/index.ts';
 import type {
 	Anchor,
@@ -31,6 +33,7 @@ interface Snapshot {
 	signals: Record<string, Record<string, BillSignal>>;
 	responses: Record<string, OfficeResponse>;
 	flags: string[];
+	requests: Record<string, string[]>;
 }
 
 const seed = (): Snapshot => ({
@@ -40,7 +43,8 @@ const seed = (): Snapshot => ({
 	supports: {},
 	signals: {},
 	responses: {},
-	flags: []
+	flags: [],
+	requests: {}
 });
 
 let nextId = Date.now();
@@ -58,6 +62,8 @@ class Demo {
 	/** suggestionId -> public office response. */
 	responses = $state<Record<string, OfficeResponse>>({});
 	flags = $state<string[]>([]);
+	/** personaId -> catalog ids requested for markup. Private: only totals are ever shown. */
+	requests = $state<Record<string, string[]>>({});
 
 	persona = $derived(personaById(this.personaId));
 	/** Reviewers, stewards and moderators are residents and may signal. Officials and readers may not. */
@@ -99,7 +105,8 @@ class Demo {
 			supports: this.supports,
 			signals: this.signals,
 			responses: this.responses,
-			flags: this.flags
+			flags: this.flags,
+			requests: this.requests
 		};
 	}
 
@@ -111,6 +118,7 @@ class Demo {
 		this.signals = s.signals;
 		this.responses = s.responses;
 		this.flags = s.flags;
+		this.requests = s.requests;
 	}
 
 	// --- Suggested edits ----------------------------------------------------
@@ -239,6 +247,35 @@ class Demo {
 			}
 		}
 		return { support, oppose, reviewers, reasons, riderTags };
+	}
+
+	// --- Markup requests (design/01) ---------------------------------------
+
+	requestCount(entryId: string): number {
+		const base = catalogEntry(entryId)?.seedRequests ?? 0;
+		return base + Object.values(this.requests).filter((ids) => ids.includes(entryId)).length;
+	}
+
+	hasRequested(entryId: string): boolean {
+		return (this.requests[this.personaId] ?? []).includes(entryId);
+	}
+
+	toggleRequest(entryId: string) {
+		const mine = this.requests[this.personaId] ?? [];
+		this.requests[this.personaId] = mine.includes(entryId)
+			? mine.filter((x) => x !== entryId)
+			: [...mine, entryId];
+	}
+
+	/** In the steward queue once requests reach the threshold and no decision exists. */
+	inStewardQueue(entryId: string): boolean {
+		const e = catalogEntry(entryId);
+		return (
+			!!e &&
+			e.markupStatus === 'eligible' &&
+			!e.decision &&
+			this.requestCount(entryId) >= REQUEST_THRESHOLD
+		);
 	}
 
 	// --- Office responses ---------------------------------------------------
