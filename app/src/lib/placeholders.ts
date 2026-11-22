@@ -195,6 +195,12 @@ export const placeholders = {
 		doc: 'design/01-bill-ingestion-and-display.md',
 		body: 'Optional. You see the outcome on your own requests when signed in. An email is sent only if you add one for this request, and the record is deleted once sent.'
 	},
+	'push-delivery': {
+		title: 'Device notifications by Web Push',
+		milestone: 'M2',
+		doc: 'design/08-onboarding-and-verification.md',
+		body: 'Turning notifications on subscribes this device. After each count batch, the server checks your own items against public updates and sends a content-free “You have updates” message. No email or phone number is needed, and no list of who supported what is kept. In M0 the message is shown locally.'
+	},
 	'district-breakdown': {
 		title: 'District breakdowns',
 		milestone: 'M5',

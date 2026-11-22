@@ -220,3 +220,18 @@ export interface CatalogEntry {
 	seedRequests: number;
 	decision?: MarkupDecision;
 }
+
+// --- Notifications (design/08) ---------------------------------------------
+
+export type FeedEventKind = 'new_version' | 'stale' | 'revised' | 'decision' | 'response';
+
+/** A public change-feed event (design/10). Notifications join these with a person's own items. */
+export interface FeedEvent {
+	id: string;
+	date: string;
+	kind: FeedEventKind;
+	/** What the event is about, for matching against the person's own items. */
+	target: { kind: 'bill' | 'suggestion' | 'request'; id: string; billId: string };
+	text: string;
+	href: string;
+}

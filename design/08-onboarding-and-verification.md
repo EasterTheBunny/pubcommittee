@@ -58,9 +58,31 @@ What they can tell us (needs re-checking before build; permissions change often)
 - **Legislator and office staff accounts:** verified through the office, not through the citizen tiers.
 - **Stewards:** must be tier 3 and confirmed as staff of a sitting member's office ([05](05-roles-and-stewardship.md)).
 
+## Installable app
+
+The web app must be an installable app: people can add it to a phone's home screen or a desktop from the browser, with no app store. Installed, it opens like a native app, starts without network for its shell, and keeps official bill text the person has already opened readable offline (official versions never change, so cached copies stay correct). Commenting, suggesting, and signalling always need a connection. On some phones, device notifications only work once the app is installed.
+
+## Notifications
+
+People hear about changes to things they took part in: a suggestion they supported was revised or went stale, a new official version arrived, a markup request was decided, an office responded, or a suggestion appeared in the official text ([02](02-versions-and-review-lifecycle.md), [03](03-review-features-and-support.md), [07](07-legislator-brief-and-responses.md)).
+
+### Channels
+| Channel | How | Default |
+| --- | --- | --- |
+| In-app inbox | A list of updates shown when the person is signed in | Always on |
+| Device notifications | Browser or installed-app notifications, turned on per device | Off; opt-in per device |
+| Email | Not offered for now | — |
+
+### Rules
+- **Opt-in, per device, revocable.** Turning notifications on is a choice made on each device. Turning it off, signing out, or the browser revoking permission removes that device's subscription.
+- **Content-free messages.** A device notification says only that updates are waiting, with a link. What changed is shown after the person opens the app while signed in. A notification never names a bill, item, or position, so a lock screen or a shared device reveals nothing.
+- **No list of who took part.** The system does not keep a record of which people supported, opposed, or requested which items in order to notify them. It works out each person's updates from their own private record of their signals, at the time it notifies them ([09](09-integrity-moderation-and-privacy.md)).
+- **Batched.** Notifications go out on a schedule, not the moment something happens, matching how counts are published ([11](11-ai-security.md)).
+- **No contact details.** Device notifications need no email address or phone number. A device subscription identifies the device to the browser's notification service, not the person.
+
 ## Domain concepts
 
-- **Account** — display name, linked sign-in identities, contact channels, current tier.
+- **Account** — display name, linked sign-in identities, notification preference, device subscriptions, current tier.
 - **Verification record** — method, result, timestamp, expiry. For ID checks, only a one-way token is kept, never the document ([09](09-integrity-moderation-and-privacy.md)).
 - **Location evidence** — IP-derived region, device location (if consented), entered address, conflict flags.
 - **Residency** — jurisdiction(s) and district(s) derived from a confirmed address; effective dates (people move).
@@ -71,6 +93,7 @@ What they can tell us (needs re-checking before build; permissions change often)
 - Precise location and home addresses are private and never shown publicly or to legislators.
 - District and tier are **never shown on public content** (comments, suggestions, profiles). They are used only in aggregates ([11](11-ai-security.md)).
 - Display names are pseudonyms by default; people are not asked to use their real name.
+- Notifications never require an email address, and never name a bill, item, or position in the message itself.
 - Tier changes never retroactively add weight; they may change which totals a signal is included in.
 - A person holds at most one reviewer account (enforced as far as signals allow).
 
@@ -92,3 +115,5 @@ What they can tell us (needs re-checking before build; permissions change often)
 - Is phone verification required at tier 1, or optional?
 - Will other sign-in options be needed for people without Google or Facebook accounts?
 - Should reviewers be offered a separate pseudonym per bill, to resist cross-bill profiling ([11](11-ai-security.md))?
+- Is email worth adding later for people who never install the app or allow device notifications, given that it requires collecting and protecting an address?
+- How long should offline copies of official text be kept on a device?

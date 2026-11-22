@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { briefsHref, catalogHref, homeHref, issuesHref } from '#lib/links.ts';
+	import { briefsHref, catalogHref, homeHref, inboxHref, issuesHref } from '#lib/links.ts';
 	import { demo } from '#lib/state/demo.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from './Icon.svelte';
@@ -44,6 +44,34 @@
 			{/each}
 		</nav>
 		<div class="ml-auto flex items-center gap-2 text-sm">
+			{#if ui.installPrompt}
+				<button
+					type="button"
+					class="btn-ghost px-3"
+					onclick={async () => {
+						await ui.installPrompt?.prompt();
+						ui.installPrompt = null;
+					}}
+				>
+					Install app
+				</button>
+			{/if}
+			{#if demo.persona.role !== 'reader'}
+				<a
+					href={inboxHref()}
+					class="relative btn-ghost px-3 no-underline"
+					aria-label="Inbox, {demo.unread} new"
+				>
+					Inbox
+					{#if demo.unread}
+						<span
+							class="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-support px-1.5 text-xs font-semibold text-white"
+						>
+							{demo.unread}
+						</span>
+					{/if}
+				</a>
+			{/if}
 			<span class="hidden text-muted sm:inline">
 				{demo.persona.role === 'reader' ? 'Not signed in' : 'Viewing as'}
 			</span>

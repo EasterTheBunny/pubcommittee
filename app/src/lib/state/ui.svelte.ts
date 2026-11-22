@@ -10,6 +10,8 @@ class UI {
 	/** Bill id whose oppose dialog is open. */
 	oppose = $state<string | null>(null);
 	toast = $state<string | null>(null);
+	/** Deferred browser install prompt (Chromium only); null when not offered. */
+	installPrompt = $state<(Event & { prompt: () => Promise<void> }) | null>(null);
 
 	#toastTimer: ReturnType<typeof setTimeout> | undefined;
 

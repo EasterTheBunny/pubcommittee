@@ -46,6 +46,7 @@ High-level delivery plan for PubCommittee. Each milestone has a goal, what is in
 | [08 Onboarding and verification](08-onboarding-and-verification.md) | Fake "Sign in" that picks a persona | **Social sign-in buttons open a pop-up** describing tiers and location checks |
 | [09 Integrity and privacy](09-integrity-moderation-and-privacy.md) | "Flag" button; canned spike disclosure in the brief | Moderation queue, public log, appeals, audit |
 | [01 Bill selection and catalog](01-bill-ingestion-and-display.md#bill-selection) | Catalog page listing every mock bill with markup status, scope statement, and coverage breakdown (topic, sponsor party, administrator-selected); markup requests on eligible bills with private requests and "fewer than N" totals; steward queue with anonymous reasons; "in review because" line on bill pages | Official bill and text links (mock bills have none), steward accept/decline with two-party sign-off, outcome email |
+| [08 Installable app and notifications](08-onboarding-and-verification.md#installable-app) | Installable progressive web app (manifest, icons, service worker): app shell offline, opened official text cached; in-app inbox joining mock public events with the persona's own supports, signals, and requests; per-browser notification opt-in with a content-free local notification on "simulate a batch" | Web Push delivery from the server, subscription storage |
 | [10 Machine access](10-machine-access.md) | Path-based addresses for sections and line ranges alongside in-page fragments; user content marked as `user` in page markup | Structured forms, bulk exports, change feed, agent tool interface |
 | [11 AI security](11-ai-security.md) | Bill-signal comments never shown with their author; small counts shown as "fewer than N"; seeded authors do not auto-support; no district or tier on public content | Batched count publishing, automation disclosure |
 
@@ -68,6 +69,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 - Automatic ingestion of bills and versions from the official feed ([01](01-bill-ingestion-and-display.md)).
 - Bill catalog for the current Congress; tracked set selected by the published policy in pilot mode (committee action and a focus topic) ([01](01-bill-ingestion-and-display.md#bill-selection)).
 - Privileged administration (system access only, no product screens): select a catalog bill for review directly, correct ingestion errors, re-run ingestion, parsing, and generation, publish selection policy versions; every action in the public log ([05](05-roles-and-stewardship.md#platform-administration)).
+- Installable app: add to home screen or desktop, app shell available offline, previously opened official text readable offline ([08](08-onboarding-and-verification.md#installable-app)).
 - Public catalog: browse and search every bill, with links to the legislature's bill page and text versions, and markup status (*in review*, *eligible*, *not a markup candidate*) ([01](01-bill-ingestion-and-display.md#public-catalog)).
 - Stable anchors on real text; line-level deep links ([06](06-sharing.md), without social cards).
 - Citation resolution against the US Code; unresolved citations listed.
@@ -101,6 +103,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 - Social sign-in, tier 1 only, test users ([08](08-onboarding-and-verification.md)).
 - Comments, suggested edits, support, bill-level signal persisted ([03](03-review-features-and-support.md)).
 - Markup requests on eligible catalog bills: one per reviewer, withdrawable, private, batched totals ([01](01-bill-ingestion-and-display.md#markup-requests)).
+- Notifications: in-app inbox, and opt-in device notifications with content-free messages, sent in batches; no email ([08](08-onboarding-and-verification.md#notifications)).
 - Basic steward actions: mark well formed, wording fix, re-anchor ([05](05-roles-and-stewardship.md)).
 - Generated brief from live data, viewable as a page ([07](07-legislator-brief-and-responses.md)).
 - Real share links with preview cards ([06](06-sharing.md)).

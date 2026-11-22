@@ -8,10 +8,12 @@ import {
 	seedThreads,
 	SMALL_COUNT,
 	catalogEntry,
-	REQUEST_THRESHOLD
+	REQUEST_THRESHOLD,
+	seedFeed
 } from '#lib/mock/index.ts';
 import type {
 	Anchor,
+	FeedEvent,
 	BillSignal,
 	OfficeResponse,
 	OpposeReason,
@@ -34,6 +36,8 @@ interface Snapshot {
 	responses: Record<string, OfficeResponse>;
 	flags: string[];
 	requests: Record<string, string[]>;
+	read: Record<string, string[]>;
+	deviceNotify: Record<string, boolean>;
 }
 
 const seed = (): Snapshot => ({
@@ -44,7 +48,9 @@ const seed = (): Snapshot => ({
 	signals: {},
 	responses: {},
 	flags: [],
-	requests: {}
+	requests: {},
+	read: {},
+	deviceNotify: {}
 });
 
 let nextId = Date.now();
@@ -64,6 +70,10 @@ class Demo {
 	flags = $state<string[]>([]);
 	/** personaId -> catalog ids requested for markup. Private: only totals are ever shown. */
 	requests = $state<Record<string, string[]>>({});
+	/** personaId -> feed event ids read in the inbox. */
+	read = $state<Record<string, string[]>>({});
+	/** personaId -> device notifications turned on for this browser (M2: a Web Push subscription). */
+	deviceNotify = $state<Record<string, boolean>>({});
 
 	persona = $derived(personaById(this.personaId));
 	/** Reviewers, stewards and moderators are residents and may signal. Officials and readers may not. */
@@ -106,7 +116,9 @@ class Demo {
 			signals: this.signals,
 			responses: this.responses,
 			flags: this.flags,
-			requests: this.requests
+			requests: this.requests,
+			read: this.read,
+			deviceNotify: this.deviceNotify
 		};
 	}
 
@@ -119,6 +131,8 @@ class Demo {
 		this.responses = s.responses;
 		this.flags = s.flags;
 		this.requests = s.requests;
+		this.read = s.read;
+		this.deviceNotify = s.deviceNotify;
 	}
 
 	// --- Suggested edits ----------------------------------------------------
@@ -276,6 +290,58 @@ class Demo {
 			!e.decision &&
 			this.requestCount(entryId) >= REQUEST_THRESHOLD
 		);
+	}
+
+	// --- Notifications (design/08) -----------------------------------------
+
+	/**
+	 * Public events joined with this persona's own items, the same join job-notify does in
+	 * memory in M2. The demo shows matching events regardless of when the persona acted.
+	 */
+	inbox = $derived.by((): FeedEvent[] => {
+		const supported = new Set(this.supports[this.personaId] ?? []);
+		const signalled = new Set(Object.keys(this.signals[this.personaId] ?? {}));
+		const requested = new Set(this.requests[this.personaId] ?? []);
+		const supportedBills = new Set(
+			[...supported].map((id) => this.suggestion(id)?.anchor.billId).filter(Boolean) as string[]
+		);
+		const responses: FeedEvent[] = Object.entries(this.responses).map(([sid, r]) => {
+			const s = this.suggestion(sid);
+			return {
+				id: `resp-${sid}-${r.status}`,
+				date: today(),
+				kind: 'response',
+				target: { kind: 'suggestion', id: sid, billId: s?.anchor.billId ?? '' },
+				text: `An office responded to a suggestion you support: ${
+					{ adopted: 'adopted', consider: 'under consideration', declined: 'declined' }[r.status]
+				}.`,
+				href: `/briefs/${s?.anchor.billId ?? ''}`
+			};
+		});
+		return [...seedFeed, ...responses]
+			.filter((e) => {
+				const t = e.target;
+				if (t.kind === 'suggestion') return supported.has(t.id);
+				if (t.kind === 'request') return requested.has(t.id);
+				return signalled.has(t.billId) || supportedBills.has(t.billId);
+			})
+			.sort((a, b) => b.date.localeCompare(a.date));
+	});
+
+	unread = $derived(
+		this.inbox.filter((e) => !(this.read[this.personaId] ?? []).includes(e.id)).length
+	);
+
+	isRead(id: string) {
+		return (this.read[this.personaId] ?? []).includes(id);
+	}
+
+	markAllRead() {
+		this.read[this.personaId] = this.inbox.map((e) => e.id);
+	}
+
+	setDeviceNotify(on: boolean) {
+		this.deviceNotify[this.personaId] = on;
 	}
 
 	// --- Office responses ---------------------------------------------------

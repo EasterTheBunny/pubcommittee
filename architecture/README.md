@@ -71,14 +71,14 @@ Four rules hold the shape together:
 | API edge (Firebase Hosting) | Custom domain, TLS, and CDN in front of the Cloud Run APIs | Yes | No fixed-cost load balancer. Caches public GETs by `Cache-Control`; never caches credentialed responses |
 | `read-api` | Public, read-only JSON: bills, versions, lines by anchor, explanations, threads, suggestions, issues, snapshots, exports, feed | Yes | Read ports only. Every response carries version, as-of time, provenance, and content class ([10](../design/10-machine-access.md)) |
 | `write-api` | Sign-in, sessions, comments, suggestions, signals, flags, office responses | Yes | Only service the browser sends credentials to |
-| `worker` | Handles queued tasks (notifications, re-anchoring, re-render hints) | Yes | HTTP service Cloud Tasks pushes to; not publicly routed |
+| `worker` | Handles queued tasks (re-anchoring, promotion of accepted bills, re-render hints) | Yes | HTTP service Cloud Tasks pushes to; not publicly routed |
 | `admin-api` | Privileged operations interface for administrators ([Administration](#administration)) | Yes | Not part of the product; no UI; callable only with Google Cloud IAM credentials |
 | Jobs | Ingest, batcher, briefs, exports, detector | Yes | Run to completion; triggered by Cloud Scheduler |
 | Object store | Immutable bill text (source XML + parsed JSON), existing-law excerpts, rendered briefs, exports, count snapshots, feeds | Yes (storage only) | Versioned, write-once paths: `bills/{bill}/v/{n}/text.json` |
 | Document store | Public, mutable documents | Yes (per operation) | See [Data placement](#data-placement) |
 | SQL database | Private, relational data | Yes, with resume delay | Serverless Postgres. Never reachable from `read-api` |
 | Key management | HMAC and encryption keys | Near zero | Keys never leave the service; code calls sign and encrypt operations |
-| Queue | Fan-out for notifications and re-anchoring after a new version | Yes | Small volume |
+| Queue | Re-anchoring after a new version, promotion of accepted bills | Yes | Small volume |
 
 Every backend unit is a standalone container image ([Service packaging](#service-packaging)).
 
@@ -93,6 +93,18 @@ Every backend unit is a standalone container image ([Service packaging](#service
 - **Domains:** the UI at `<domain>` and the APIs at `api.<domain>`, under one registrable domain. That keeps the session cookie same-site, which browsers that block third-party cookies require.
 - **Cross-origin rules:** `write-api` allows credentialed CORS only from `https://<domain>` and checks `Origin` on every write. `read-api` allows any origin without credentials.
 - **What the web host never sees:** session cookies (they are host-only on `api.<domain>`), sign-in redirects, signals, or any backend credential.
+
+### Progressive web app
+The UI is a **progressive web app** and must be installable ([08](../design/08-onboarding-and-verification.md#installable-app)).
+- **Manifest** served by the web host: name, icons, theme, start URL, `display: standalone`.
+- **Service worker** served from the UI's origin, registered on first visit. Responsibilities:
+  - **App shell** cached for offline start.
+  - **Official text** (`read-api` immutable version resources and the matching pages) cached cache-first: they never change, so a cached copy is always correct.
+  - **Review items, counts, and the catalog** network-first with a short fallback copy, labelled as possibly out of date when offline.
+  - **Never caches credentialed responses** (`/v1/me*`, `/auth/*`, any write) and never queues writes for later; a write made offline fails visibly.
+  - **Receives device notifications** ([Notifications](#notifications)) and opens the inbox on tap.
+- **Build:** the SvelteKit service-worker support in `app/`, versioned with each deploy so a new release replaces old caches.
+- **Requirement checks in CI:** installability (manifest and service worker present and valid) and an offline load of a cached version page.
 
 ## Data placement
 
@@ -136,11 +148,11 @@ Documents never store an account id. Authorship is stored two ways:
 | `accounts` | `id`, `created_on` (day), `tier`, `display_name`, `us_at_signup` (bool), `status` | Referential integrity for everything below |
 | `identities` | `provider`, `subject_hmac` (unique), `account_id` | One account per sign-in identity; linking several providers |
 | `signals` | `signal_key` (PK), `item_id`, `item_kind`, `value`, `tier_at_signal`, `created_day`, `withdrawn` | Exactly one signal per person per item, enforced by the primary key; exact aggregation for the batcher and auditor. Markup requests are stored here with `item_kind = markup_request` |
-| `my_signals` | `account_id`, `items_encrypted` | Lets a person list and withdraw their own signals |
+| `my_signals` | `account_id`, `items_encrypted` | Lets a person list and withdraw their own signals; source of their notifications |
 | `roles` | `account_id`, `role`, `scope`, `granted_by`, `start`, `end` | Steward, moderator, office grants ([05](../design/05-roles-and-stewardship.md)) |
-| `contacts` | `account_id`, `channel`, `value_encrypted` | Optional notification email; deleted on request |
 | `snapshots` | `item_id`, `batch`, `published_count` | Record of what was published, for audit and consistent suppression |
-| `request_notify` | `bill_id`, `contact_ref_encrypted` | Opt-in email for a markup decision; deleted once sent |
+| `push_subscriptions` | `id`, `account_id`, `endpoint_encrypted`, `keys_encrypted`, `created_day`, `last_ok_day` | One row per opted-in device. No item ids. Deleted on revoke, sign-out, or when the push service reports the subscription gone |
+| `notify_state` | `account_id`, `last_event_cursor`, `last_read_cursor` | Where each person's inbox and device notifications are up to |
 | `request_reasons` | `signal_key` (PK), `bill_id`, `reason`, `created_day` | Optional reason given with a markup request. No account id; shown to stewards without names; deleted with the request |
 
 `signal_key = HMAC(k_signal, account_id ‖ item_id)`. The table holds no account id, so a copy of the database alone shows totals but not who signalled. Checking or withdrawing a signal recomputes the key through the key service. `my_signals` is encrypted with a separate key so a person can still see their own list.
@@ -169,7 +181,7 @@ Ports are grouped by the boundary they sit behind. A service receives only the g
 | | `Moderation` | Record actions and appeals in the public log | `adapters/firestore` |
 | Private | `SignalLedger` | Set, withdraw, and check one signal per key; aggregate by item and day | `adapters/postgres` |
 | | `Identities` | Look up or create an account by identity hash; link providers | `adapters/postgres` |
-| | `Accounts` | Tier, display name, roles, optional contacts | `adapters/postgres` |
+| | `Accounts` | Tier, display name, roles, notification preference and device subscriptions | `adapters/postgres` |
 | | `Keys` | HMAC and encrypt/decrypt by named key; keys never leave the adapter | `adapters/kmsgcp` |
 | Session and limits | `Sessions` | Create, read, expire sessions | `adapters/firestore` |
 | | `RateLimits` | Increment and check hashed counters with expiry | `adapters/firestore` |
@@ -177,6 +189,7 @@ Ports are grouped by the boundary they sit behind. A service receives only the g
 | | `Queue` | Enqueue tasks for the worker | `adapters/cloudtasks` |
 | Ingestion | `BillSource` | List changed bills since a watermark; fetch bill status and each text version's original XML | `adapters/govinfo` |
 | | `LawSource` | List and fetch existing-law release points (US Code) | `adapters/uscode` |
+| Notification | `Notifier` | Send an encrypted Web Push message to a subscription; report subscriptions that are gone | `adapters/webpush` |
 | Generation | `Generator` | Submit summarization tasks as a batch, collect results; one synchronous call for steward-requested regeneration | `adapters/claude` |
 
 ### Interface rules
@@ -256,6 +269,8 @@ Build: `CGO_ENABLED=0 go build -tags gcp -trimpath -ldflags="-s -w" ./cmd/write-
 | `internal/adapters/govinfo` | `BillSource` | GPO govinfo bulk data over HTTPS |
 | `internal/adapters/usccollector` | `BillSource` | Output of the `unitedstates/congress` collector, read from a bucket or directory |
 | `internal/adapters/uscode` | `LawSource` | US Code release points from the Office of the Law Revision Counsel |
+| `internal/adapters/webpush` | `Notifier` | Web Push protocol (RFC 8030) with message encryption (RFC 8291) and VAPID (RFC 8292) |
+| `internal/adapters/fakenotify` | `Notifier` | Records messages in memory for tests and local runs |
 | `internal/adapters/fixturesrc` | `BillSource`, `LawSource` | Checked-in sample bills, including the M0 mock bills; no network |
 
 Adding a backend means adding a package that implements one or more ports and passes their conformance tests. Candidates later: DynamoDB, S3-compatible storage, AWS KMS, Postgres-backed documents, SQLite.
@@ -281,9 +296,10 @@ cmd/
   job-exports/
   job-detector/
   job-summarize/
+  job-notify/
 internal/
   data/                ports, domain types, errors, conformance tests
-  adapters/            memory, firestore, gcs, postgres, kmsgcp, localkeys, cloudtasks, claude, fakegen, govinfo, usccollector, uscode, fixturesrc
+  adapters/            memory, firestore, gcs, postgres, kmsgcp, localkeys, cloudtasks, claude, fakegen, webpush, fakenotify, govinfo, usccollector, uscode, fixturesrc
   telemetry/           OpenTelemetry setup, standard instruments, attribute allowlist
   httpx/               server bootstrap: health, readiness, metrics port, shutdown
   ...                  domain packages (auth, review, signals, ingest, briefs), each used by few binaries
@@ -312,6 +328,7 @@ Every backend unit is a **standalone container image** that runs on any containe
 | `job-exports` | Job | Same | Same |
 | `job-detector` | Job | Same | Same |
 | `job-summarize` | Job | Same | Same |
+| `job-notify` | Job | Same | Same |
 
 One image per unit, so each deploys, scales, and holds credentials independently.
 
@@ -365,7 +382,7 @@ The `TARGET` build argument selects the build tag, and so the [wiring](#build-ti
 
 | Target | Adapters | Use |
 | --- | --- | --- |
-| `gcp` | `firestore`, `gcs`, `postgres`, `kmsgcp`, `cloudtasks`, `claude` | Production and staging. Also runs off Google Cloud when given credentials to the same project |
+| `gcp` | `firestore`, `gcs`, `postgres`, `kmsgcp`, `cloudtasks`, `claude`, `webpush` | Production and staging. Also runs off Google Cloud when given credentials to the same project |
 | `local` | Same adapters pointed at the Firestore and Cloud Storage emulators and a local Postgres; `localkeys` | Development and integration tests with `compose.yaml` |
 | `memory` | `memory`, `localkeys` | Unit and conformance tests; nothing persists |
 
@@ -414,6 +431,7 @@ Service-specific counters:
 | `pubcommittee.rate_limited` | `write-api` | `pubcommittee.write.kind` |
 | `pubcommittee.signin` | `write-api` | `pubcommittee.provider` (`google`, `facebook`), `pubcommittee.outcome` |
 | `pubcommittee.tasks` | `worker` | `pubcommittee.task.kind`, `pubcommittee.outcome` |
+| `pubcommittee.notifications` | `job-notify` | `pubcommittee.outcome` (`sent`, `gone`, `error`, `nothing_new`). No account or item attributes |
 | `pubcommittee.job.runs`, `pubcommittee.job.duration`, `pubcommittee.job.items` | jobs | `pubcommittee.job.name`, `pubcommittee.outcome` |
 | `gen_ai.client.token.usage` | `job-summarize`, `worker` | `gen_ai.operation.name`, `gen_ai.request.model`, `gen_ai.token.type` (`input`, `output`, `cache_read`, `cache_creation`). OpenTelemetry GenAI semantic conventions; drives cost tracking |
 | `pubcommittee.generation.results` | `job-summarize`, `worker` | `pubcommittee.generation.task`, `pubcommittee.outcome` (`ok`, `refusal`, `invalid`, `truncated`, `error`) |
@@ -466,7 +484,8 @@ Scraping inside the instance is what makes this work with scale to zero: an exte
 | IP address | No (in memory at sign-in only) | — | Request lifetime |
 | Signals and markup requests | Keyed by HMAC, no account id | SQL `signals` | Per [09](../design/09-integrity-moderation-and-privacy.md) retention decision |
 | Markup request reasons | Text only, keyed by HMAC, never published | SQL `request_reasons` | Until the request is withdrawn or decided, then per retention decision |
-| Notification email | Only if the person adds it, encrypted | SQL `contacts` | Until removed |
+| Email address | Not collected (email notifications deferred) | — | — |
+| Device notification subscriptions | Encrypted endpoint and keys; no item ids | SQL `push_subscriptions` | Until revoked, signed out, or reported gone |
 | Phone (tier 1 uniqueness, later) | HMAC only | SQL | Account lifetime |
 | Address (tier 2, later) | District and state only, plus verification token | SQL | Until residency changes |
 | ID documents (tier 3, later) | Never; one-way token from the verifier | SQL | Per verifier contract |
@@ -563,7 +582,7 @@ Implements [01 Markup requests](../design/01-bill-ingestion-and-display.md#marku
 - **Steward queue.** Steward routes on `write-api` list queued bills with their published total and the reasons, without names or keys.
 - **Decisions.** A steward records accept or decline with a reason. Accept stays `pending` until a steward from another party signs; then `write-api` writes the public `markup_decisions` entry, sets `tracked` on the bill with `requested:{decision id}` as a reason, and enqueues a `worker` task that fetches and parses all its text versions and triggers `job-summarize`. Decline is published immediately with the rule applied.
 - **Surges.** `job-detector` checks request totals like support totals; a detected surge is attached to the decision as a disclosure.
-- **Notifications.** By default, outcomes are pulled, not pushed: `GET /v1/me/signals` shows the decision on each of the person's own requests, so no list of requesters exists. A person who opts in to an email for a request gets an entry in `request_notify` (SQL: bill id and an encrypted pointer to their `contacts` row, no account id in clear); the `worker` sends the email after the decision and deletes the entries.
+- **Notifications.** Decisions reach requesters through the general [notification](#notifications) path: the decision is a public event, and each requester's own `my_signals` list includes the request, so no list of requesters exists.
 
 `job-ingest` also publishes the tracked set's counts by topic and by sponsor party with each run, for the neutrality disclosure in [09](../design/09-integrity-moderation-and-privacy.md#coverage-neutrality). Policy changes are written to the public moderation log.
 
@@ -639,6 +658,29 @@ Model ids, prices, and feature availability on the platform are confirmed at M1 
 - Run before changing the model, effort, or prompt version, and its results decide the per-task display policy. Runs spend money, so they are triggered deliberately, not on every commit.
 - `fakegen` fixtures cover the job's code paths in CI without calling a model.
 
+## Notifications
+
+Implements [08 Notifications](../design/08-onboarding-and-verification.md#notifications): an in-app inbox for everyone, and opt-in browser and installed-app notifications through Web Push. No email.
+
+### Finding whom to notify without a supporter list
+Notifying "everyone who supported X" would need a stored list of who supported X, which the design forbids. Instead:
+1. **Events are public.** Revisions, stale flags, new versions, markup decisions, office responses, and adoptions are already entries in the public change feed ([10](../design/10-machine-access.md)).
+2. **Each person's own interests are private.** `my_signals` holds each person's items, encrypted.
+3. **`job-notify` joins the two in memory.** After each count batch, for each account with at least one device subscription, it decrypts that person's `my_signals`, reads feed events since their `last_event_cursor`, and if any match, sends one content-free push to each of their devices. It then advances the cursor.
+4. **Nothing joined is stored.** No item-to-person index exists at rest. A copy of the database shows which accounts have devices, not what they took part in.
+
+The inbox (`GET /v1/me/notifications`) does the same join on request for the signed-in person, from their `last_read_cursor`, so it works with no device subscription at all.
+
+### Web Push
+- **Subscribe.** The service worker subscribes using the VAPID public key from `GET /v1/push/public-key` and sends the subscription to `write-api`, which stores the endpoint and keys encrypted with a dedicated key.
+- **Payload.** Encrypted end to end (RFC 8291) and content-free: `{ "kind": "updates" }`. The service worker shows "You have updates on PubCommittee" and opens the inbox. The push service sees only that a message was sent to a device, and when.
+- **Signing.** `job-notify` signs pushes with the VAPID private key from Secret Manager. Only `job-notify` holds it, and only `job-notify` and `write-api` can decrypt `my_signals` and subscriptions.
+- **Cleanup.** Subscriptions the push service reports as gone are deleted; signing out or turning notifications off deletes that device's row.
+- **Installed apps.** Some mobile browsers deliver Web Push only to installed web apps, one reason the UI must be installable ([Progressive web app](#progressive-web-app)).
+
+### Cost and limits
+`job-notify` work grows with the number of accounts that have device subscriptions, which is small at pilot scale. If it grows large, the job can be sharded by account range; it still never stores the join.
+
 ## API contract
 
 **Decided: REST** over HTTPS with JSON bodies, specified in **OpenAPI 3.1** at `api/openapi.yaml`. The spec is the contract between the backend and every client: the web UI, agents, and third parties are equal consumers.
@@ -675,6 +717,9 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 | `GET /v1/feed`, `GET /v1/exports/...` | `read-api` | None | Until next batch |
 | `GET /auth/{provider}/start`, `GET /auth/{provider}/callback`, `POST /auth/signout` | `write-api` | Session created here | Never |
 | `GET /v1/me`, `GET /v1/me/signals` (includes markup requests) | `write-api` | Session cookie | Never |
+| `GET /v1/me/notifications`, `POST /v1/me/notifications/read` | `write-api` | Session cookie | Never |
+| `GET /v1/push/public-key` | `write-api` | None | Long (the VAPID public key) |
+| `PUT /v1/me/push-subscriptions`, `DELETE /v1/me/push-subscriptions/{id}` | `write-api` | Session, Origin, anti-forgery token | Never |
 | `POST /v1/threads`, `POST /v1/threads/{id}/comments` | `write-api` | Session, Origin, anti-forgery token | Never |
 | `POST /v1/suggestions`, `POST /v1/suggestions/{id}/revisions` | `write-api` | Same | Never |
 | `PUT /v1/signals/{item}`, `DELETE /v1/signals/{item}` | `write-api` | Same | Never |
@@ -755,6 +800,7 @@ pubctl bills reparse us-119-hr-4127 --version 2 --reason "parser fix for tables"
 | Machine access, exports, feed | API edge → (miss) `read-api` → object store | No |
 | Post a comment or suggestion | Browser → `write-api`: session, Origin, token, rate limit → document store | No |
 | Signal | Browser → `write-api`: session, eligibility, rate limit → `signals` upsert by `signal_key` | Yes |
+| Turn on device notifications | Browser asks permission → service worker subscribes with the VAPID public key → `write-api` stores the encrypted subscription in `push_subscriptions` | Yes |
 | Request markup | Browser → `write-api`: session, bill `eligible`, rate limit → `signals` upsert (`markup_request`), optional `request_reasons` row | Yes |
 | Decide a request | Steward → `write-api`: role, conflict rule, second sign-off → `markup_decisions`, `bills.tracked`, `worker` task to fetch text | Yes (role check) |
 | Sign in | Browser → `write-api` → provider → callback → `identities` lookup or insert → session cookie → redirect to `<domain>` | Yes |
@@ -769,6 +815,7 @@ pubctl bills reparse us-119-hr-4127 --version 2 --reason "parser fix for tables"
 | Brief builder | Weekly, plus before markup and floor events | Snapshots, public docs | `briefs`, rendered brief, delivery queue |
 | Export and feed builder | After each batch | Object store, public docs | Exports, feed; drops removed content |
 | Spike and automation detector | After each batch | SQL aggregates by day | Integrity events in public docs |
+| Notify | After each count batch | `notify_state`, opted-in accounts' `my_signals` (decrypted in memory), public change feed since each cursor | Content-free Web Push per device with updates; cursors advanced; gone subscriptions deleted |
 | Summarize | After ingest, for tracked bills only; then on a short interval until its batches finish | Object store text and cited provisions, `generations` | Batch submissions; stored outputs, `generations`, steward review queue |
 
 ## Hosting
@@ -811,7 +858,7 @@ The architecture is public on purpose: the code is open source, and the protecti
 
 | Never public | Where it lives instead |
 | --- | --- |
-| Secrets: keys, tokens, passwords, connection strings, HMAC key material | Secret Manager and KMS; workload identity instead of stored keys |
+| Secrets: keys, tokens, passwords, connection strings, HMAC key material, the VAPID private key | Secret Manager and KMS; workload identity instead of stored keys |
 | Infrastructure state (`*.tfstate`) | Remote state bucket with restricted access |
 | Per-environment values: project ids and numbers, region choices, bucket, database, queue, and key names | Environment values files outside git (`*.tfvars`, already ignored), applied by CI |
 | Service URLs other than the public domains, especially `admin-api` and `worker` | Environment values; discovered by CI, never written into docs |
@@ -831,7 +878,7 @@ Rules:
 | Milestone | Needs |
 | --- | --- |
 | M1 read-only | Go module; `internal/data`, `adapters/memory`, `adapters/gcs`, `adapters/firestore` (read ports), `adapters/claude`, `adapters/fakegen`, `telemetry`, `httpx`; `adapters/govinfo`, `adapters/uscode`, `adapters/fixturesrc`; `admin-api`, `pubctl`, and `infra/operators.yaml` (privileged: direct selection, re-ingest, re-parse, regenerate, policy versions); `read-api` (including the public catalog with official links and markup status), `job-ingest` (catalog backfill of the current Congress; tracked set in pilot mode), `job-summarize` (bill summaries and change explanations, with the evaluation set), `job-exports`; API edge; UI reading `read-api`. No SQL, no sign-in |
-| M2 interactive | `adapters/postgres`, `adapters/kmsgcp`, write ports; `write-api`, sign-in, SQL (`accounts`, `identities`, `signals`, `my_signals`, `request_reasons`), sessions, rate limits, markup requests, `job-batcher`, moderation log; custom domain so cookies are same-site |
+| M2 interactive | `adapters/postgres`, `adapters/kmsgcp`, write ports; `write-api`, sign-in, SQL (`accounts`, `identities`, `signals`, `my_signals`, `request_reasons`, `push_subscriptions`, `notify_state`), sessions, rate limits, markup requests, `job-batcher`, `job-notify` and `adapters/webpush` (inbox and device notifications), moderation log; custom domain so cookies are same-site |
 | M3 pilot | `job-briefs` and delivery queue, `worker`, roles, `job-detector`; `markup_queue`, steward decision routes with two-party sign-off, `markup_decisions`, promotion of accepted bills |
 | M4 launch | Audit export, log hardening review, load test of the CDN-first read path |
 | M5 verification | Tier records, district fields, complementary suppression across breakdowns |
@@ -842,7 +889,7 @@ Rules:
 - **Sessions in the document store or SQL:** the document store avoids a SQL resume on every signed-in request.
 - **Batch interval**, shared with [11](../design/11-ai-security.md).
 - **Review-item freshness on the UI:** CDN TTL for pages showing comments and suggestions.
-- **Notification channel:** optional email, or in-app only at M2.
+- **Email notifications:** deferred. Revisit only if device notifications and the inbox leave too many people unreachable; it would need verified, encrypted addresses and a mail provider under a data processing agreement.
 - **CI** for the Go module and `app/`, including the dependency checks, binary size budgets, and contract checks.
 - **Image registry:** Artifact Registry in the production project.
 - **Self-hosted adapters** for document and object storage, if running entirely off Google Cloud becomes a goal.

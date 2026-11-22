@@ -15,7 +15,21 @@
 
 	let { children }: LayoutProps = $props();
 
-	onMount(() => demo.init());
+	onMount(() => {
+		demo.init();
+		// Chromium offers an install prompt; keep it so the header can show an Install button.
+		const keep = (e: Event) => {
+			e.preventDefault();
+			ui.installPrompt = e as Event & { prompt: () => Promise<void> };
+		};
+		const installed = () => (ui.installPrompt = null);
+		window.addEventListener('beforeinstallprompt', keep);
+		window.addEventListener('appinstalled', installed);
+		return () => {
+			window.removeEventListener('beforeinstallprompt', keep);
+			window.removeEventListener('appinstalled', installed);
+		};
+	});
 </script>
 
 <svelte:head>

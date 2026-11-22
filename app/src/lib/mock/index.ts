@@ -4,6 +4,7 @@ import { issues } from './issues';
 
 export { bills } from './bills';
 export { issues } from './issues';
+export { seedFeed } from './feed';
 export {
 	catalog,
 	catalogEntry,

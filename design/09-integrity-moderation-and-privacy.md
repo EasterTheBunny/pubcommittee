@@ -87,6 +87,7 @@ Which bills are reviewable shapes what legislators hear. Selection follows [01](
 | Individual support/oppose | Private to the person. Never shown to the public, legislators, or stewards |
 | Aggregate counts | Public; to legislators by jurisdiction (later, by district) |
 | Address, precise location, phone | Private |
+| Device notification subscriptions | Private; tied to the account, never to the items that triggered a notification |
 | ID documents | Not stored; one-way token only |
 | Steward, moderator, office actions | Public and attributed |
 

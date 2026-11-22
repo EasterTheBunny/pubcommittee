@@ -43,6 +43,7 @@ export const sectionSuggestionsHref = (
 
 export const issuesHref = () => resolve('/issues');
 export const catalogHref = () => resolve('/catalog');
+export const inboxHref = () => resolve('/inbox');
 export const issueHref = (issueId: string) => resolve('/issues/[issue]', { issue: issueId });
 export const briefsHref = () => resolve('/briefs');
 export const briefHref = (billId: string) => resolve('/briefs/[bill]', { bill: billId });
