@@ -19,11 +19,13 @@
 		"format": "prettier --write ."
 	},
 	"devDependencies": {
+		"@redocly/cli": "^2.82.0",
 		"@sveltejs/adapter-static": "^4.0.1",
 		"@sveltejs/kit": "^3.2.0",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/vite": "^4.3.5",
+		"openapi-typescript": "^7.13.0",
 		"prettier": "^3.10.1",
 		"prettier-plugin-svelte": "^4.1.1",
 		"prettier-plugin-tailwindcss": "^0.8.1",
@@ -32,5 +34,10 @@
 		"tailwindcss": "^4.3.5",
 		"typescript": "^6.0.3",
 		"vite": "^8.3.8"
+	},
+	"overrides": {
+		"openapi-typescript": {
+			"typescript": "$typescript"
+		}
 	}
 }
