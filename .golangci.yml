@@ -82,6 +82,8 @@ linters:
               desc: local-only adapter in a gcp build
             - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/localauth
               desc: local-only adapter in a gcp build
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/fsutil
+              desc: local-only helper in a gcp build
         no-vendor-in-data:
           files:
             - "**/internal/data/**"
