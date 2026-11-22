@@ -128,7 +128,8 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
+                # anyOf, not oneOf: a tracked catalog entry also satisfies BillSummary, so exactly-one cannot hold.
+                anyOf:
                   - { $ref: '#/components/schemas/BillSummaryPage' }
                   - { $ref: '#/components/schemas/CatalogEntryPage' }
         '304': { $ref: '#/components/responses/NotModified' }

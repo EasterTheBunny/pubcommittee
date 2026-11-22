@@ -20,7 +20,7 @@ check() {
 }
 
 check "read-api ready on local target" "$api/readyz" 200
-check "read-api ping reads the policy document" "$api/v1/ping" 200
+check "read-api serves discovery" "$api/v1" 200
 
 if command -v go >/dev/null 2>&1 && [ -f go.mod ]; then
 	go test -tags local -count=1 ./internal/adapters/fsobject/... ./internal/adapters/fsdocs/... ./internal/adapters/localauth/...

@@ -65,6 +65,7 @@ func docsPolicyCases() []docsCase {
 	return []docsCase{
 		{"GetSelectionPolicy on empty store is not found", docsPolicyEmpty},
 		{"GetSelectionPolicy returns the latest version", docsPolicyLatest},
+		{"GetSelectionPolicyVersion returns one version or not found", docsPolicyByVersion},
 		{"identical policy re-put is nil, different content conflicts", docsPolicyWriteOnce},
 		{"policy version below one is invalid", docsPolicyInvalidVersion},
 	}
@@ -142,11 +143,17 @@ func docsWantErr(t *testing.T, err, want error) {
 // docsSampleCatalog returns a catalog entry for bill n.
 func docsSampleCatalog(n int, title string, tracked bool) data.CatalogEntry {
 	return data.CatalogEntry{
-		Bill:    SampleBill(n),
-		Title:   title,
-		Tracked: tracked,
-		Reasons: []string{"sponsor"},
-		Meta:    SampleMeta(),
+		Bill:              SampleBill(n),
+		Title:             title,
+		Status:            "introduced",
+		Chamber:           data.ChamberHouse,
+		Subjects:          []string{"Health"},
+		CommitteeActivity: true,
+		Tracked:           tracked,
+		Reasons:           []string{"sponsor"},
+		MarkupStatus:      data.MarkupEligible,
+		OfficialLinks:     []data.Link{{Label: "Congress.gov", URL: "https://example.test/bill", Kind: data.LinkBillPage}},
+		Meta:              SampleMeta(),
 	}
 }
 
@@ -226,10 +233,15 @@ func docsBillRoundTrip(t *testing.T, factory docsFactory) {
 	ctx := t.Context()
 	pub, plat, _ := factory(t)
 	want := data.Bill{
-		Ref:     SampleBill(1),
-		Title:   "A bill",
-		Sponsor: "Rep. Example",
-		Status:  docsIntroduced,
+		Ref:            SampleBill(1),
+		Title:          "A bill",
+		Sponsor:        "Rep. Example",
+		Status:         docsIntroduced,
+		Chamber:        data.ChamberHouse,
+		ReviewState:    data.ReviewOpen,
+		OfficialLinks:  []data.Link{{Label: "Congress.gov", URL: "https://example.test/bill", Kind: data.LinkBillPage}},
+		TrackedReasons: []string{"sponsor"},
+		PolicyVersion:  1,
 		Versions: []data.VersionSummary{{
 			Ref:         SampleVersion(1, "ih").Ref,
 			Type:        docsIntroduced,
@@ -285,6 +297,22 @@ func docsPolicyLatest(t *testing.T, factory docsFactory) {
 	if !reflect.DeepEqual(got, v2) {
 		t.Fatalf("GetSelectionPolicy = %+v, want %+v", got, v2)
 	}
+}
+
+func docsPolicyByVersion(t *testing.T, factory docsFactory) {
+	t.Helper()
+	ctx := t.Context()
+	pub, plat, _ := factory(t)
+	v1 := docsSamplePolicy(1, "a")
+	docsNoErr(t, plat.PutSelectionPolicy(ctx, v1))
+	docsNoErr(t, plat.PutSelectionPolicy(ctx, docsSamplePolicy(docsNextVersion, "a", "b")))
+	got, err := pub.GetSelectionPolicyVersion(ctx, 1)
+	docsNoErr(t, err)
+	if !reflect.DeepEqual(got, v1) {
+		t.Fatalf("GetSelectionPolicyVersion(1) = %+v, want %+v", got, v1)
+	}
+	_, err = pub.GetSelectionPolicyVersion(ctx, docsNextVersion+1)
+	docsWantErr(t, err, data.ErrNotFound)
 }
 
 func docsPolicyWriteOnce(t *testing.T, factory docsFactory) {
