@@ -1,5 +1,5 @@
-# Local stack on the shared data volume. M1-01 ships the placeholder
-# read-api on the memory target; M1-03a switches TARGET to local. No emulators
+# Local stack on the shared data volume. M1-01 shipped the placeholder
+# read-api on the memory target; M1-03a runs it on the local target. No emulators
 # and no Postgres in M1; the emulator profile arrives with M1-03b.
 name: pubcommittee
 services:
@@ -9,11 +9,12 @@ services:
       dockerfile: docker/Dockerfile
       args:
         SERVICE: read-api
-        TARGET: memory
+        TARGET: local
     environment:
       PORT: "8080"
       METRICS_PORT: "9464"
       OTEL_SERVICE_NAME: read-api
+      DATA_DIR: /data
     ports:
       - "127.0.0.1:8080:8080"
     volumes:

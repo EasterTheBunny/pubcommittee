@@ -6,7 +6,7 @@ set -eu
 . "$(dirname "$0")/lib.sh"
 
 sql_keys='/adapters/(postgres|kmsgcp|localkeys)|jackc/pgx|cloud\.google\.com/go/kms'
-local_only='/adapters/(fsobject|fsdocs|localkeys|localauth)'
+local_only='/adapters/(fsobject|fsdocs|fsutil|localkeys|localauth)'
 
 for tag in memory local gcp emulator; do
 	if ! go list -deps -tags "$tag" ./cmd/read-api | forbid_in_list "$sql_keys"; then
