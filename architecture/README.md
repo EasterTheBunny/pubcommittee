@@ -193,6 +193,11 @@ Ports are grouped by the boundary they sit behind. A service receives only the g
 | Notification | `Notifier` | Send an encrypted Web Push message to a subscription; report subscriptions that are gone | `adapters/webpush` |
 | Generation | `Generator` | Submit summarization tasks as a batch, collect results; one synchronous call for steward-requested regeneration | `adapters/claude` |
 
+M1 notes (from M1-01):
+- The public read group holds only `BillText` and `PublicDocs` in M1; `Snapshots` arrives in M2.
+- `PlatformDocs` also has `PutBill`, `GetIngestState`, and `PutIngestState`. `ApplyLogged` takes a `Change`, which carries exactly one of a bill, catalog entry, policy, or explanation, plus a `LogEntry`.
+- `BillSource` declares `ListChanged(ctx, since, page)` in M1. Manual pulls ([M1-05](../design/tasks/m1/05-manual-bill-pull-and-storage.md)) pass an empty watermark.
+
 ### Interface rules
 1. **Domain types only.** Ports take and return types from `internal/data` (`Anchor`, `Thread`, `SignalKey`, `Snapshot`). No vendor types (document references, timestamps, rows, SDK errors) cross a port.
 2. **Domain operations, not generic queries.** `SignalLedger.Set(ctx, key, item, value)` is an idempotent upsert; there is no `Query(sql)` or `Collection(name)`. Each adapter decides how to make the operation atomic.
@@ -257,6 +262,8 @@ cmd/write-api/
 ```
 
 `wiring_none.go` references an undefined identifier, so a build with no target tag fails to compile instead of producing a binary with no storage.
+
+Each wiring file defines the same function, `wire(...)`, which `main.go` calls to get the service's port group.
 
 Build: `CGO_ENABLED=0 go build -tags gcp -trimpath -ldflags="-s -w" ./cmd/write-api`.
 
@@ -390,7 +397,7 @@ Open: the OpenAPI linter ([API contract](#contract-workflow)), whether DTD valid
 ### Keeping each service small
 - **One responsibility per binary.** A service that grows a second job is split.
 - **Few dependencies.** Standard library first. A new third-party module needs a reason in review. Vendor SDKs are imported only from adapter packages.
-- **Size budget per binary, checked in CI.** Google Cloud clients built on gRPC dominate binary size; services that do not need an adapter must not link it. The budget is set from the first M1 builds and fails the build when exceeded.
+- **Size budget per binary, checked in CI.** Google Cloud clients built on gRPC dominate binary size; services that do not need an adapter must not link it. The budget is set from the first M1 builds and fails the build when exceeded. First measurement (M1-01): `read-api` on the `memory` target, `linux/amd64`, `-trimpath -ldflags="-s -w"`, is 16.8 MB, most of it the OTLP exporter's gRPC and protobuf. The budget is 20 MB, in `test/ci/size-budget.txt`, checked by `test/ci/size.sh`.
 - **No work at startup** beyond reading config and constructing clients. Clients connect on first use.
 
 ### Contract for every image

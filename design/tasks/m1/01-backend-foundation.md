@@ -78,4 +78,6 @@ Create the Go backend skeleton every other M1 task builds on: one module, domain
 ## Open questions
 
 - Does `BillSource` declare its "list changed bills since a watermark" operation in M1, when bill pulls are manual ([M1-05](05-manual-bill-pull-and-storage.md))?
+  - **Answered (M1-01):** yes. `ListChanged(ctx, since, page)` is declared and the memory adapter and conformance suite cover it; manual pulls pass an empty watermark. Recorded in [architecture § Ports](../../../architecture/README.md#ports).
 - What binary size budget applies to each service? The architecture sets it from the first M1 builds; record it in [architecture § Keeping each service small](../../../architecture/README.md#keeping-each-service-small).
+  - **Answered (M1-01):** `read-api` measured 16.8 MB; budget 20 MB in `test/ci/size-budget.txt`, enforced in CI. Recorded in the architecture section.
