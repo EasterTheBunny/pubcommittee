@@ -105,6 +105,9 @@ $RECYCLE.BIN/
 # Local agent and tool settings (may hold personal paths or tokens)
 .claude/settings.local.json
 
+# Agent git worktrees (one per task-orchestrator run)
+.claude/worktrees/
+
 # Local data directory for the `local` build target
 .local-data/
 
