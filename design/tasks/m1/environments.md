@@ -85,4 +85,5 @@ How the development environment grows as M1 tasks complete: what runs on a local
 - **Cloud Storage stand-in** (cloud phase, E1): Google publishes no Cloud Storage emulator. Which stand-in does `adapters/gcs` test against? Answered by [M1-00](00-storage-emulator-exploration.md).
 - **Firestore emulator** (cloud phase, E1): run in a container so CI and other machines match.
 - **Tool choices** are recorded in [architecture § Tooling](../../../architecture/README.md#tooling): Go 1.27, Go tools through the `tool` directive, `openapi-typescript` in `app/`, cross-compiled multi-arch images, BuildKit SBOMs, GitHub Actions, OpenTofu, Playwright, the Firestore emulator in a container (cloud phase), the Firebase CLI in the deployment repository's CI only, and no Postgres until M2.
-- **Still open:** the OpenAPI linter ([M1-02](02-api-contract.md)); DTD validation in Go tests or with `xmllint` in a CI container ([M1-04](04-bill-xml-parser.md)); a local pre-commit secret scanner beside CI scanning ([M1-15](15-infrastructure-and-deploy.md)).
+- **Answered:** the OpenAPI linter is Redocly CLI ([M1-02](02-api-contract.md)).
+- **Still open:** DTD validation in Go tests or with `xmllint` in a CI container ([M1-04](04-bill-xml-parser.md)); a local pre-commit secret scanner beside CI scanning ([M1-15](15-infrastructure-and-deploy.md)).

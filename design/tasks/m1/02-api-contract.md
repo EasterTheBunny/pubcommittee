@@ -75,5 +75,7 @@ Write `api/openapi.yaml` for every M1 read route, generate server and client typ
 - Committee-activity filter: **Decided:** yes, in M1 ([01 § Public catalog](../../01-bill-ingestion-and-display.md#public-catalog)); added to [architecture § Resources](../../../architecture/README.md#resources).
 - Short-code link aliases: **Decided:** not in M1; human-readable canonical addresses only.
 - What is the range syntax in paths, and how is a block addressed? It must match the UI fragment form `#s4-l12-13`.
+  - **Answered (M1-02):** `{range}` is `12` or `12-13`, inclusive. A block has no separate syntax: each line carries `block_to`, and the block is the range `n-block_to`. Recorded in [architecture § Resources](../../../architecture/README.md#resources).
 - Spec linter: **Decided:** this task chooses one and proposes it for [architecture § Tooling](../../../architecture/README.md#tooling).
+  - **Answered (M1-02):** Redocly CLI, recorded in architecture § Tooling.
 - Where the spec is published: **Decided:** `read-api` serves it at `GET /v1/openapi.yaml`, linked from `GET /v1`.

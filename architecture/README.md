@@ -280,8 +280,8 @@ Build: `CGO_ENABLED=0 go build -tags gcp -trimpath -ldflags="-s -w" ./cmd/write-
 | `internal/adapters/postgres` | `SignalLedger`, `Identities`, `Accounts` | Any Postgres (Neon in production) |
 | `internal/adapters/kmsgcp` | `Keys` | Cloud KMS |
 | `internal/adapters/localkeys` | `Keys` | Keys from a local file; development only, excluded from `gcp` builds |
-| `internal/adapters/fsobject` | `BillText`, `Snapshots`, `Publisher` | Local filesystem, same paths as the bucket; write-once by exclusive create, atomic rename for replaceable files, content hash as `ETag`. Local only, excluded from `gcp` builds |
-| `internal/adapters/fsdocs` | `PublicDocs`, `ReviewItems`, `Moderation`, `PlatformDocs` | One JSON file per document on the local filesystem; atomic rename, lock file for change-plus-log operations. Local only, excluded from `gcp` builds |
+| `internal/adapters/fsobject` | `BillText`, `Snapshots`, `Publisher` | Local filesystem, same paths as the bucket; write-once by hard-linking a synced temporary file to the final path (exclusive and atomic), atomic rename for replaceable files, content hash as `ETag`. Local only, excluded from `gcp` builds |
+| `internal/adapters/fsdocs` | `PublicDocs`, `ReviewItems`, `Moderation`, `PlatformDocs` | One JSON file per document on the local filesystem; atomic rename, one lock file (`<root>/.lock`) serializing writes and change-plus-log operations. The catalog has no index file: file names encode the bill key, and a page lists the directory and reads only its entries (about 10 ms for the first page of 15,000). Local only, excluded from `gcp` builds |
 | `internal/adapters/localauth` | Operator authentication for `admin-api` | A fixed fake operator. Local only, excluded from `gcp` builds |
 | `internal/adapters/cloudtasks` | `Queue` | Cloud Tasks |
 | `internal/adapters/claude` | `Generator` | Claude through the Anthropic Go SDK: the Google Cloud client (`googlecloud`) in `gcp` builds, the first-party client elsewhere |
@@ -382,7 +382,9 @@ Build: multi-stage Dockerfile. A Go builder stage with module and build caches c
 | Lint | `golangci-lint` v2, strict: all linters enabled, each disabled linter justified in `.golangci.yml`, no issue limits, `//nolint` only with a named linter and reason | Findings fail CI |
 | Development container | `docker/dev.Dockerfile`; builds, tests, and lint run inside it, with explicit CPU and memory limits, for agents and CI alike | Same toolchain everywhere; parallel work cannot starve the host |
 | Node | Node 24 (`node:24-bookworm-slim`, pinned by digest in `docker/dev.Dockerfile`) for `app/` | One runtime for UI builds, type generation, and Playwright |
-| TypeScript types | `openapi-typescript` as a dev dependency in `app/` | Pinned by the app's lockfile |
+| TypeScript types | `openapi-typescript` as a dev dependency in `app/`, with the npm override `overrides.openapi-typescript.typescript=$typescript` because its peer range stops at TypeScript 5 | Pinned by the app's lockfile |
+| OpenAPI linter | Redocly CLI (`@redocly/cli`, dev dependency in `app/`), config in `api/redocly.yaml` | Validates OpenAPI 3.1 with no extra runtime |
+| API code generation | `oapi-codegen` (tool directive) generates `api/v1` (package `apiv1`); `sh api/generate.sh` regenerates Go and TypeScript, `sh api/check.sh` lints the spec and fails if generated code is stale | One command each to regenerate and to check |
 | Multi-arch images | Cross-compile in the builder stage (`--platform=$BUILDPLATFORM`, `GOOS`/`GOARCH` from `TARGETOS`/`TARGETARCH`) | Static Go binaries need no emulation; the final stage only copies the binary, so no QEMU or binfmt |
 | SBOM | BuildKit SBOM attestation (`--sbom=true`) | Generated at build with no separate tool |
 | CI | GitHub Actions, in this repository and the deployment repository | The repository is on GitHub; secret scanning with push protection and OIDC federation to Google Cloud are built in |
@@ -393,7 +395,7 @@ Build: multi-stage Dockerfile. A Go builder stage with module and build caches c
 | Postgres | Not in `compose.yaml` until M2 | No SQL in M1 |
 | Secret scanning | GitHub secret scanning with push protection, plus the format-based pattern check in CI | See [What stays private](#what-stays-private) |
 
-Open: the OpenAPI linter ([API contract](#contract-workflow)), whether DTD validation of bill XML runs in Go tests or with `xmllint` in a CI container, and whether a local pre-commit secret scanner is wanted beside CI scanning.
+Open: whether DTD validation of bill XML runs in Go tests or with `xmllint` in a CI container, and whether a local pre-commit secret scanner is wanted beside CI scanning.
 
 ### Keeping each service small
 - **One responsibility per binary.** A service that grows a second job is split.
@@ -433,7 +435,7 @@ The `TARGET` build argument selects the build tag, and so the [wiring](#build-ti
 | `emulator` | `firestore` and `gcs` against the Firestore emulator and a Cloud Storage stand-in; `localkeys` | Conformance and integration tests of the cloud adapters, locally and in CI |
 | `memory` | `memory`, `localkeys` | Unit and conformance tests; nothing persists |
 
-A target only includes the adapters a given service's wiring imports, so a `read-api` image of any target contains no SQL or key adapter. CI also fails if a `gcp` binary links any local-only adapter (`fsobject`, `fsdocs`, `localkeys`, `localauth`), so a local stand-in can never reach a deployed service.
+A target only includes the adapters a given service's wiring imports, so a `read-api` image of any target contains no SQL or key adapter. CI also fails if a `gcp` binary links any local-only adapter (`fsobject`, `fsdocs`, `localkeys`, `localauth`, and their helper `fsutil`), so a local stand-in can never reach a deployed service.
 
 **Local first.** Every service and job builds and runs on `local` before any cloud adapter exists; cloud connections are added afterwards behind the same ports ([M1 phases](../design/tasks/README.md#phases)).
 
@@ -779,6 +781,10 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 | `GET /v1/markup-decisions`, `GET /v1/markup-decisions/{id}` | `read-api` | None | Short |
 | `GET /v1/bills/{bill}/v/{n}` | `read-api` | None | Immutable: metadata, sections, lines, anchors |
 | `GET /v1/bills/{bill}/v/{n}/s/{section}`, `.../s/{section}/l/{range}` | `read-api` | None | Immutable |
+| `GET /v1/bills/{bill}/s/{section}`, `.../s/{section}/l/{range}` | `read-api` | None | Short: latest version, with an `address` block naming the pinned and latest versions |
+| `GET /v1/bills/{bill}/v/{n}/summary`, `.../changes` | `read-api` | None | Short: bill summary and change summary against the previous version ([M1-09](../design/tasks/m1/09-ai-generation.md)) |
+| `GET /v1/bills/{bill}/v/{n}/citations?state=`, `.../citations/unresolved` | `read-api` | None | Short ([M1-07](../design/tasks/m1/07-us-code-and-citations.md)) |
+| `GET /v1/bills/{bill}/v/{n}/compare/{m}` | `read-api` | None | Immutable: base `n` against `m` ([M1-08](../design/tasks/m1/08-version-history-and-stale.md)) |
 | `GET /v1/bills/{bill}/v/{n}/explanations` | `read-api` | None | Short (stewards correct explanations) |
 | `GET /v1/bills/{bill}/v/{n}/review` | `read-api` | None | Short: threads and suggestions for that version |
 | `GET /v1/threads/{id}`, `GET /v1/suggestions/{id}` | `read-api` | None | Short |
@@ -786,7 +792,8 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 | `GET /v1/briefs/{bill}` | `read-api` | None | Until next brief |
 | `GET /v1/snapshots/bills/{bill}` | `read-api` | None | Until next batch |
 | `GET /v1/moderation-log` | `read-api` | None | Short |
-| `GET /v1/feed`, `GET /v1/exports/...` | `read-api` | None | Until next batch |
+| `GET /v1/feed`, `GET /v1/exports/{export}` | `read-api` | None | Until next batch |
+| `GET /v1`, `GET /v1/openapi.yaml` | `read-api` | None | Short |
 | `GET /auth/{provider}/start`, `GET /auth/{provider}/callback`, `POST /auth/signout` | `write-api` | Session created here | Never |
 | `GET /v1/me`, `GET /v1/me/signals` (includes markup requests) | `write-api` | Session cookie | Never |
 | `GET /v1/me/notifications`, `POST /v1/me/notifications/read` | `write-api` | Session cookie | Never |
@@ -801,13 +808,15 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 
 `PUT` and `DELETE` on signals make set and withdraw idempotent, matching `SignalLedger`. The paths above are a starting outline; `api/openapi.yaml` is authoritative once written.
 
+Path parameters (M1-02): `{n}` is the 1-based position in the bill's version list, or `latest`; the version code (for example `ih`) is the `code` field. `{range}` is `12` or `12-13`, inclusive, the same form as the UI fragment `#s4-l12-13`. A block has no syntax of its own: each line carries `block_to`, and the block is the range `n-block_to`. `markup-decisions` routes are not yet in the spec.
+
 ### Conventions
 - **Versioning.** Major version in the path (`/v1`). Additive changes do not bump it. A new major version runs beside the old one for a published period ([10](../design/10-machine-access.md)).
 - **Representation.** Plain JSON, `snake_case` fields, UTC timestamps in RFC 3339 (public timestamps coarsened to the day where [11](../design/11-ai-security.md) requires). No envelope; collections return `{ "items": [...], "next": "<cursor>" }`.
 - **Provenance on every record.** `version`, `as_of`, `provenance`, and `content_class` (`official`, `platform`, `user`) on each record that carries text ([10](../design/10-machine-access.md#instruction-injection)).
 - **Pagination.** Opaque cursors from the adapter, passed as `?cursor=`. No offsets.
 - **Caching.** Strong `ETag` on every `GET`, with `If-None-Match` returning `304`. `Cache-Control` per resource as in the table; `immutable` for official text. Credentialed responses are `private, no-store`.
-- **Errors.** RFC 9457 problem details (`application/problem+json`) with a stable `type` per typed data error (`not-found`, `conflict`, `invalid`, `rate-limited`, `unavailable`). No stack traces or vendor errors.
+- **Errors.** RFC 9457 problem details (`application/problem+json`) with a stable `type` per typed data error, in the path form `/problems/<name>` (`not-found`, `conflict`, `invalid`, `rate-limited`, `unavailable`). No stack traces or vendor errors.
 - **Rate limits.** `429` with `Retry-After`; published limits per route class, as ranges. `read-api` limits in memory per instance, keyed on `HMAC(k_rate, ip ‖ day)` that never leaves memory; it holds no storage port for limits.
 - **Feed.** `GET /v1/feed?since=<RFC 3339>` in the collection convention; entries carry type, day-granular time, and canonical address.
 - **Licences.** Official text and US Code provisions are marked public domain; platform-generated content is CC0 1.0.
