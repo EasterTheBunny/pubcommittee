@@ -63,3 +63,31 @@ export function isStale(bill: Bill, anchor: Anchor): boolean {
 
 export const overlaps = (a: Anchor, b: Anchor) =>
 	a.billId === b.billId && a.sectionId === b.sectionId && a.from <= b.to && b.from <= a.to;
+
+// --- Nesting (design/01 Block) -----------------------------------------------
+// A line's block is the line plus every following line nested deeper under it
+// (subsections, paragraphs, list items). Blocks are always contiguous.
+
+const depth = (l: Line) => l.indent ?? 0;
+
+/** Last line number of the block that starts at line n (n itself for a leaf). */
+export function blockEnd(lines: Line[], n: number): number {
+	const i = lines.findIndex((l) => l.n === n);
+	if (i < 0) return n;
+	let end = n;
+	for (let j = i + 1; j < lines.length && depth(lines[j]) > depth(lines[i]); j++) end = lines[j].n;
+	return end;
+}
+
+/** Number of lines nested under line n. */
+export const nestedCount = (lines: Line[], n: number) => blockEnd(lines, n) - n;
+
+/**
+ * Smallest range containing [from, to] that is closed under nesting: every line in it
+ * brings all its nested lines. Required for suggested edits (design/03).
+ */
+export function closeRange(lines: Line[], from: number, to: number): { from: number; to: number } {
+	let end = to;
+	for (const l of lines) if (l.n >= from && l.n <= end) end = Math.max(end, blockEnd(lines, l.n));
+	return { from, to: end };
+}

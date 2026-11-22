@@ -110,7 +110,8 @@ People can ask for an eligible catalog bill to be brought into review. Requests 
 - **Bill** — identity within a jurisdiction and session; has metadata and an ordered list of official versions.
 - **Official version** — immutable snapshot of text with a version type (introduced, reported, engrossed, etc.) and publication date. Never edited after load.
 - **Section** — a structural unit of a version (title, section, subsection, paragraph...), with heading and citation label (e.g. "Sec. 4(b)").
-- **Line** — the smallest addressable text unit. Every line has a stable anchor within its version.
+- **Line** — the smallest addressable text unit. Every line has a stable anchor within its version, and a depth: lines nested under another line (subsections, paragraphs, list items) are deeper than it.
+- **Block** — a line together with every following line nested under it. A block is always contiguous, so it is addressed like any line range. A line with nothing nested under it is a block of one line. Example: a findings section whose line 5 ("Congress finds the following:") has items on lines 6–8 forms the block 5–8; line 7 is a block on its own.
 - **Anchor** — `(bill, version, section path, line or line range)`. Must be stable for the lifetime of a version so links, comments, and suggestions never drift.
 - **Provision** — an addressable unit of existing law, with its current text and the date the consolidated source was last current.
 - **Citation link** — a resolved reference from a bill section to one or more provisions, with a confidence state: `resolved`, `ambiguous`, `unresolved`, `steward-confirmed`.
@@ -154,6 +155,7 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 
 - Official versions are immutable once loaded.
 - Anchors never change for a given version.
+- Line depth comes from the official text's own structure, so blocks are the legislature's structure, not ours.
 - Every change explanation shows its provenance (automatic, steward-checked, bill-only).
 - An as-amended preview is never presented as official law.
 - Steward corrections to explanations are attributed and logged (see [05](05-roles-and-stewardship.md)).
@@ -176,6 +178,7 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 - How are explanations generated at scale (rules, templates, assisted drafting), and what accuracy bar must they meet before display without steward review?
 - How quickly must a new version appear after publication? The product doc marks speed as low priority at launch.
 - How are tables, formulas, and other non-prose bill content made addressable?
+- How are wrapped continuation lines (one sentence split across lines at the same depth) told apart from separate items, so a selection never splits a sentence?
 - Should excluded measure kinds (privileged resolutions, simple resolutions) offer a bill-level signal only, or stay out of the product entirely?
 - The legislature's subject indexing often arrives days or weeks after introduction. Is title matching enough in the meantime, or do pilot bills wait for indexing?
 - Which subject terms define each focus topic, and who maintains that list?

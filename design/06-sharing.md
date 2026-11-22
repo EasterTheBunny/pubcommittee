@@ -21,7 +21,7 @@ Let anyone share a whole bill or any part of it, down to a single line, so socia
 | --- | --- | --- |
 | Whole bill | Share button at top of bill | Title, number, sponsor, status, one-line change explanation, current support and opposition |
 | Section | Share icon by section heading | Heading and first lines, bill title, share of opposers tagging it a rider (if notable) |
-| Line or range | Select text, then Share | Quoted words, section citation, bill title |
+| Line, block, or range | Select a line, then Share. A line with nested lines selects its block (the line and everything under it); a custom end narrows or widens the range; a line with nothing nested shares alone | Quoted words, section citation, bill title |
 | Suggested edit | Share button on suggestion | Side-by-side comparison, reason, support count |
 | Comment thread | Share button on thread | Quoted line and opening comment |
 

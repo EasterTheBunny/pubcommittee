@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { anchorText, isStale, overlaps, parseHash, rangeLabel } from '#lib/anchors.ts';
+	import {
+		anchorText,
+		closeRange,
+		isStale,
+		overlaps,
+		parseHash,
+		rangeLabel
+	} from '#lib/anchors.ts';
 	import CommentThread from '#lib/components/CommentThread.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import SideBySide from '#lib/components/SideBySide.svelte';
@@ -23,11 +30,22 @@
 	let to = $state(0);
 	let filtered = $state(false);
 
+	/** Lines the last widening added, shown so the author knows why the range grew. */
+	let widenedFrom = $state<number | null>(null);
+
+	/** Edits must include every line nested under a selected line (design/03). */
+	function close() {
+		const c = closeRange(section.lines, from, to);
+		widenedFrom = c.to !== to ? to : null;
+		to = c.to;
+	}
+
 	function readHash() {
 		const h = parseHash(location.hash);
 		if (h?.sectionId === section.id && h.from !== undefined) {
 			from = h.from;
 			to = h.to ?? h.from;
+			close();
 			filtered = true;
 		}
 	}
@@ -159,6 +177,7 @@
 					bind:value={from}
 					onchange={() => {
 						if (to < from) to = from;
+						close();
 						filtered = true;
 					}}
 				>
@@ -172,6 +191,7 @@
 					bind:value={to}
 					onchange={() => {
 						if (from > to) from = to;
+						close();
 						filtered = true;
 					}}
 				>
@@ -188,6 +208,11 @@
 				/>
 			</label>
 		</div>
+		{#if widenedFrom !== null}
+			<p class="m-0 text-[13px] text-muted">
+				Extended to {rangeLabel(from, to)} so the edit includes the lines nested under the lines you chose.
+			</p>
+		{/if}
 		<div class="grid gap-4 md:grid-cols-2">
 			<label class="flex flex-col gap-1.5 text-sm font-semibold">
 				Replacement text (leave empty to delete)

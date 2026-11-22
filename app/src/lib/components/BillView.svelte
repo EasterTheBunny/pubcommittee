@@ -4,6 +4,9 @@
 	import {
 		anchorHash,
 		anchorText,
+		blockEnd,
+		closeRange,
+		nestedCount,
 		isStale,
 		parseHash,
 		rangeLabel,
@@ -88,16 +91,56 @@
 
 	function select(sectionId: string, n: number, extend: boolean) {
 		composing = false;
+		const lines = version.sections.find((s) => s.id === sectionId)?.lines ?? [];
+		const end = blockEnd(lines, n);
 		if (extend && sel && sel.sectionId === sectionId) {
-			sel = { sectionId, from: Math.min(sel.from, n), to: Math.max(sel.to, n) };
-		} else if (sel && sel.sectionId === sectionId && sel.from === n && sel.to === n) {
+			// Shift-click adjusts a custom range from its start, so a block can be narrowed (5–8 → 5–7).
+			sel = n >= sel.from ? { ...sel, to: n } : { sectionId, from: n, to: sel.to };
+		} else if (sel && sel.sectionId === sectionId && sel.from === n && sel.to === end) {
 			sel = null;
 		} else {
-			sel = { sectionId, from: n, to: n };
+			// A line with nested lines selects its whole block; a leaf selects itself.
+			sel = { sectionId, from: n, to: end };
 		}
+		writeHash();
+	}
+
+	function writeHash() {
 		const hash = sel ? anchorHash(sel.sectionId, sel.from, sel.to) : '';
 		replaceState(new URL((basePath ?? location.pathname) + hash, location.href), {});
 	}
+
+	const selLines = $derived(
+		sel ? (version.sections.find((s) => s.id === sel!.sectionId)?.lines ?? []) : []
+	);
+	const lastLine = $derived(selLines.at(-1)?.n ?? 0);
+
+	/** Moves the end of the selection by one line; the touch-friendly equivalent of shift-click. */
+	function stepEnd(d: 1 | -1) {
+		if (!sel) return;
+		const to = Math.min(lastLine, Math.max(sel.from, sel.to + d));
+		if (to === sel.to) return;
+		sel = { ...sel, to };
+		writeHash();
+	}
+
+	$effect(() => {
+		ui.actionBar = !!sel;
+		return () => (ui.actionBar = false);
+	});
+
+	function clearSelection() {
+		composing = false;
+		sel = null;
+		replaceState(new URL(basePath ?? location.pathname, location.href), {});
+	}
+
+	/** The selection widened so every included line brings its nested lines (for edits). */
+	const editRange = $derived.by(() => {
+		if (!sel) return null;
+		const lines = version.sections.find((s) => s.id === sel!.sectionId)?.lines ?? [];
+		return closeRange(lines, sel.from, sel.to);
+	});
 
 	const inSel = (sectionId: string, n: number) =>
 		!!sel && sel.sectionId === sectionId && n >= sel.from && n <= sel.to;
@@ -147,7 +190,7 @@
 	);
 </script>
 
-<div class="mx-auto flex max-w-[1200px] flex-col gap-5 px-4 py-6 sm:px-6">
+<div class="mx-auto flex max-w-[1200px] flex-col gap-5 px-4 py-6 sm:px-6 {sel ? 'pb-44' : ''}">
 	{#if issue && competitors.length}
 		<a
 			href={issueHref(issue.id)}
@@ -252,7 +295,9 @@
 					v{version.n}
 					{version.type}
 				</span>
-				<span class="ml-auto">Click a line number to select. Shift-click to extend.</span>
+				<span class="ml-auto">
+					Tap a line number to select it with its nested lines; adjust the end with − and +.
+				</span>
 			</div>
 
 			{#each version.sections as section (section.id)}
@@ -326,10 +371,15 @@
 							>
 								<button
 									type="button"
-									class="w-8 flex-none cursor-pointer pt-1 text-right font-sans text-xs {selected
+									class="w-8 flex-none cursor-pointer pt-1 text-right font-sans text-xs pointer-coarse:min-h-11 pointer-coarse:w-11 {selected
 										? 'font-semibold text-hl-ink'
 										: 'text-faint hover:text-support'}"
-									aria-label="Select line {line.n}"
+									aria-label={nestedCount(section.lines, line.n)
+										? `Select line ${line.n} and its ${nestedCount(section.lines, line.n)} nested lines`
+										: `Select line ${line.n}`}
+									title={nestedCount(section.lines, line.n)
+										? `Selects lines ${line.n}–${blockEnd(section.lines, line.n)}. Adjust with − and +, or shift-click.`
+										: undefined}
 									aria-pressed={selected}
 									onclick={(e) => select(section.id, line.n, e.shiftKey)}
 								>
@@ -343,43 +393,11 @@
 								</span>
 							</div>
 
-							{#if sel && sel.sectionId === section.id && sel.to === line.n && selAnchor}
+							{#if composing && sel && sel.sectionId === section.id && sel.to === line.n && selAnchor}
 								<div
 									class="my-2 mr-5 ml-16 flex flex-col gap-3 font-sans"
 									data-content-class="user"
 								>
-									<div class="flex flex-wrap gap-2">
-										<button type="button" class="btn-secondary" onclick={startComment}>
-											<Icon name="comment" /> Comment
-										</button>
-										<a
-											class="btn-primary"
-											href={sectionSuggestionsHref(
-												bill.id,
-												version.n,
-												section.id,
-												sel.from,
-												sel.to
-											)}
-										>
-											<Icon name="pencil" /> Suggest edit
-										</a>
-										<button
-											type="button"
-											class="btn-secondary"
-											onclick={() =>
-												(ui.share = { kind: 'lines', anchor: $state.snapshot(selAnchor) })}
-										>
-											<Icon name="share" /> Share {rangeLabel(sel.from, sel.to)}
-										</button>
-										<button
-											type="button"
-											class="btn-ghost text-ink-2"
-											onclick={() => select(section.id, sel!.from, false)}
-										>
-											Clear
-										</button>
-									</div>
 									{#if composing}
 										<form
 											class="flex flex-col gap-2 rounded-xl border border-line p-3.5"
@@ -471,3 +489,77 @@
 		</aside>
 	</div>
 </div>
+
+{#if sel && selAnchor}
+	<div
+		role="toolbar"
+		aria-label="Selected lines"
+		class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 px-3 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur"
+	>
+		<div class="mx-auto flex max-w-[1200px] flex-col gap-2">
+			<div class="flex flex-wrap items-center gap-2">
+				<span class="text-sm font-semibold" aria-live="polite">
+					{rangeLabel(sel.from, sel.to).replace(/^l/, 'L')}
+				</span>
+				<div class="flex" role="group" aria-label="Adjust the end of the selection">
+					<button
+						type="button"
+						class="btn-secondary size-11 rounded-r-none px-0 text-lg"
+						aria-label="End one line earlier"
+						disabled={sel.to === sel.from}
+						onclick={() => stepEnd(-1)}
+					>
+						−
+					</button>
+					<button
+						type="button"
+						class="-ml-px btn-secondary size-11 rounded-l-none px-0 text-lg"
+						aria-label="End one line later"
+						disabled={sel.to >= lastLine}
+						onclick={() => stepEnd(1)}
+					>
+						+
+					</button>
+				</div>
+				<button
+					type="button"
+					class="ml-auto btn-ghost px-3 text-ink-2"
+					aria-label="Clear selection"
+					onclick={clearSelection}
+				>
+					<Icon name="close" />
+				</button>
+			</div>
+			<div class="flex flex-wrap gap-2">
+				<button type="button" class="btn-secondary" onclick={startComment}>
+					<Icon name="comment" /> Comment
+				</button>
+				<a
+					class="btn-primary"
+					href={sectionSuggestionsHref(
+						bill.id,
+						version.n,
+						sel.sectionId,
+						editRange?.from ?? sel.from,
+						editRange?.to ?? sel.to
+					)}
+				>
+					<Icon name="pencil" /> Suggest edit
+				</a>
+				<button
+					type="button"
+					class="btn-secondary"
+					onclick={() => (ui.share = { kind: 'lines', anchor: $state.snapshot(selAnchor) })}
+				>
+					<Icon name="share" /> Share
+				</button>
+			</div>
+			{#if editRange && editRange.to !== sel.to}
+				<p class="m-0 text-xs text-muted">
+					An edit covers {rangeLabel(editRange.from, editRange.to)}: lines nested under a selected
+					line change with it.
+				</p>
+			{/if}
+		</div>
+	</div>
+{/if}

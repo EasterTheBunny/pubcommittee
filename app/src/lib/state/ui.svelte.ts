@@ -10,6 +10,8 @@ class UI {
 	/** Bill id whose oppose dialog is open. */
 	oppose = $state<string | null>(null);
 	toast = $state<string | null>(null);
+	/** True while the bottom selection bar is showing, so toasts sit above it. */
+	actionBar = $state(false);
 	/** Deferred browser install prompt (Chromium only); null when not offered. */
 	installPrompt = $state<(Event & { prompt: () => Promise<void> }) | null>(null);
 

@@ -28,6 +28,7 @@ Give reviewers three ways to respond to a bill (comment on lines, suggest exact 
 ## Line comments
 
 - Any eligible reviewer can comment on any line or line range.
+- Selecting a line that has nested lines selects its whole block by default ([01](01-bill-ingestion-and-display.md)). A comment may then narrow it to a custom range (for example lines 5–7 of the block 5–8); a line with nothing nested under it can be selected alone.
 - Threaded replies.
 - No count, no reactions that act as a signal. Comments exist for understanding and debate.
 - Steward replies may be marked **steward context** (sourced facts) — see [05](05-roles-and-stewardship.md).
@@ -37,6 +38,7 @@ Give reviewers three ways to respond to a bill (comment on lines, suggest exact 
 
 **Content**
 - Target anchor: one line or a contiguous range, in a specific official version.
+- **The target always includes nested lines.** If the range includes a line with lines nested under it, the target extends to include all of them: an edit to a lead-in line ("Congress finds the following:") changes what its items mean, so they are part of the edit. Edits may still target a nested line alone (line 7 of the block 5–8). The author is shown when and why the range was extended.
 - Replacement text (may be empty for a deletion).
 - Short plain-language reason.
 
