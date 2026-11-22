@@ -1,0 +1,72 @@
+# Local stack on the shared data volume. M1-01 ships the placeholder
+# read-api on the memory target; M1-03a switches TARGET to local. No emulators
+# and no Postgres in M1; the emulator profile arrives with M1-03b.
+name: pubcommittee
+services:
+  read-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE: read-api
+        TARGET: memory
+    environment:
+      PORT: "8080"
+      METRICS_PORT: "9464"
+      OTEL_SERVICE_NAME: read-api
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./.local-data:/data
+    read_only: true
+    healthcheck:
+      test: ["CMD", "/service", "-healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    mem_reservation: 64M
+
+  otel-collector:
+    image: otel/opentelemetry-collector@sha256:34b24b740c3c88d3467740e8642a397c13898ef76d7295c5425164c482ed1b73
+    command: ["--config=/etc/otelcol.yaml"]
+    volumes:
+      - ./docker/otelcol.yaml:/etc/otelcol.yaml:ro
+    depends_on:
+      read-api:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    mem_reservation: 128M
+
+  # Runs every task's acceptance script against the stack:
+  #   docker compose --profile acceptance run --rm acceptance
+  acceptance:
+    profiles: ["acceptance"]
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    working_dir: /src
+    volumes:
+      - ./test:/src/test:ro
+    environment:
+      READ_API_URL: http://read-api:8080
+      READ_API_METRICS_URL: http://read-api:9464
+      DATA_DIR: /data
+    command: ["sh", "-c", "for f in test/acceptance/*/run.sh; do [ -e \"$$f\" ] && sh \"$$f\" || exit 1; done"]
+    depends_on:
+      read-api:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    mem_reservation: 128M

@@ -1,0 +1,45 @@
+name: backend
+on:
+  push:
+    paths-ignore: ["app/**", "design/**", "architecture/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the development image
+        run: docker build -f docker/dev.Dockerfile -t pc-dev:ci .
+      - name: Run checks in the development image
+        run: |
+          docker run --rm --cpus 2 --memory 4g -v "$PWD":/src -w /src \
+            -v pc-gomod:/go/pkg/mod -v pc-gocache:/root/.cache/go-build \
+            pc-dev:ci sh -c '
+              set -eu
+              test -z "$(gofmt -l cmd internal)"
+              go vet -tags memory ./...
+              go tool golangci-lint run ./...
+              go test -tags memory -count=1 ./...
+              sh test/ci/tags.sh
+              sh test/ci/deps.sh
+              sh test/ci/size.sh
+              sh test/ci/deps_test.sh
+            '
+  image:
+    runs-on: ubuntu-latest
+    needs: go
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build read-api for both architectures with an SBOM
+        run: |
+          docker buildx build -f docker/Dockerfile \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg SERVICE=read-api --build-arg TARGET=memory \
+            --build-arg COMMIT="$GITHUB_SHA" \
+            --sbom=true --provenance=false \
+            -t pc-read-api:ci .

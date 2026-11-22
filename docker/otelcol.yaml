@@ -1,0 +1,27 @@
+# Local OpenTelemetry Collector: scrapes every HTTP service and accepts OTLP
+# pushes from jobs; prints metrics to its log. No data leaves the machine.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: read-api
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["read-api:9464"]
+processors:
+  batch: {}
+exporters:
+  debug:
+    verbosity: basic
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [batch]
+      exporters: [debug]
