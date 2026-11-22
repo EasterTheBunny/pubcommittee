@@ -13,7 +13,7 @@ Integration branch: `m1-integration`.
 | Task | Phase | State | Branch | Model | Churn | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | [M1-00](m1/00-storage-emulator-exploration.md) | cloud | todo | | | | |
-| [M1-01](m1/01-backend-foundation.md) | local | todo | | | | |
+| [M1-01](m1/01-backend-foundation.md) | local | in-progress | `task/M1-01` | sonnet | | Run r20261122-1412 |
 | [M1-02](m1/02-api-contract.md) | local | todo | | | | |
 | [M1-03a](m1/03a-local-storage-adapters.md) | local | todo | | | | |
 | [M1-03b](m1/03b-cloud-storage-adapters.md) | cloud | todo | | | | |
