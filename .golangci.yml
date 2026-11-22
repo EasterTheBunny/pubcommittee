@@ -39,6 +39,7 @@ linters:
     - tagliatelle   # JSON tags follow the OpenAPI contract (snake_case), checked by M1-02
     - funcorder     # method order follows port declaration order, not exported-first
     - noinlineerr   # inline `if err := ...; err != nil` is idiomatic Go
+    - gomodguard    # deprecated since v2.12.0; gomodguard_v2 (enabled by default: all) replaces it
   exclusions:
     rules:
       # Decorators return the wrapped port's error unchanged so errors.Is and identity hold.

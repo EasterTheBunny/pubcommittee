@@ -381,6 +381,7 @@ Build: multi-stage Dockerfile. A Go builder stage with module and build caches c
 | Go tools | `golangci-lint` and `oapi-codegen` pinned with the `tool` directive in `go.mod`, run with `go tool` | Versions live in the module; nothing to install by hand |
 | Lint | `golangci-lint` v2, strict: all linters enabled, each disabled linter justified in `.golangci.yml`, no issue limits, `//nolint` only with a named linter and reason | Findings fail CI |
 | Development container | `docker/dev.Dockerfile`; builds, tests, and lint run inside it, with explicit CPU and memory limits, for agents and CI alike | Same toolchain everywhere; parallel work cannot starve the host |
+| Node | Node 24 (`node:24-bookworm-slim`, pinned by digest in `docker/dev.Dockerfile`) for `app/` | One runtime for UI builds, type generation, and Playwright |
 | TypeScript types | `openapi-typescript` as a dev dependency in `app/` | Pinned by the app's lockfile |
 | Multi-arch images | Cross-compile in the builder stage (`--platform=$BUILDPLATFORM`, `GOOS`/`GOARCH` from `TARGETOS`/`TARGETARCH`) | Static Go binaries need no emulation; the final stage only copies the binary, so no QEMU or binfmt |
 | SBOM | BuildKit SBOM attestation (`--sbom=true`) | Generated at build with no separate tool |
