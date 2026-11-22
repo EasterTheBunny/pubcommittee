@@ -55,13 +55,10 @@
     "deny": [
       "Read(./deploy/**)",
       "Edit(./deploy/**)",
-      "Write(./deploy/**)",
       "Read(./contacts/**)",
       "Edit(./contacts/**)",
-      "Write(./contacts/**)",
       "Read(./.env*)",
       "Edit(./.env*)",
-      "Write(./.env*)",
       "Bash(git push*)",
       "Bash(git commit*)",
       "Bash(git merge *)",
