@@ -1,10 +1,16 @@
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/pubcom-dark.svg">
+  <img alt="PubCom" src="assets/pubcom-light.svg">
+</picture>
+
+<!--
  mmmmm         #        mmm
  #   "# m   m  #mmm   m"   "  mmm   mmmmm
  #mmm#" #   #  #" "#  #      #" "#  # # #
  #      #   #  #   #  #      #   #  # # #
  #      "mm"#  ##m#"   "mmm" "#m#"  # # #
-```
+-->
+
 
 # PubCommittee
 
@@ -38,6 +44,7 @@ pubcommittee/
 ├── PRODUCT_DOC.md         product definition: problem, personas, principles
 ├── SECURITY.md            how to report vulnerabilities; scope
 ├── LICENSE                AGPL-3.0
+├── assets/                README banner (light and dark SVG)
 ├── design/                stack-agnostic feature docs
 │   ├── README.md          index and dependency sketch
 │   ├── 01-…11-*.md        one doc per feature (ingestion, versions, review,

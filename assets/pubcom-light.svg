@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 524 140" width="524" height="140" role="img" aria-label="PubCom">
+  <title>PubCom</title>
+  <style>text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:20px;font-weight:700}.p{fill:#1b1f24}.c{fill:#1f4fd1}</style>
+  <text class="p" x="28 40 52 64 76 196" y="32">mmmmm#</text>
+  <text class="c" x="304 316 328" y="32">mmm</text>
+  <text class="p" x="28 76 88 112 160 196 208 220 232" y="54">#"#mm#mmm</text>
+  <text class="c" x="280 292 340 376 388 400 448 460 472 484 496" y="54">m""mmmmmmmm</text>
+  <text class="p" x="28 40 52 64 76 88 112 160 196 208 232 244" y="76">#mmm#"###""#</text>
+  <text class="c" x="280 364 376 400 412 448 472 496" y="76">##""####</text>
+  <text class="p" x="28 112 160 196 244" y="98">#####</text>
+  <text class="c" x="280 364 412 448 472 496" y="98">######</text>
+  <text class="p" x="28 112 124 136 148 160 196 208 220 232 244" y="120">#"mm"###m#"</text>
+  <text class="c" x="292 304 316 328 340 364 376 388 400 412 448 472 496" y="120">"mmm""#m#"###</text>
+</svg>
