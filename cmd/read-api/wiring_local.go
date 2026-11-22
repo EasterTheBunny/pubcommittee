@@ -3,14 +3,29 @@
 package main
 
 import (
-	"errors"
+	"fmt"
+	"os"
 
+	"github.com/easterthebunny/pubcommittee/internal/adapters/fsdocs"
+	"github.com/easterthebunny/pubcommittee/internal/adapters/fsobject"
 	"github.com/easterthebunny/pubcommittee/internal/data"
 	"github.com/easterthebunny/pubcommittee/internal/telemetry"
 )
 
-// wire is a placeholder until M1-03a adds the filesystem adapters fsobject
-// and fsdocs; it imports no adapter yet.
-func wire(_ *telemetry.Telemetry) (data.PublicReadPorts, error) {
-	return data.PublicReadPorts{}, errors.New("local adapters arrive with M1-03a")
+// wire builds the public read ports on the local data directory named by
+// DATA_DIR, the only storage setting. Other processes may write to it.
+func wire(tel *telemetry.Telemetry) (data.PublicReadPorts, error) {
+	dir := os.Getenv("DATA_DIR")
+	if dir == "" {
+		return data.PublicReadPorts{}, fmt.Errorf("DATA_DIR is required: %w", data.ErrInvalid)
+	}
+	objects, err := fsobject.New(fsobject.Config{Root: dir})
+	if err != nil {
+		return data.PublicReadPorts{}, err //nolint:wrapcheck // already names the adapter
+	}
+	docs, err := fsdocs.New(fsdocs.Config{Root: dir})
+	if err != nil {
+		return data.PublicReadPorts{}, err //nolint:wrapcheck // already names the adapter
+	}
+	return tel.WrapPublicRead("local", data.PublicReadPorts{BillText: objects, PublicDocs: docs}), nil
 }
