@@ -15,9 +15,9 @@ Integration branch: `m1-integration`.
 | [M1-00](m1/00-storage-emulator-exploration.md) | cloud | todo | | | | |
 | [M1-01](m1/01-backend-foundation.md) | local | done-local | `task/M1-01` | sonnet | none (4 sub-tasks, 0 redone, rewrite 0, 1 commit) | Run r20261122-1412; merged into `m1-integration`. `compose.yaml` builds `read-api` with `TARGET=memory`; M1-03a switches it to `local` |
 | [M1-02](m1/02-api-contract.md) | local | in-progress | `task/M1-02` | sonnet | | Run r20261122-1412, batch 2 |
-| [M1-03a](m1/03a-local-storage-adapters.md) | local | in-progress | `task/M1-03a` | sonnet | | Run r20261122-1412, batch 2 |
+| [M1-03a](m1/03a-local-storage-adapters.md) | local | blocked | `task/M1-03a` | sonnet | | Run r20261122-1412, batch 2: worktree cut from `main` (14a4f7d), not `m1-integration`; agent fast-forward denied by permission classifier. No work done |
 | [M1-03b](m1/03b-cloud-storage-adapters.md) | cloud | todo | | | | |
-| [M1-04](m1/04-bill-xml-parser.md) | local | in-progress | `task/M1-04` | sonnet | | Run r20261122-1412, batch 2 |
+| [M1-04](m1/04-bill-xml-parser.md) | local | blocked | `task/M1-04` | sonnet | | Run r20261122-1412, batch 2: worktree cut from `main` (14a4f7d), not `m1-integration`; agent fast-forward denied by permission classifier. No work done |
 | [M1-05](m1/05-manual-bill-pull-and-storage.md) | local, cloud | todo | | | | |
 | [M1-06](m1/06-selection-policy.md) | local, cloud | todo | | | | |
 | [M1-07](m1/07-us-code-and-citations.md) | local | todo | | | | |
