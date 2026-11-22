@@ -24,6 +24,8 @@ These docs are deliberately **stack-agnostic**. They name no languages, framewor
 
 See [MILESTONES.md](MILESTONES.md): M0 proof of concept on mocked data through M6 additional jurisdictions.
 
+Work packages for building each milestone are in [tasks/](tasks/README.md). Tasks use the stack recorded in [architecture/](../architecture/README.md) and make no stack choices of their own.
+
 Stack, hosting, and storage choices live outside these docs, in [architecture/](../architecture/README.md).
 
 ## Dependency sketch

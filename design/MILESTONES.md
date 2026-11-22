@@ -66,7 +66,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 **Goal.** Rebuild the earlier national prototype on Congress's XML bill text and the US Code. Prove that real bills can be ingested, made addressable, and explained.
 
 **In scope**
-- Automatic ingestion of bills and versions from the official feed ([01](01-bill-ingestion-and-display.md)).
+- Manual pull of bills and their official versions from the official source, started by an operator, with text stored as the architecture specifies ([01](01-bill-ingestion-and-display.md)). No automatic feed ingestion.
 - Bill catalog for the current Congress; tracked set selected by the published policy in pilot mode (committee action and a focus topic) ([01](01-bill-ingestion-and-display.md#bill-selection)).
 - Privileged administration (system access only, no product screens): select a catalog bill for review directly, correct ingestion errors, re-run ingestion, parsing, and generation, publish selection policy versions; every action in the public log ([05](05-roles-and-stewardship.md#platform-administration)).
 - Installable app: add to home screen or desktop, app shell available offline, previously opened official text readable offline ([08](08-onboarding-and-verification.md#installable-app)).
@@ -84,7 +84,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
   - long-lived caching of immutable versions; published rate limits;
   - machine-access notice and crawler directives.
 
-**Out of scope.** Accounts, signals, briefs.
+**Out of scope.** Accounts, signals, briefs. Automatic feed ingestion (milestone not yet assigned).
 
 **Exit criteria**
 - Three real bills, one with multiple versions, display correctly with explanations.
@@ -148,7 +148,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 - Measured share of suggestions marked well formed.
 - Decisions on: delivery minimum, rider-tag threshold, brief recipients, and whether to show line-comment concerns beside suggestions.
 - Decisions on: markup request threshold and steward capacity for accepted requests.
-- Decisions on: AI-drafted text policy, when presence checks apply, per-bill pseudonyms on public pages, and export licence ([10](10-machine-access.md), [11](11-ai-security.md)).
+- Decisions on: AI-drafted text policy, when presence checks apply, per-bill pseudonyms on public pages, and export licence for user content ([10](10-machine-access.md), [11](11-ai-security.md)).
 
 ---
 

@@ -22,6 +22,10 @@ service-account*.json
 secrets.*
 !secrets.example.*
 
+# Private deployment repository (environment roots, values, operator mapping).
+# Checked out here as its own git repository; never part of this one.
+/deploy/
+
 # Infrastructure as code state and per-environment values
 *.tfstate
 *.tfstate.*
@@ -100,6 +104,12 @@ $RECYCLE.BIN/
 
 # Local agent and tool settings (may hold personal paths or tokens)
 .claude/settings.local.json
+
+# Local data directory for the `local` build target
+.local-data/
+
+# Agent task scratch (progress, compose limit overrides, logs)
+.task/
 
 # Scratch
 tmp/

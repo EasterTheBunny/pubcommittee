@@ -50,7 +50,8 @@ pubcommittee/
 │   ├── 01-…11-*.md        one doc per feature (ingestion, versions, review,
 │   │                      lineage, roles, sharing, briefs, onboarding,
 │   │                      integrity, machine access, AI security)
-│   └── MILESTONES.md      M0–M6 delivery plan
+│   ├── MILESTONES.md      M0–M6 delivery plan
+│   └── tasks/             work packages per milestone (M1 first)
 ├── architecture/
 │   └── README.md          implementation architecture (Go on Google Cloud,
 │                          REST/OpenAPI, adapters, ingest, notifications)
@@ -87,6 +88,7 @@ pubcommittee/
 | --- | --- |
 | Why a feature exists or how it should behave | `PRODUCT_DOC.md`, then the matching `design/NN-*.md` |
 | What is in scope now versus later | `design/MILESTONES.md` |
+| Build work for a milestone | `design/tasks/README.md`, then the task file |
 | Stack, hosting, data stores, API shape | `architecture/README.md` |
 | Change demo data | `app/src/lib/mock/` |
 | Change a page | `app/src/routes/` |

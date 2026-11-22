@@ -1,6 +1,6 @@
 # Architecture
 
-Implementation architecture for PubCommittee from M1 onward. The feature docs in [`design/`](../design/README.md) stay stack-agnostic; this is where stack, hosting, and storage choices are recorded. M0 remains a static site ([MILESTONES](../design/MILESTONES.md#m0--proof-of-concept)).
+Implementation architecture for PubCommittee from M1 onward. The feature docs in [`design/`](../design/README.md) stay stack-agnostic; this is where stack, hosting, and storage choices are recorded. M0 remains a static site ([MILESTONES](../design/MILESTONES.md#m0--proof-of-concept)); from M1 it is archived at `demo/` and still served from its existing Netlify site, while `app/` becomes the M1 app.
 
 **Status:** draft. **Decided:**
 - Web UI: the SvelteKit app in [`app/`](../app/) on **any Node-capable web host**, talking to the backend **only through its APIs**.
@@ -99,7 +99,7 @@ The UI is a **progressive web app** and must be installable ([08](../design/08-o
 - **Manifest** served by the web host: name, icons, theme, start URL, `display: standalone`.
 - **Service worker** served from the UI's origin, registered on first visit. Responsibilities:
   - **App shell** cached for offline start.
-  - **Official text** (`read-api` immutable version resources and the matching pages) cached cache-first: they never change, so a cached copy is always correct.
+  - **Official text** (`read-api` immutable version resources and the matching pages) cached cache-first: they never change, so a cached copy is always correct. Bounded to the 50 most recently opened version pages; least recently opened evicted first.
   - **Review items, counts, and the catalog** network-first with a short fallback copy, labelled as possibly out of date when offline.
   - **Never caches credentialed responses** (`/v1/me*`, `/auth/*`, any write) and never queues writes for later; a write made offline fails visibly.
   - **Receives device notifications** ([Notifications](#notifications)) and opens the inbox on tap.
@@ -179,6 +179,7 @@ Ports are grouped by the boundary they sit behind. A service receives only the g
 | | `Snapshots` | Read published count snapshots | `adapters/gcs` |
 | Public write | `ReviewItems` | Create and revise threads, comments, suggestions; flags; office responses | `adapters/firestore` |
 | | `Moderation` | Record actions and appeals in the public log | `adapters/firestore` |
+| Platform write | `PlatformDocs` | Write the public documents the platform itself changes: catalog entries and `tracked` (`bills`), `selection_policy` versions, `explanations`, `generations`, `ingest_state`; and `ApplyLogged(ctx, change, entry)`, which writes a change and its public log entry atomically or neither | `adapters/firestore` |
 | Private | `SignalLedger` | Set, withdraw, and check one signal per key; aggregate by item and day | `adapters/postgres` |
 | | `Identities` | Look up or create an account by identity hash; link providers | `adapters/postgres` |
 | | `Accounts` | Tier, display name, roles, notification preference and device subscriptions | `adapters/postgres` |
@@ -221,6 +222,14 @@ type PublicReadPorts struct {
 	Snapshots  Snapshots
 }
 
+// PlatformPorts are held by ingest, generation, exports, and admin-api; never by read-api or write-api.
+type PlatformPorts struct {
+	PublicReadPorts
+	PlatformDocs PlatformDocs
+	Moderation   Moderation
+	Publisher    Publisher
+}
+
 type WritePorts struct {
 	PublicReadPorts
 	ReviewItems ReviewItems
@@ -241,9 +250,10 @@ Each service has one **wiring file per build target**, selected by a build tag. 
 cmd/write-api/
   main.go
   wiring_gcp.go      //go:build gcp     → adapters/firestore, gcs, postgres, kmsgcp, cloudtasks
-  wiring_local.go    //go:build local   → same adapters against emulators, adapters/localkeys
+  wiring_local.go    //go:build local   → adapters/fsobject, fsdocs, localkeys, localauth (filesystem; no cloud service)
+  wiring_emulator.go //go:build emulator → adapters/firestore, gcs against emulators, adapters/localkeys
   wiring_memory.go   //go:build memory  → adapters/memory, adapters/localkeys
-  wiring_none.go     //go:build !gcp && !local && !memory
+  wiring_none.go     //go:build !gcp && !local && !emulator && !memory
 ```
 
 `wiring_none.go` references an undefined identifier, so a build with no target tag fails to compile instead of producing a binary with no storage.
@@ -258,11 +268,14 @@ Build: `CGO_ENABLED=0 go build -tags gcp -trimpath -ldflags="-s -w" ./cmd/write-
 | --- | --- | --- |
 | `internal/data` | Port interfaces, domain types, errors, conformance tests | — |
 | `internal/adapters/memory` | Every port | Process memory; seeded from the M0 mock data |
-| `internal/adapters/firestore` | `PublicDocs`, `ReviewItems`, `Moderation`, `Sessions`, `RateLimits` | Firestore |
+| `internal/adapters/firestore` | `PublicDocs`, `ReviewItems`, `Moderation`, `PlatformDocs`, `Sessions`, `RateLimits` | Firestore |
 | `internal/adapters/gcs` | `BillText`, `Snapshots`, `Publisher` | Cloud Storage |
 | `internal/adapters/postgres` | `SignalLedger`, `Identities`, `Accounts` | Any Postgres (Neon in production) |
 | `internal/adapters/kmsgcp` | `Keys` | Cloud KMS |
 | `internal/adapters/localkeys` | `Keys` | Keys from a local file; development only, excluded from `gcp` builds |
+| `internal/adapters/fsobject` | `BillText`, `Snapshots`, `Publisher` | Local filesystem, same paths as the bucket; write-once by exclusive create, atomic rename for replaceable files, content hash as `ETag`. Local only, excluded from `gcp` builds |
+| `internal/adapters/fsdocs` | `PublicDocs`, `ReviewItems`, `Moderation`, `PlatformDocs` | One JSON file per document on the local filesystem; atomic rename, lock file for change-plus-log operations. Local only, excluded from `gcp` builds |
+| `internal/adapters/localauth` | Operator authentication for `admin-api` | A fixed fake operator. Local only, excluded from `gcp` builds |
 | `internal/adapters/cloudtasks` | `Queue` | Cloud Tasks |
 | `internal/adapters/claude` | `Generator` | Claude through the Anthropic Go SDK: the Google Cloud client (`googlecloud`) in `gcp` builds, the first-party client elsewhere |
 | `internal/adapters/fakegen` | `Generator` | Recorded fixtures; deterministic, no network, for tests and local runs |
@@ -271,12 +284,12 @@ Build: `CGO_ENABLED=0 go build -tags gcp -trimpath -ldflags="-s -w" ./cmd/write-
 | `internal/adapters/uscode` | `LawSource` | US Code release points from the Office of the Law Revision Counsel |
 | `internal/adapters/webpush` | `Notifier` | Web Push protocol (RFC 8030) with message encryption (RFC 8291) and VAPID (RFC 8292) |
 | `internal/adapters/fakenotify` | `Notifier` | Records messages in memory for tests and local runs |
-| `internal/adapters/fixturesrc` | `BillSource`, `LawSource` | Checked-in sample bills, including the M0 mock bills; no network |
+| `internal/adapters/fixturesrc` | `BillSource`, `LawSource` | Example data committed under `fixtures/`: real bills, a catalog sample, and cited US Code provisions ([tasks § Example data](../design/tasks/README.md#example-data-and-local-triggers)); no network |
 
 Adding a backend means adding a package that implements one or more ports and passes their conformance tests. Candidates later: DynamoDB, S3-compatible storage, AWS KMS, Postgres-backed documents, SQLite.
 
 ### Conformance tests
-`internal/data/conformance` holds a test suite per port as exported functions (`conformance.SignalLedger(t, factory)`): uniqueness of signals, idempotent upserts, expiry of sessions, revision history, typed errors, cursor stability. Every adapter's tests call the suites for the ports it implements, against the service's local emulator or a disposable container where one exists. An adapter that fails a suite cannot be wired into a service.
+`internal/data/conformance` holds a test suite per port as exported functions (`conformance.SignalLedger(t, factory)`): uniqueness of signals, idempotent upserts, expiry of sessions, revision history, typed errors, cursor stability. Every adapter's tests call the suites for the ports it implements: in process for `memory`, on a temporary directory for `fsobject` and `fsdocs`, and against the service's emulator or a disposable container where one exists. Because the filesystem and cloud adapters pass the same suites, local runs are a faithful stand-in for the contract; what a suite cannot check (query and index limits, transaction size limits, IAM) is listed by the filesystem adapters and tested on the cloud adapters. An adapter that fails a suite cannot be wired into a service.
 
 ### Repository layout
 
@@ -297,17 +310,21 @@ cmd/
   job-detector/
   job-summarize/
   job-notify/
+  accuracy-report/     development tool for the accuracy checks (not a deployed image)
 internal/
   data/                ports, domain types, errors, conformance tests
-  adapters/            memory, firestore, gcs, postgres, kmsgcp, localkeys, cloudtasks, claude, fakegen, webpush, fakenotify, govinfo, usccollector, uscode, fixturesrc
+  adapters/            memory, fsobject, fsdocs, localauth, firestore, gcs, postgres, kmsgcp, localkeys, cloudtasks, claude, fakegen, webpush, fakenotify, govinfo, usccollector, uscode, fixturesrc
   telemetry/           OpenTelemetry setup, standard instruments, attribute allowlist
   httpx/               server bootstrap: health, readiness, metrics port, shutdown
   ...                  domain packages (auth, review, signals, ingest, briefs), each used by few binaries
 app/                   SvelteKit UI, deployed to any Node web host
 docker/
   Dockerfile           one multi-stage file; SERVICE and TARGET build arguments
-compose.yaml           every backend service plus local emulators
-infra/                 infrastructure as code; operators.yaml lists administrators by id and public name only
+compose.yaml           every backend service on a shared local data volume; emulators behind a profile
+infra/
+  modules/gcp/         public, reusable infrastructure modules; every name, project, region, and domain is an input
+  examples/            placeholder root that CI validates against fake values
+deploy/                ignored here: local checkout of the private deployment repository
 ```
 
 ## Service packaging
@@ -349,6 +366,27 @@ One image per unit, so each deploys, scales, and holds credentials independently
 
 Build: multi-stage Dockerfile. A Go builder stage with module and build caches compiles one binary with the selected target tag and copies it alone into the distroless stage.
 
+### Tooling
+
+| Need | Decision | Why |
+| --- | --- | --- |
+| Go version | Go 1.27, in `go.mod` (`go` and `toolchain` lines) and the builder image, pinned by digest | One version everywhere; bumped deliberately |
+| Go tools | `golangci-lint` and `oapi-codegen` pinned with the `tool` directive in `go.mod`, run with `go tool` | Versions live in the module; nothing to install by hand |
+| Lint | `golangci-lint` v2, strict: all linters enabled, each disabled linter justified in `.golangci.yml`, no issue limits, `//nolint` only with a named linter and reason | Findings fail CI |
+| Development container | `docker/dev.Dockerfile`; builds, tests, and lint run inside it, with explicit CPU and memory limits, for agents and CI alike | Same toolchain everywhere; parallel work cannot starve the host |
+| TypeScript types | `openapi-typescript` as a dev dependency in `app/` | Pinned by the app's lockfile |
+| Multi-arch images | Cross-compile in the builder stage (`--platform=$BUILDPLATFORM`, `GOOS`/`GOARCH` from `TARGETOS`/`TARGETARCH`) | Static Go binaries need no emulation; the final stage only copies the binary, so no QEMU or binfmt |
+| SBOM | BuildKit SBOM attestation (`--sbom=true`) | Generated at build with no separate tool |
+| CI | GitHub Actions, in this repository and the deployment repository | The repository is on GitHub; secret scanning with push protection and OIDC federation to Google Cloud are built in |
+| Infrastructure as code | OpenTofu | Open-source licence; the HCL also works with Terraform |
+| UI, no-script, and installability tests | Playwright, with manifest and service-worker checks and an offline reload | One browser tool for all UI checks; Lighthouse dropped its PWA audits in version 12 |
+| Firestore emulator | Container image under the `emulator` profile in `compose.yaml` (cloud phase) | CI and every machine run the same emulator |
+| Firebase CLI | Cloud phase only, in the deployment repository's CI | Local runs never use Firebase Hosting |
+| Postgres | Not in `compose.yaml` until M2 | No SQL in M1 |
+| Secret scanning | GitHub secret scanning with push protection, plus the format-based pattern check in CI | See [What stays private](#what-stays-private) |
+
+Open: the OpenAPI linter ([API contract](#contract-workflow)), whether DTD validation of bill XML runs in Go tests or with `xmllint` in a CI container, and whether a local pre-commit secret scanner is wanted beside CI scanning.
+
 ### Keeping each service small
 - **One responsibility per binary.** A service that grows a second job is split.
 - **Few dependencies.** Standard library first. A new third-party module needs a reason in review. Vendor SDKs are imported only from adapter packages.
@@ -383,15 +421,18 @@ The `TARGET` build argument selects the build tag, and so the [wiring](#build-ti
 | Target | Adapters | Use |
 | --- | --- | --- |
 | `gcp` | `firestore`, `gcs`, `postgres`, `kmsgcp`, `cloudtasks`, `claude`, `webpush` | Production and staging. Also runs off Google Cloud when given credentials to the same project |
-| `local` | Same adapters pointed at the Firestore and Cloud Storage emulators and a local Postgres; `localkeys` | Development and integration tests with `compose.yaml` |
+| `local` | `fsobject`, `fsdocs`, `localkeys`, `localauth`; sources `fixturesrc` or `govinfo`/`uscode`; `fakegen` or `claude` with an API key; a local Postgres container from M2 | Durable local development and integration tests with `compose.yaml`. Needs no cloud account or emulator |
+| `emulator` | `firestore` and `gcs` against the Firestore emulator and a Cloud Storage stand-in; `localkeys` | Conformance and integration tests of the cloud adapters, locally and in CI |
 | `memory` | `memory`, `localkeys` | Unit and conformance tests; nothing persists |
 
-A target only includes the adapters a given service's wiring imports, so a `read-api` image of any target contains no SQL or key adapter.
+A target only includes the adapters a given service's wiring imports, so a `read-api` image of any target contains no SQL or key adapter. CI also fails if a `gcp` binary links any local-only adapter (`fsobject`, `fsdocs`, `localkeys`, `localauth`), so a local stand-in can never reach a deployed service.
 
-A fully self-hosted durable deployment with no Google services needs adapters for the document and object stores outside Google Cloud. These fit the adapter model and are listed as candidates.
+**Local first.** Every service and job builds and runs on `local` before any cloud adapter exists; cloud connections are added afterwards behind the same ports ([M1 phases](../design/tasks/README.md#phases)).
+
+A fully self-hosted durable deployment with no Google services needs production-grade adapters for the document and object stores outside Google Cloud; the filesystem adapters are for local use only. These fit the adapter model and are listed as candidates.
 
 ### Local run
-`compose.yaml` starts every backend HTTP service, the Firestore and Cloud Storage emulators, Postgres, and an OpenTelemetry Collector, all on the `local` target. The UI runs with `npm run dev` in `app/`, pointed at the local `read-api` and `write-api`. Jobs run on demand:
+`compose.yaml` starts every backend HTTP service and an OpenTelemetry Collector on the `local` target, with one shared data volume (for example `./.local-data`, ignored by git) that every service and job mounts. From M2 it also starts Postgres. The Firestore emulator and Cloud Storage stand-in run only under the `emulator` profile (`docker compose --profile emulator`). The UI runs with `npm run dev` in `app/`, pointed at the local `read-api` and `write-api`. Jobs run on demand:
 
 ```sh
 docker compose up read-api write-api worker
@@ -616,7 +657,7 @@ Brief contents are not generated: the brief quotes authors' own words ([07](../d
 3. **Output is platform content.** Stored with `content_class: platform`, provenance `auto`, the model id, and the prompt version. The UI and `read-api` label it "auto-generated" until a steward checks it ([05](../design/05-roles-and-stewardship.md)).
 4. **Anchored claims.** Each statement in an output lists the line anchors (`s4-l12`) and provision citations it rests on. The job rejects outputs that cite anchors that do not exist in the input, and stewards see the cited lines beside each statement.
 5. **Neutral language.** Prompts require neutral, descriptive wording; the evaluation set scores it. Generation never ranks, recommends, or takes a position ([principles 2 and 3](../design/README.md#global-principles)).
-6. **Steward review before trust.** Every output enters the steward review queue. Whether an unreviewed output may be shown at all, and under which accuracy bar, is decided per task from evaluation results (the open question in [01](../design/01-bill-ingestion-and-display.md)).
+6. **Steward review before trust.** Every output enters the steward review queue. Whether an unreviewed output may be shown at all, and under which accuracy bar, is decided per task from evaluation results (the open question in [01](../design/01-bill-ingestion-and-display.md)). **Until stewards exist** there is no review queue, no steward review, and no evaluation set: outputs are recorded with `review_state: unreviewed` and shown labelled *auto-generated*, and nothing is labelled *steward-checked*.
 7. **Corrections are attributed.** A steward's edit replaces the displayed text, is logged and attributed, and is kept beside the original output.
 
 ### Flow
@@ -652,11 +693,34 @@ job-ingest ──► new version stored ──► job-summarize (submit)
 
 Model ids, prices, and feature availability on the platform are confirmed at M1 start. The `claude` adapter keeps all of this behind the `Generator` port, so services never import the SDK.
 
-### Evaluation
+### Accuracy checks (before stewards)
+Accuracy is measured against each statement's **cited lines**, which needs no reference text. Every statement in an output lists the bill line anchors and provision citations it rests on, so each check compares a statement with exactly those lines.
+
+| Check | What it does | When it runs | Effect |
+| --- | --- | --- | --- |
+| **Fact fidelity** (deterministic) | Every number, date, dollar amount, percentage, and section or US Code reference in a statement must appear in its cited lines | Every collect phase; in CI on `fakegen` outputs | A failing output is recorded `unverified` and not published |
+| **Amendment consistency** (deterministic) | Parses the bill's amendment instructions ("striking X and inserting Y", "is amended by adding", "is repealed") in the cited lines, and checks the explanation names the same target provision, removed text, and inserted text | Same, for amendatory text | Same |
+| **Grounding grader** (model) | A grader model, different from the generating model, labels each statement *supported*, *unsupported*, or *contradicted* by its cited lines, and rates neutral wording | Local live runs only (stage L3), with operator approval; never in CI | *Contradicted* outputs are withheld; grades are stored beside the output |
+| **Planted errors** | Injects known errors into good outputs (changed numbers, swapped sections, reversed effect, evaluative wording) and measures how many each check catches | Deterministic checks in CI; grader in local live runs | Reports each check's catch rate |
+| **Operator sample** | The operator grades about 30 statements against their cited lines once, recorded as an operator check, not a steward review | Once in M1, before the first report | Reports grader agreement with the operator |
+| **CRS summary coverage** | For bill summaries, the grader compares our summary with the Congressional Research Service summary of the same version from `BILLSTATUS` (public domain): points covered, points contradicted | Local live runs | Reports coverage and contradictions |
+
+- **CRS summaries are references, never inputs.** They are not passed to the generating model, so the coverage check stays independent.
+- **Grades are stored** at `generated/{task}/{bill}/v/{n}/{key}.grade.json` with the grader model and prompt version.
+- **Metrics per task:** share of statements *supported*; share *contradicted*, reported separately; fact-fidelity and amendment-consistency failure rates; each check's catch rate on planted errors; grader-to-operator agreement; CRS coverage for bill summaries. The M1 report proposes an M3 target from these.
+- **Reports** are written by a local command (`cmd/accuracy-report`, a development tool, not a deployed image) to `test/accuracy/report.md`, with the inputs needed to reproduce them.
+
+### Evaluation (with stewards)
+**Not built until stewards exist.** The references are steward-written, so the evaluation set, its grader, and evaluation runs start with the steward program. The accuracy checks above keep running beside it.
+
 - An evaluation set of real bills with steward-written reference summaries and explanations, covering amendatory text, insertions, repeals, and freestanding text ([01](../design/01-bill-ingestion-and-display.md)).
 - Graded on factual accuracy against the cited lines, completeness, neutral wording, and anchor correctness.
 - Run before changing the model, effort, or prompt version, and its results decide the per-task display policy. Runs spend money, so they are triggered deliberately, not on every commit.
 - `fakegen` fixtures cover the job's code paths in CI without calling a model.
+
+### Live model calls
+- **Local (stage L3):** an operator-supplied Anthropic API key with the first-party client, on the operator's machine only. The key is never committed and never given to CI.
+- **CI:** never calls a model. Every generation path runs on `fakegen`. Live runs stay behind a switch that is off by default (a workflow input or repository variable), so they can be turned on later without changing the workflow's shape.
 
 ## Notifications
 
@@ -703,7 +767,7 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 | --- | --- | --- | --- |
 | `GET /v1/bills`, `GET /v1/bills/{bill}` | `read-api` | None | Short. Lists the tracked set; `?scope=catalog` lists catalog entries |
 | `GET /v1/selection-policy`, `GET /v1/selection-policy/{version}` | `read-api` | None | Short; versions immutable |
-| `GET /v1/bills?scope=catalog&status=&chamber=&subject=&q=` | `read-api` | None | Short. Catalog entries with official links and markup status |
+| `GET /v1/bills?scope=catalog&status=&chamber=&committee_activity=&subject=&q=` | `read-api` | None | Short. Catalog entries with official links and markup status |
 | `GET /v1/markup-decisions`, `GET /v1/markup-decisions/{id}` | `read-api` | None | Short |
 | `GET /v1/bills/{bill}/v/{n}` | `read-api` | None | Immutable: metadata, sections, lines, anchors |
 | `GET /v1/bills/{bill}/v/{n}/s/{section}`, `.../s/{section}/l/{range}` | `read-api` | None | Immutable |
@@ -736,10 +800,12 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 - **Pagination.** Opaque cursors from the adapter, passed as `?cursor=`. No offsets.
 - **Caching.** Strong `ETag` on every `GET`, with `If-None-Match` returning `304`. `Cache-Control` per resource as in the table; `immutable` for official text. Credentialed responses are `private, no-store`.
 - **Errors.** RFC 9457 problem details (`application/problem+json`) with a stable `type` per typed data error (`not-found`, `conflict`, `invalid`, `rate-limited`, `unavailable`). No stack traces or vendor errors.
-- **Rate limits.** `429` with `Retry-After`; published limits per route class.
+- **Rate limits.** `429` with `Retry-After`; published limits per route class, as ranges. `read-api` limits in memory per instance, keyed on `HMAC(k_rate, ip ‖ day)` that never leaves memory; it holds no storage port for limits.
+- **Feed.** `GET /v1/feed?since=<RFC 3339>` in the collection convention; entries carry type, day-granular time, and canonical address.
+- **Licences.** Official text and US Code provisions are marked public domain; platform-generated content is CC0 1.0.
 - **Writes.** JSON request bodies only; `Content-Type` checked. Every write requires the session cookie, an `Origin` of `https://<domain>`, and the anti-forgery token header.
 - **CORS.** `read-api`: any origin, no credentials. `write-api`: only `https://<domain>`, with credentials.
-- **Discovery.** `GET /v1` lists top-level resources and links to the spec; UI pages link to their resource with `rel="alternate"`.
+- **Discovery.** `GET /v1` lists top-level resources and links to the spec at `GET /v1/openapi.yaml`; UI pages link to their resource with `rel="alternate"`, and answer `Accept: application/json` with `303 See Other` to it.
 
 ### Contract workflow
 - `api/openapi.yaml` is written first and reviewed like code.
@@ -756,18 +822,22 @@ Implements [platform administration](../design/05-roles-and-stewardship.md#platf
 - **`admin-api`** is a separate Go service on Cloud Run with its own service account. It is **not** behind the API edge and does not accept citizen sessions.
 - **Authentication is Google Cloud IAM.** The service requires an identity token; only principals granted the invoker role in the production project can call it. No load balancer or identity proxy is needed, so it still scales to zero.
 - **Operators use `pubctl`,** a Go command-line tool that calls `admin-api` with the operator's Google credentials (`gcloud auth` / Application Default Credentials). No UI is built on `admin-api`: it sends no CORS headers, is not in the public OpenAPI contract, and is never called from the web tier.
-- **Who is an administrator is infrastructure configuration, in two parts:**
-  - **Public, in the repository:** `infra/operators.yaml` lists each administrator by a stable id and public display name, which is all the public log needs for attribution:
+- **Who is an administrator is private infrastructure configuration.** The operator roster lives in the private deployment repository at `operators/operators.yaml` ([Public modules, private deployment](#public-modules-private-deployment)): a stable id and public display name for each administrator, and their Google principal per environment.
     ```yaml
     operators:
       - id: op-1
         name: "[Operator name]"
+        principals:
+          dev: "user:<operator-principal>"
+          staging: "user:<operator-principal>"
+          prod: "user:<operator-principal>"
     ```
-  - **Private, per environment:** the mapping from operator id to Google principal (an email address) lives outside git, in the environment's values file or Secret Manager, and is applied only by CI. It is never committed, logged, or published ([What stays private](#what-stays-private)).
-  - Infrastructure code joins the two into the IAM invoker binding on `admin-api` and the service's operator list. Adding or removing an administrator is a reviewed repository change plus a private value change, not an action in the product.
+  - Infrastructure code turns the roster into the IAM invoker binding on `admin-api` and the service's operator list. Adding, renaming, or removing an administrator is a reviewed change in the deployment repository, not an action in the product.
+  - Principals are never committed to this repository, logged, or published ([What stays private](#what-stays-private)). The roster file itself is not published.
+- **Roster changes are public.** Granting or removing administrator access is a privileged action (principle 4), so every roster change is written to the public log before it takes effect ([Roster log](#roster-log)). The list of who can act is therefore reconstructible from the public log, while principals stay private.
 - **Attribution.** `admin-api` maps the caller's verified Google identity to an operator id and refuses anyone not on the list. The public log records the operator id and public name, never the principal. Every mutating call requires a reason.
 - **Separate from product accounts.** Administrator identities never appear in `accounts` or `roles`. An administrator who also takes part as a reviewer signs in through the product like anyone else, with no added standing.
-- **Least privilege.** `admin-api` holds write ports and `Publisher`, `Queue`, and `Generator`, but never calls `SignalLedger` aggregate or reads `request_reasons`; a dependency rule keeps those operations out of its wiring.
+- **Least privilege.** `admin-api` holds `PlatformPorts`, `Queue`, and `Generator`, but never calls `SignalLedger` aggregate or reads `request_reasons`; a dependency rule keeps those operations out of its wiring.
 
 ### Actions
 
@@ -780,11 +850,23 @@ Implements [platform administration](../design/05-roles-and-stewardship.md#platf
 | Publish policy | `POST /admin/v1/selection-policy` | Writes the next immutable `selection_policy` version |
 | Product roles | `POST /admin/v1/roles`, `DELETE /admin/v1/roles/{id}` | Grants and revokes steward, moderator, and office roles; steward and office grants record their verification. Administrator access is not grantable here |
 | Failures | `GET /admin/v1/ingest/failures`, `GET /admin/v1/jobs` | Watermarks, retries, last runs |
+| Operator roster | `POST /admin/v1/operators/roster` | Called only by the environment's deploy service account during a deploy, never by `pubctl`. Writes one public log entry per roster change ([Roster log](#roster-log)) |
 
 ```sh
 pubctl bills track us-119-hr-4127 --reason "pilot seed: healthcare, reported by committee"
 pubctl bills reparse us-119-hr-4127 --version 2 --reason "parser fix for tables"
 ```
+
+### Roster log
+The public log records every change to the operator roster, so administrator access is public without a public roster file.
+
+1. A roster change is a pull request in the deployment repository, approved by a current operator. Each roster entry carries the operator's GitHub login (private, like the principals), so CD can map a review to an operator id. The file holds no approver or reason: those come from the pull request.
+2. Before applying infrastructure, the deployment repository's CD finds the merged pull request that changed the roster and takes the approver from its reviews: an `APPROVED` review on the pull request's final commit, by a login that maps to an operator on the roster **before** the change (read from the base commit). The reason is the pull request title. A roster change that reached `main` without such a pull request is refused. CD then calls `POST /admin/v1/operators/roster` in each environment with the public part of the new roster (`id`, `name`), the approving operator id, and the reason. Principals and GitHub logins are never sent.
+3. `admin-api` rebuilds the current roster from earlier roster entries in `moderation_log`, compares, and writes one entry per change: `operator_added`, `operator_renamed`, or `operator_removed`, each with operator id, public name, approver, reason, and day. No change writes nothing, so the call is idempotent.
+4. Only if the log write succeeds does CD apply the IAM binding and `admin-api`'s operator list. If the apply fails, the next run converges; the log is never written after the fact.
+5. The approver must be on the roster before the change; GitHub does not let an author approve their own pull request, so one operator cannot add themself alone. The very first roster, when the log has no roster entries yet, is the bootstrap: it needs no approver and its entries say so.
+
+The caller is the environment's deploy service account. It is `admin-api`'s only caller that is not an operator, and is allowed this one route only.
 
 ### Logging
 - Every mutating action writes a public entry to `moderation_log` (actor: the named administrator, action, target, reason, time) in the same transaction as the change. An action whose log write fails is not applied.
@@ -847,8 +929,51 @@ Firestore's query model fits nested, per-bill documents; Cloud Run runs ordinary
 
 ## Environments and delivery
 - Separate Google Cloud projects for `dev`, `staging`, `prod`, and matching web-host environments. No shared credentials.
-- Infrastructure as code in this repository; state in a remote bucket; per-environment values outside git ([`.gitignore`](../.gitignore)).
 - Deploys from CI with short-lived federated credentials, never stored keys.
+
+### Public modules, private deployment
+Infrastructure code is split between two repositories:
+
+| Repository | Holds | Visibility |
+| --- | --- | --- |
+| This repository, `infra/` | Reusable modules named by vendor (`infra/modules/gcp/...`), a placeholder example root | Public |
+| Private deployment repository | Environment roots for `dev`, `staging`, `prod`; state backend config; per-environment values; the operator roster (`operators/operators.yaml`); deploy workflows and their federated credentials; the real-value leak check | Private |
+
+- **Why public modules.** A new unit and its Cloud Run service or job, schedule, service account, and IAM bindings are reviewed in one change with the code. Anyone can check least-privilege claims (for example, that `read-api`'s service account has no SQL or key access) from the modules themselves.
+- **Vendor-specific by name.** Modules are per vendor, while services stay vendor-neutral through adapters. Another vendor means new modules under `infra/modules/<vendor>/`, not changes to services.
+- **Module rules.** No defaults that are real values; every name, project, region, and domain is an input. No network specifics or defense tuning (rate-limit values, detection thresholds) hard-coded; those are inputs set privately. No sensitive outputs. CI runs `validate` and a plan of `infra/examples/` against fake values.
+- **Pinning.** The deployment repository pins modules by tag (`?ref=vX.Y.Z`). Changing a module is a tagged release here, then a pin bump there. The application commit and image digests running in each environment are recorded by each deploy ([Continuous delivery](#continuous-delivery)).
+- **Where images are built and deployed.** This repository's CI builds and tests images but never pushes or deploys, because its logs are public and would show project ids and service URLs. The deployment repository's CI builds, pushes, and deploys ([Continuous delivery](#continuous-delivery)).
+- **Local layout.** The deployment repository may be checked out at `deploy/` inside this repository; that path is ignored here ([`.gitignore`](../.gitignore)). Local module development can point a module `source` at `../infra/modules/...` instead of a tag, never committed that way.
+- **State** lives in a remote bucket created by the deployment repository's bootstrap root, with restricted access.
+
+### Continuous delivery
+Deploys run only in the private deployment repository. This repository's only part is to send a trigger naming the commit.
+
+```
+this repository (public)                      deployment repository (private)
+────────────────────────                      ───────────────────────────────
+PR ─► CI: build, test (no credentials)
+merge to main ─► CI green
+  └─► dispatch-deploy ── repository_dispatch ─► deploy-dev
+      (GitHub App token,     {sha, kind}          verify sha is on public main
+       one permission)                            leak check
+release tag v* ─► dispatch-deploy ──────────────►  build changed units, push to shared registry
+                                                  apply dev by digest, smoke test
+                                                  record dev.json on the deployed branch
+                                                promote (release or manual)
+                                                  staging: same digests, approval
+                                                  prod:    same digests, approval
+```
+
+- **Trigger.** A GitHub App installed on the deployment repository only, with `Contents: write` (needed for `repository_dispatch`) and nothing else. Its id and key are secrets of a `deploy-trigger` environment in this repository, limited to `main` and release tags. The dispatch job runs on `workflow_run` of a successful `push` CI run on `main`, or on a release tag, and prints only the commit and kind.
+- **Untrusted payload.** The deployment repository refuses a commit that is not on this repository's `main`, or a release whose tag does not point at it. The dispatch says *which* commit; it never decides *whether* to deploy.
+- **Same bytes everywhere.** Images are built once, pushed to one shared Artifact Registry, and applied by digest. `staging` and `prod` receive exactly the digests `dev` ran; nothing is rebuilt per environment.
+- **Approvals.** `dev` deploys on every merge. `staging` and `prod` are GitHub environments with required reviewers.
+- **Roster first.** When a deploy changes the operator roster, CD writes the roster log entries through `admin-api` before applying IAM ([Roster log](#roster-log)).
+- **Deploy records.** Each deploy writes `<env>.json` (commit, kind, tag, per-unit digests, time, run id) to a `deployed` branch of the deployment repository. That branch says what each environment runs; rollback re-applies an earlier record without rebuilding.
+- **Independent units.** Only units whose inputs changed are rebuilt and redeployed.
+- **Secrets.** Google Cloud access is federated per environment; no keys are stored. Infrastructure creates Secret Manager secrets without values; values are added outside the IaC tool, so they never reach state or logs.
 - Each backend unit deploys separately with its own service account; `read-api` never receives SQL or key permissions.
 - The UI deploys from `app/` to its host and needs only the API base URLs.
 
@@ -860,9 +985,10 @@ The architecture is public on purpose: the code is open source, and the protecti
 | --- | --- |
 | Secrets: keys, tokens, passwords, connection strings, HMAC key material, the VAPID private key | Secret Manager and KMS; workload identity instead of stored keys |
 | Infrastructure state (`*.tfstate`) | Remote state bucket with restricted access |
-| Per-environment values: project ids and numbers, region choices, bucket, database, queue, and key names | Environment values files outside git (`*.tfvars`, already ignored), applied by CI |
+| Per-environment values: project ids and numbers, region choices, bucket, database, queue, and key names | Private deployment repository, applied by its CI ([Public modules, private deployment](#public-modules-private-deployment)) |
 | Service URLs other than the public domains, especially `admin-api` and `worker` | Environment values; discovered by CI, never written into docs |
-| Identities of people with privileged access: Google principals of administrators, service-account emails tied to them | Private operator mapping ([Administration](#administration)) |
+| The deploy trigger's GitHub App private key | Secret of this repository's `deploy-trigger` environment, limited to `main` and release tags; it can only send a dispatch |
+| Identities of people with privileged access: Google principals of administrators, service-account emails tied to them | Operator roster in the deployment repository ([Administration](#administration)); only ids, public names, and roster changes are published |
 | Network specifics: IP allowlists, connector or peering details | Environment values |
 | Defense tuning: rate-limit values, automation and spike detection thresholds, detector features | Environment configuration; published only as ranges or after the fact, so detection cannot be tuned against ([10](../design/10-machine-access.md), [11](../design/11-ai-security.md)) |
 | Production data and exports beyond the public bulk exports | Production project only |
@@ -870,14 +996,15 @@ The architecture is public on purpose: the code is open source, and the protecti
 Rules:
 - **Placeholders in docs.** Use `<domain>`, `<project>`, `<region>`, and similar; never paste real values into documentation or examples.
 - **Examples use fake values.** Test fixtures and sample configs use obviously fake ids.
-- **Checked in CI.** Secret scanning with push protection runs on every push; a pattern check fails the build if project ids, `run.app` URLs, service-account emails, or bucket names of real environments appear in tracked files.
+- **Checked in CI.** Secret scanning with push protection runs on every push. A format-based pattern check here fails the build on `run.app` URLs, service-account emails, and project-id-shaped values in tracked files; listing the real values here would publish them. The deployment repository holds the real values and scans this repository for them on a schedule and before each deploy.
+- **Public CI never touches an environment.** This repository's workflows hold no cloud credentials and print no environment values.
 - **Reports go private.** Anything found exposed is reported through [`SECURITY.md`](../SECURITY.md), not in a public issue.
 
 ## Milestone fit
 
 | Milestone | Needs |
 | --- | --- |
-| M1 read-only | Go module; `internal/data`, `adapters/memory`, `adapters/gcs`, `adapters/firestore` (read ports), `adapters/claude`, `adapters/fakegen`, `telemetry`, `httpx`; `adapters/govinfo`, `adapters/uscode`, `adapters/fixturesrc`; `admin-api`, `pubctl`, and `infra/operators.yaml` (privileged: direct selection, re-ingest, re-parse, regenerate, policy versions); `read-api` (including the public catalog with official links and markup status), `job-ingest` (catalog backfill of the current Congress; tracked set in pilot mode), `job-summarize` (bill summaries and change explanations, with the evaluation set), `job-exports`; API edge; UI reading `read-api`. No SQL, no sign-in |
+| M1 read-only | Local phase first, then cloud phase ([M1 phases](../design/tasks/README.md#phases)). Go module; `internal/data`, `adapters/memory`, `adapters/fsobject`, `adapters/fsdocs`, `adapters/localauth`, `adapters/gcs`, `adapters/firestore` (read ports), `adapters/claude`, `adapters/fakegen`, `telemetry`, `httpx`; `adapters/govinfo`, `adapters/uscode`, `adapters/fixturesrc`; `admin-api` and `pubctl` (privileged: direct selection, re-ingest, re-parse, regenerate, policy versions); `read-api` (including the public catalog with official links and markup status), `job-ingest` (catalog backfill of the current Congress; tracked set in pilot mode), `job-summarize` (bill summaries and change explanations; no evaluation set or steward review until stewards exist), `job-exports`; API edge; UI reading `read-api`. No SQL, no sign-in |
 | M2 interactive | `adapters/postgres`, `adapters/kmsgcp`, write ports; `write-api`, sign-in, SQL (`accounts`, `identities`, `signals`, `my_signals`, `request_reasons`, `push_subscriptions`, `notify_state`), sessions, rate limits, markup requests, `job-batcher`, `job-notify` and `adapters/webpush` (inbox and device notifications), moderation log; custom domain so cookies are same-site |
 | M3 pilot | `job-briefs` and delivery queue, `worker`, roles, `job-detector`; `markup_queue`, steward decision routes with two-party sign-off, `markup_decisions`, promotion of accepted bills |
 | M4 launch | Audit export, log hardening review, load test of the CDN-first read path |
@@ -890,8 +1017,8 @@ Rules:
 - **Batch interval**, shared with [11](../design/11-ai-security.md).
 - **Review-item freshness on the UI:** CDN TTL for pages showing comments and suggestions.
 - **Email notifications:** deferred. Revisit only if device notifications and the inbox leave too many people unreachable; it would need verified, encrypted addresses and a mail provider under a data processing agreement.
-- **CI** for the Go module and `app/`, including the dependency checks, binary size budgets, and contract checks.
-- **Image registry:** Artifact Registry in the production project.
+- **CI workflows** (GitHub Actions, [Tooling](#tooling)) for the Go module and `app/`, including the dependency checks, binary size budgets, and contract checks.
+- **Image registry:** one shared Artifact Registry, pushed only by the deployment repository's CI, promoted by digest ([Continuous delivery](#continuous-delivery)). Which project holds it is open.
 - **Self-hosted adapters** for document and object storage, if running entirely off Google Cloud becomes a goal.
 - **Metrics backend and cost:** Managed Prometheus bills per sample ingested; set scrape intervals and histogram buckets with that in mind.
 - **Traces:** the same OpenTelemetry setup can add tracing later; decide whether traces are wanted, given they carry request detail.
@@ -899,6 +1026,6 @@ Rules:
 - **Markup request threshold** and steward capacity, shared with [01](../design/01-bill-ingestion-and-display.md#markup-requests).
 - **Topic subject terms** for healthcare, deficit reduction, and affordability, confirmed against the legislature's subject vocabulary before the pilot.
 - **Bill backfill depth:** current Congress only at M1, or earlier Congresses for lineage detection ([04](../design/04-bill-lineage-and-competing-bills.md)).
-- **AI display policy:** per task, whether unreviewed output is shown, and the accuracy bar from the evaluation set.
+- **AI display policy:** per task, whether unreviewed output is shown, and the accuracy bar: from the accuracy checks in M1, and the evaluation set once stewards exist.
 - **Effort level per task**, and whether any task moves to a cheaper model, both decided from evaluation results.
 - **Key rotation** for HMAC keys: rotating `k_signal` requires re-keying every signal; plan the procedure before M2.
