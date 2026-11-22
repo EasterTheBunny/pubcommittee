@@ -23,7 +23,7 @@ Integration branch: `m1-integration`.
 | [M1-07](m1/07-us-code-and-citations.md) | local | todo | | | | |
 | [M1-08](m1/08-version-history-and-stale.md) | local | todo | | | | |
 | [M1-09](m1/09-ai-generation.md) | local, cloud | todo | | | | Live run needs the operator's API key and spend approval |
-| [M1-10](m1/10-read-api.md) | local, cloud | todo | | | | |
+| [M1-10](m1/10-read-api.md) | local, cloud | in-progress | `task/M1-10` | sonnet | | Run r20261122-1412, batch 3, worktree `.claude/worktrees/m1-10` |
 | [M1-11](m1/11-exports-feed-machine-notice.md) | local, cloud | todo | | | | |
 | [M1-12](m1/12-administration.md) | local, cloud | todo | | | | |
 | [M1-13](m1/13-web-ui-real-data.md) | local, cloud | todo | | | | |
