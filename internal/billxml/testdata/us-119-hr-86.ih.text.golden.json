@@ -1,0 +1,50 @@
+{
+  "parser_version": "billxml/1",
+  "source_sha256": "ec4ee4d12f23cfde6f5196972552e60ea04b4a9e19561d5e9375b45164a2bbbe",
+  "kind": "bill",
+  "stage": "Introduced-in-House",
+  "legis_num": "H. R. 86",
+  "official_title": "To abolish the Occupational Safety and Health Administration, and for other purposes.",
+  "source_id": "H8172CFA7BEE94B8BA06A2A1D79BD9EBF",
+  "sections": [
+    {
+      "path": [
+        "s1"
+      ],
+      "enum": "1.",
+      "label": "Sec. 1",
+      "heading": "Short title",
+      "source_id": "H59E9EF6A1456483BAC12D77585313B35",
+      "lines": [
+        {
+          "n": 1,
+          "anchor": "s1-l1",
+          "depth": 0,
+          "text": "This Act may be cited as the “Nullify Occupational Safety and Health Administration Act” or the “NOSHA Act”.",
+          "source_id": "H59E9EF6A1456483BAC12D77585313B35",
+          "kind": "text"
+        }
+      ]
+    },
+    {
+      "path": [
+        "s2"
+      ],
+      "enum": "2.",
+      "label": "Sec. 2",
+      "heading": "In general",
+      "source_id": "H1280109BC2214DBAB959EAA99D73EFAF",
+      "lines": [
+        {
+          "n": 2,
+          "anchor": "s2-l2",
+          "depth": 0,
+          "text": "The Occupational Safety and Health Act of 1970 is repealed. The Occupational Safety and Health Administration is abolished.",
+          "source_id": "H1280109BC2214DBAB959EAA99D73EFAF",
+          "kind": "text"
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

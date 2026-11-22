@@ -1,0 +1,394 @@
+{
+  "parser_version": "billxml/1",
+  "source_sha256": "2fc9aea2d989797aeae2fac29c07622a788da9f1eacdb16d553ae4005eade0f7",
+  "kind": "bill",
+  "stage": "Introduced-in-House",
+  "legis_num": "H. R. 3062",
+  "official_title": "To establish a more uniform, transparent, and modern process to authorize the construction, connection, operation, and maintenance of international border-crossing facilities for the import and export of oil and natural gas and the transmission of electricity.",
+  "source_id": "H144C8F2226E34E8489A7C4EE2ECD2BB9",
+  "sections": [
+    {
+      "path": [
+        "s1"
+      ],
+      "enum": "1.",
+      "label": "Sec. 1",
+      "heading": "Short title",
+      "source_id": "H7480DBAAF8A945E9A11BB41A67A02238",
+      "lines": [
+        {
+          "n": 1,
+          "anchor": "s1-l1",
+          "depth": 0,
+          "text": "This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.",
+          "source_id": "H7480DBAAF8A945E9A11BB41A67A02238",
+          "kind": "text"
+        }
+      ]
+    },
+    {
+      "path": [
+        "s2"
+      ],
+      "enum": "2.",
+      "label": "Sec. 2",
+      "heading": "Strengthening North American energy security",
+      "source_id": "H7FDC398094FF44C49D098A4201E9C297",
+      "lines": [
+        {
+          "n": 2,
+          "anchor": "s2-l2",
+          "depth": 0,
+          "text": "(a) Authorization of certain energy infrastructure projects at an international boundary of the United States",
+          "source_id": "H804AD20762784CD4A9B52D988E9BDE8B",
+          "kind": "text"
+        },
+        {
+          "n": 3,
+          "anchor": "s2-l3",
+          "depth": 1,
+          "text": "(1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.",
+          "source_id": "H34AE90003BE546FD8CA882D9C1AA86C7",
+          "kind": "text"
+        },
+        {
+          "n": 4,
+          "anchor": "s2-l4",
+          "depth": 1,
+          "text": "(2) Certificate of crossing",
+          "source_id": "HF2F129E57FA142898D7BDB57F1F36456",
+          "kind": "text"
+        },
+        {
+          "n": 5,
+          "anchor": "s2-l5",
+          "depth": 2,
+          "text": "(A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.",
+          "source_id": "H6CD2D68E43184F238DBFD4EBEB156CD8",
+          "kind": "text"
+        },
+        {
+          "n": 6,
+          "anchor": "s2-l6",
+          "depth": 2,
+          "text": "(B) Relevant official or agency The relevant official or agency referred to in subparagraph (A) is—",
+          "source_id": "HF11543EFCBAE4FAF9A9200C710389CC9",
+          "kind": "text"
+        },
+        {
+          "n": 7,
+          "anchor": "s2-l7",
+          "depth": 3,
+          "text": "(i) the Federal Energy Regulatory Commission with respect to border-crossing facilities consisting of oil or natural gas pipelines; and",
+          "source_id": "H9A4A6D8397124037A01B04015B289E90",
+          "kind": "text"
+        },
+        {
+          "n": 8,
+          "anchor": "s2-l8",
+          "depth": 3,
+          "text": "(ii) the Secretary of Energy with respect to border-crossing facilities consisting of electric transmission facilities.",
+          "source_id": "H0CADEB7FEE0A46BBA76B7C7CD98922E9",
+          "kind": "text"
+        },
+        {
+          "n": 9,
+          "anchor": "s2-l9",
+          "depth": 2,
+          "text": "(C) Additional requirement for electric transmission facilities In the case of a request for a certificate of crossing for a border-crossing facility consisting of an electric transmission facility, the Secretary of Energy shall require, as a condition of issuing the certificate of crossing under subparagraph (A), that the border-crossing facility be constructed, connected, operated, or maintained consistent with all applicable policies and standards of—",
+          "source_id": "H38B59BCCFEEE4D75872475A29B47AEBD",
+          "kind": "text"
+        },
+        {
+          "n": 10,
+          "anchor": "s2-l10",
+          "depth": 3,
+          "text": "(i) the Electric Reliability Organization and the applicable regional entity; and",
+          "source_id": "H46F75464FB714FB986631CFD84DCC80E",
+          "kind": "text"
+        },
+        {
+          "n": 11,
+          "anchor": "s2-l11",
+          "depth": 3,
+          "text": "(ii) any Regional Transmission Organization or Independent System Operator with operational or functional control over the border-crossing facility.",
+          "source_id": "H03455F8FA81C4A33BB269D35DA0147C8",
+          "kind": "text"
+        },
+        {
+          "n": 12,
+          "anchor": "s2-l12",
+          "depth": 1,
+          "text": "(3) Exclusions This subsection shall not apply to any construction, connection, operation, or maintenance of a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity—",
+          "source_id": "H555C3E3654AE4F2D874FC2D0C54F1BDA",
+          "kind": "text"
+        },
+        {
+          "n": 13,
+          "anchor": "s2-l13",
+          "depth": 2,
+          "text": "(A) if the border-crossing facility is operating for such import, export, or transmission as of the date of enactment of this Act;",
+          "source_id": "H6F17F1334A0848958C30DD01EDEC56C0",
+          "kind": "text"
+        },
+        {
+          "n": 14,
+          "anchor": "s2-l14",
+          "depth": 2,
+          "text": "(B) if a Presidential permit (or similar permit) for the construction, connection, operation, or maintenance has been issued pursuant to any provision of law or Executive order; or",
+          "source_id": "H4422B88EA087440AB0C6C5AAB642FF14",
+          "kind": "text"
+        },
+        {
+          "n": 15,
+          "anchor": "s2-l15",
+          "depth": 2,
+          "text": "(C) if an application for a Presidential permit (or similar permit) for the construction, connection, operation, or maintenance is pending on the date of enactment of this Act, until the earlier of—",
+          "source_id": "H5413F7AA01CA43038BF2F5179B8AC6A1",
+          "kind": "text"
+        },
+        {
+          "n": 16,
+          "anchor": "s2-l16",
+          "depth": 3,
+          "text": "(i) the date on which such application is denied; or",
+          "source_id": "H00A421ED4D02478EB5DD94244B379B37",
+          "kind": "text"
+        },
+        {
+          "n": 17,
+          "anchor": "s2-l17",
+          "depth": 3,
+          "text": "(ii) two years after the date of enactment of this Act, if such a permit has not been issued by such date of enactment.",
+          "source_id": "H7E8B04E39C604A219B39C63719C0095B",
+          "kind": "text"
+        },
+        {
+          "n": 18,
+          "anchor": "s2-l18",
+          "depth": 1,
+          "text": "(4) Effect of other laws",
+          "source_id": "H4C94CD6F10454F6A8A50757421BEF06B",
+          "kind": "text"
+        },
+        {
+          "n": 19,
+          "anchor": "s2-l19",
+          "depth": 2,
+          "text": "(A) Application to projects Nothing in this subsection or subsection (e) shall affect the application of any other Federal statute to a project for which a certificate of crossing for a border-crossing facility is requested under this subsection.",
+          "source_id": "H639C1FD6AAE5420FA63AADBBF534A1E2",
+          "kind": "text"
+        },
+        {
+          "n": 20,
+          "anchor": "s2-l20",
+          "depth": 2,
+          "text": "(B) Natural Gas Act Nothing in this subsection or subsection (e) shall affect the requirement to obtain approval or authorization under sections 3 and 7 of the Natural Gas Act for the siting, construction, or operation of any facility to import or export natural gas.",
+          "source_id": "H5DC6DBDFEAB644C5B1435BB0DD8BE37F",
+          "kind": "text"
+        },
+        {
+          "n": 21,
+          "anchor": "s2-l21",
+          "depth": 2,
+          "text": "(C) Oil pipelines Nothing in this subsection or subsection (e) shall affect the authority of the Federal Energy Regulatory Commission with respect to oil pipelines under section 60502 of title 49, United States Code.",
+          "source_id": "HFF4AC16D9DB5434ABBAF9CCC4702425D",
+          "kind": "text"
+        },
+        {
+          "n": 22,
+          "anchor": "s2-l22",
+          "depth": 0,
+          "text": "(b) Importation or exportation of natural gas to Canada and Mexico Section 3(c) of the Natural Gas Act (15 U.S.C. 717b(c)) is amended by adding at the end the following: “In the case of an application for the importation of natural gas from, or the exportation of natural gas to, Canada or Mexico, the Commission shall grant the application not later than 30 days after the date on which the Commission receives the complete application.”.",
+          "source_id": "H871E591E83B2488383E1108E9B4D28CC",
+          "kind": "text"
+        },
+        {
+          "n": 23,
+          "anchor": "s2-l23",
+          "depth": 0,
+          "text": "(c) Transmission of electric energy to Canada and Mexico",
+          "source_id": "HCBC39DFD22FC4E9DBF3709BE9049BC91",
+          "kind": "text"
+        },
+        {
+          "n": 24,
+          "anchor": "s2-l24",
+          "depth": 1,
+          "text": "(1) Repeal of requirement to secure order Section 202(e) of the Federal Power Act (16 U.S.C. 824a(e)) is repealed.",
+          "source_id": "HEA38E72C09684DD7A26189FCF67A6864",
+          "kind": "text"
+        },
+        {
+          "n": 25,
+          "anchor": "s2-l25",
+          "depth": 1,
+          "text": "(2) Conforming amendments",
+          "source_id": "H4B3CC7F390934AE4B33E901C2F42C467",
+          "kind": "text"
+        },
+        {
+          "n": 26,
+          "anchor": "s2-l26",
+          "depth": 2,
+          "text": "(A) State regulations Section 202(f) of the Federal Power Act (16 U.S.C. 824a(f)) is amended by striking “insofar as such State regulation does not conflict with the exercise of the Commission’s powers under or relating to subsection 202(e)”.",
+          "source_id": "H474C5CE793684CF98F7328E772AD4B1D",
+          "kind": "text"
+        },
+        {
+          "n": 27,
+          "anchor": "s2-l27",
+          "depth": 2,
+          "text": "(B) Seasonal diversity electricity exchange Section 602(b) of the Public Utility Regulatory Policies Act of 1978 (16 U.S.C. 824a–4(b)) is amended by striking “the Commission has conducted hearings and made the findings required under section 202(e) of the Federal Power Act” and all that follows through the period at the end and inserting “the Secretary has conducted hearings and finds that the proposed transmission facilities would not impair the sufficiency of electric supply within the United States or would not impede or tend to impede the coordination in the public interest of facilities subject to the jurisdiction of the Secretary.”.",
+          "source_id": "H9FD48D08CF2D4DD08CBBBA5E5D014DE0",
+          "kind": "text"
+        },
+        {
+          "n": 28,
+          "anchor": "s2-l28",
+          "depth": 0,
+          "text": "(d) No Presidential permit required No Presidential permit (or similar permit) shall be required pursuant to any provision of law or Executive order for the construction, connection, operation, or maintenance of an oil or natural gas pipeline or electric transmission facility, or any border-crossing facility thereof.",
+          "source_id": "H6280DA6D50A5416EBA5C95544EF502D4",
+          "kind": "text"
+        },
+        {
+          "n": 29,
+          "anchor": "s2-l29",
+          "depth": 0,
+          "text": "(e) Modifications to existing projects No certificate of crossing under subsection (a), or Presidential permit (or similar permit), shall be required for a modification to—",
+          "source_id": "H2D66C9255A354B7080BE419EB0AD9662",
+          "kind": "text"
+        },
+        {
+          "n": 30,
+          "anchor": "s2-l30",
+          "depth": 1,
+          "text": "(1) an oil or natural gas pipeline or electric transmission facility that is operating for the import or export of oil or natural gas or the transmission of electricity as of the date of enactment of this Act;",
+          "source_id": "HE9E3C75F69B244EBAF8EBC2525EB2220",
+          "kind": "text"
+        },
+        {
+          "n": 31,
+          "anchor": "s2-l31",
+          "depth": 1,
+          "text": "(2) an oil or natural gas pipeline or electric transmission facility for which a Presidential permit (or similar permit) has been issued pursuant to any provision of law or Executive order; or",
+          "source_id": "H23B7C4A777284CF7A71C3FBD246A84D7",
+          "kind": "text"
+        },
+        {
+          "n": 32,
+          "anchor": "s2-l32",
+          "depth": 1,
+          "text": "(3) a border-crossing facility for which a certificate of crossing has previously been issued under subsection (a).",
+          "source_id": "HCA3BA10058E34AA4B7351F4D0E2D3C00",
+          "kind": "text"
+        },
+        {
+          "n": 33,
+          "anchor": "s2-l33",
+          "depth": 0,
+          "text": "(f) Prohibition on revocation of Presidential permits Notwithstanding any other provision of law, the President may not revoke a Presidential permit (or similar permit) issued pursuant to Executive Order No. 13337 (3 U.S.C. 301 note), Executive Order No. 11423 (3 U.S.C. 301 note), Executive Order No. 12038 (42 U.S.C. 7151 note), Executive Order No. 10485 (15 U.S.C. 717b note), or any other Executive order for the construction, connection, operation, or maintenance of an oil or natural gas pipeline or electric transmission facility, or any border-crossing facility thereof, unless such revocation is authorized by an Act of Congress.",
+          "source_id": "H3F86B746FB0745678576AFF216B62165",
+          "kind": "text"
+        },
+        {
+          "n": 34,
+          "anchor": "s2-l34",
+          "depth": 0,
+          "text": "(g) Effective date; rulemaking deadlines",
+          "source_id": "H7B3A8AECF3444589A4E61C77DDD0E8C0",
+          "kind": "text"
+        },
+        {
+          "n": 35,
+          "anchor": "s2-l35",
+          "depth": 1,
+          "text": "(1) Effective date Subsections (a) through (e), and the amendments made by such subsections, shall take effect on the date that is 1 year after the date of enactment of this Act.",
+          "source_id": "H709EF36EADCB43A181BC44785F36194A",
+          "kind": "text"
+        },
+        {
+          "n": 36,
+          "anchor": "s2-l36",
+          "depth": 1,
+          "text": "(2) Rulemaking deadlines Each relevant official or agency described in subsection (a)(2)(B) shall—",
+          "source_id": "HE5922F2F93AC4C9AB98FD9ECB9E71DA5",
+          "kind": "text"
+        },
+        {
+          "n": 37,
+          "anchor": "s2-l37",
+          "depth": 2,
+          "text": "(A) not later than 180 days after the date of enactment of this Act, publish in the Federal Register notice of a proposed rulemaking to carry out the applicable requirements of subsection (a); and",
+          "source_id": "HE38DF56659344DE1AB2509779D6A775B",
+          "kind": "text"
+        },
+        {
+          "n": 38,
+          "anchor": "s2-l38",
+          "depth": 2,
+          "text": "(B) not later than 1 year after the date of enactment of this Act, publish in the Federal Register a final rule to carry out the applicable requirements of subsection (a).",
+          "source_id": "H907B19A8EB44443CB7139BF1BD62435E",
+          "kind": "text"
+        },
+        {
+          "n": 39,
+          "anchor": "s2-l39",
+          "depth": 0,
+          "text": "(h) Definitions In this section:",
+          "source_id": "H215612537E264513AB805198DC3C9DFB",
+          "kind": "text"
+        },
+        {
+          "n": 40,
+          "anchor": "s2-l40",
+          "depth": 1,
+          "text": "(1) Border-crossing facility The term border-crossing facility means the portion of an oil or natural gas pipeline or electric transmission facility that is located at an international boundary of the United States.",
+          "source_id": "HC62F518CE3F34E3583CAA45FA7F907E7",
+          "kind": "text"
+        },
+        {
+          "n": 41,
+          "anchor": "s2-l41",
+          "depth": 1,
+          "text": "(2) Modification The term modification includes a reversal of flow direction, change in ownership, change in flow volume, addition or removal of an interconnection, or an adjustment to maintain flow (such as a reduction or increase in the number of pump or compressor stations).",
+          "source_id": "H57D316E3AF4247D084AF9C0B30A47546",
+          "kind": "text"
+        },
+        {
+          "n": 42,
+          "anchor": "s2-l42",
+          "depth": 1,
+          "text": "(3) Natural gas The term natural gas has the meaning given that term in section 2 of the Natural Gas Act (15 U.S.C. 717a).",
+          "source_id": "H3B3E4BC334AD489CBFF2FD7FE5A7E2B5",
+          "kind": "text"
+        },
+        {
+          "n": 43,
+          "anchor": "s2-l43",
+          "depth": 1,
+          "text": "(4) Oil The term oil means petroleum or a petroleum product.",
+          "source_id": "HBF57D6DA756045B080A30F0C65F58BC6",
+          "kind": "text"
+        },
+        {
+          "n": 44,
+          "anchor": "s2-l44",
+          "depth": 1,
+          "text": "(5) Electric Reliability Organization; regional entity The terms Electric Reliability Organization and regional entity have the meanings given those terms in section 215 of the Federal Power Act (16 U.S.C. 824o).",
+          "source_id": "H3D10360E1610471FB0168508C2F5ABDF",
+          "kind": "text"
+        },
+        {
+          "n": 45,
+          "anchor": "s2-l45",
+          "depth": 1,
+          "text": "(6) Independent System Operator; Regional Transmission Organization The terms Independent System Operator and Regional Transmission Organization have the meanings given those terms in section 3 of the Federal Power Act (16 U.S.C. 796).",
+          "source_id": "H5F12BECAF2DE40A7A8FE92B028C69FD9",
+          "kind": "text"
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

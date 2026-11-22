@@ -1,0 +1,119 @@
+{
+  "parser_version": "billxml/1",
+  "source_sha256": "6e1d577b568368d67443bf31363996fe4bd62b7f3f1241d6f182340db31b074f",
+  "kind": "bill",
+  "stage": "Introduced-in-House",
+  "legis_num": "H. R. 1727",
+  "official_title": "To authorize additional district judgeships for the districts of Colorado and Idaho.",
+  "source_id": "H36B4D4C6CA454D95AB55AF48840923B6",
+  "sections": [
+    {
+      "path": [
+        "s1"
+      ],
+      "enum": "1.",
+      "label": "Sec. 1",
+      "heading": "Short title",
+      "source_id": "H2B55FF92D6474AA893FB3F4F049443A9",
+      "lines": [
+        {
+          "n": 1,
+          "anchor": "s1-l1",
+          "depth": 0,
+          "text": "This Act may be cited as the “Rocky Mountain Judgeship Act”.",
+          "source_id": "H2B55FF92D6474AA893FB3F4F049443A9",
+          "kind": "text"
+        }
+      ]
+    },
+    {
+      "path": [
+        "s2"
+      ],
+      "enum": "2.",
+      "label": "Sec. 2",
+      "heading": "Additional district judgeships for the districts of Colorado and Idaho",
+      "source_id": "HB6FBEC3BB6E042D18781B6078FB7A358",
+      "lines": [
+        {
+          "n": 2,
+          "anchor": "s2-l2",
+          "depth": 0,
+          "text": "(a) Colorado The President shall appoint, by and with the advice and consent of the Senate, 2 additional district judges for the district of Colorado.",
+          "source_id": "HFC1E420DE3FB49A59AAA2220108CE2B6",
+          "kind": "text"
+        },
+        {
+          "n": 3,
+          "anchor": "s2-l3",
+          "depth": 0,
+          "text": "(b) Idaho The President shall appoint, by and with the advice and consent of the Senate, 1 additional district judges for the district of Idaho.",
+          "source_id": "HB5C11B44D1124BA4B0452E7DB431ADE9",
+          "kind": "text"
+        },
+        {
+          "n": 4,
+          "anchor": "s2-l4",
+          "depth": 0,
+          "text": "(c) Technical and conforming amendments The table in section 133(a) of title 28, United States Code, is amended—",
+          "source_id": "H8C20FC225CC44EC294109150E6616869",
+          "kind": "text"
+        },
+        {
+          "n": 5,
+          "anchor": "s2-l5",
+          "depth": 1,
+          "text": "(1) by striking the item relating to Colorado and inserting the following:",
+          "source_id": "HA52A4AC8EBAB466F9E47D9F64B3CF4D6",
+          "kind": "text"
+        },
+        {
+          "n": 6,
+          "anchor": "s2-l6",
+          "depth": 2,
+          "text": "Colorado 9; and",
+          "kind": "table",
+          "quoted": true,
+          "raw": "<table blank-lines-before=\"1\" table-type=\"\" align-to-level=\"section\" frame=\"none\" colsep=\"0\" rowsep=\"0\" line-rules=\"no-gen\" rule-weights=\"0.0.0.0.0.0\" table-template-name=\"Generic: 1 text, 1 num\"> <tgroup cols=\"2\" rowsep=\"0\" thead-tbody-ldg-size=\"10.10.12\" grid-typeface=\"1.1\"><colspec colname=\"column1\" colwidth=\"269pts\" coldef=\"txt\" min-data-value=\"200\"/><colspec colname=\"column2\" colwidth=\"56pts\" coldef=\"fig\" min-data-value=\"10\"/> <tbody> <row><entry colname=\"column1\" align=\"left\" stub-definition=\"txt-ldr\" stub-hierarchy=\"1\" leader-modify=\"force-ldr\">Colorado</entry><entry colname=\"column2\" align=\"right\" leader-modify=\"force-ldr\">9</entry></row></tbody></tgroup></table>"
+        },
+        {
+          "n": 7,
+          "anchor": "s2-l7",
+          "depth": 1,
+          "text": "(2) by striking the item relating to Idaho and inserting the following:",
+          "source_id": "H09A6F86558484D349E2D9FD3ECAC8265",
+          "kind": "text"
+        },
+        {
+          "n": 8,
+          "anchor": "s2-l8",
+          "depth": 2,
+          "text": "Idaho 3.",
+          "kind": "table",
+          "quoted": true,
+          "raw": "<table table-type=\"\" align-to-level=\"section\" frame=\"none\" colsep=\"0\" rowsep=\"0\" blank-lines-before=\"1\" line-rules=\"no-gen\" rule-weights=\"0.0.0.0.0.0\" table-template-name=\"Generic: 1 text, 1 num\"> \n<tgroup cols=\"2\" rowsep=\"0\" thead-tbody-ldg-size=\"10.10.12\" grid-typeface=\"1.1\"><colspec colname=\"column1\" colwidth=\"269pts\" coldef=\"txt\" min-data-value=\"200\"/><colspec colname=\"column2\" colwidth=\"56pts\" coldef=\"fig\" min-data-value=\"10\"/> \n<tbody> \n<row><entry colname=\"column1\" align=\"left\" stub-definition=\"txt-ldr\" stub-hierarchy=\"1\" leader-modify=\"force-ldr\">Idaho</entry><entry colname=\"column2\" align=\"right\" leader-modify=\"force-ldr\">3</entry></row></tbody></tgroup></table>"
+        }
+      ]
+    },
+    {
+      "path": [
+        "s3"
+      ],
+      "enum": "3.",
+      "label": "Sec. 3",
+      "heading": "Colorado",
+      "source_id": "HAA8EEFBD24254AA2ABC2129D449BFB83",
+      "lines": [
+        {
+          "n": 9,
+          "anchor": "s3-l9",
+          "depth": 0,
+          "text": "Section 85 of title 28, United States Code, is amended by striking “and Sterling” and inserting “Sterling, and Fort Collins”.",
+          "source_id": "HAA8EEFBD24254AA2ABC2129D449BFB83",
+          "kind": "text"
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}
