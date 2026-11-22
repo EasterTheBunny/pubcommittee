@@ -106,6 +106,7 @@ func Parse(src []byte, log *slog.Logger) (*Document, error) {
 	if pre := top.child("preamble"); pre != nil {
 		w.openSection([]string{"s0"}, "", "", "Preamble", pre.attr("id"))
 		w.children(pre, 0, false)
+		w.cur = nil // text after the preamble starts its own section
 	}
 	for _, b := range bodies {
 		w.body(b)
