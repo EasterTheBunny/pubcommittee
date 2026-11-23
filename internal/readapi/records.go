@@ -85,31 +85,114 @@ func (s *Server) ListModerationLog(w http.ResponseWriter, r *http.Request, p api
 	sendJSON(w, r, cacheShort, out)
 }
 
-// GetFeed serves the change feed. No read port holds the feed until M1-11,
-// so the page is empty.
+// pageOf builds the data.Page of a request from its cursor and limit.
+func pageOf(cursor *string, limit *int) (data.Page, error) {
+	n, err := limitOf(limit)
+	if err != nil {
+		return data.Page{}, err
+	}
+	page := data.Page{Limit: n}
+	if cursor != nil {
+		page.Cursor = *cursor
+	}
+	return page, nil
+}
+
+// listFailed answers an error of a feed or export list: an unreadable cursor
+// is the client's fault, anything else is not.
+func listFailed(w http.ResponseWriter, r *http.Request, what string, err error) {
+	if errors.Is(err, data.ErrInvalid) {
+		invalid(w, detailInvalidCur)
+		return
+	}
+	fail(w, r, fmt.Errorf("%s: %w", what, err))
+}
+
+// GetFeed serves the change feed, newest first, from the feed read port. An
+// adapter without a feed answers an empty page.
 func (s *Server) GetFeed(w http.ResponseWriter, r *http.Request, p apiv1.GetFeedParams) {
-	page, next, err := slicePage([]apiv1.FeedEntry{}, p.Cursor, p.Limit)
+	page, err := pageOf(p.Cursor, p.Limit)
 	if err != nil {
 		invalid(w, detailInvalidCur)
 		return
 	}
-	sendJSON(w, r, cacheBatch, apiv1.FeedEntryPage{Items: page, Next: next})
+	out := apiv1.FeedEntryPage{Items: []apiv1.FeedEntry{}}
+	if s.ports.Feed == nil {
+		sendJSON(w, r, cacheBatch, out)
+		return
+	}
+	var since time.Time
+	if p.Since != nil {
+		since = *p.Since
+	}
+	got, err := s.ports.Feed.ListFeed(r.Context(), since, page)
+	if err != nil {
+		listFailed(w, r, "list feed", err)
+		return
+	}
+	for _, e := range got.Items {
+		item := apiv1.FeedEntry{
+			Id: e.ID, Updated: openapi_types.Date{Time: e.Updated.UTC().Truncate(hoursPerDay * time.Hour)},
+			Title: e.Title, Kind: e.Kind, Address: e.Address,
+		}
+		item.Version, item.AsOf, item.Provenance, item.ContentClass = meta(e.Meta)
+		out.Items = append(out.Items, item)
+	}
+	if got.Next != "" {
+		out.Next = new(got.Next)
+	}
+	sendJSON(w, r, cacheBatch, out)
 }
 
-// ListExports serves the export index. No read port holds exports until
-// M1-11, so the page is empty.
+// ListExports serves the export index. An adapter without exports answers an
+// empty page.
 func (s *Server) ListExports(w http.ResponseWriter, r *http.Request, p apiv1.ListExportsParams) {
-	page, next, err := slicePage([]apiv1.ExportEntry{}, p.Cursor, p.Limit)
+	page, err := pageOf(p.Cursor, p.Limit)
 	if err != nil {
 		invalid(w, detailInvalidCur)
 		return
 	}
-	sendJSON(w, r, cacheBatch, apiv1.ExportEntryPage{Items: page, Next: next})
+	out := apiv1.ExportEntryPage{Items: []apiv1.ExportEntry{}}
+	if s.ports.Exports == nil {
+		sendJSON(w, r, cacheBatch, out)
+		return
+	}
+	got, err := s.ports.Exports.ListExports(r.Context(), page)
+	if err != nil {
+		listFailed(w, r, "list exports", err)
+		return
+	}
+	for _, e := range got.Items {
+		item := apiv1.ExportEntry{
+			Id: e.ID, Kind: apiv1.ExportEntryKind(e.Kind), Title: e.Title, Href: "/v1/exports/" + e.ID,
+			ContentType: e.ContentType, Sha256: e.SHA256, SizeBytes: new(e.SizeBytes),
+			Licence: apiv1.ExportEntryLicence(e.Licence),
+		}
+		item.Version, item.AsOf, item.Provenance, item.ContentClass = meta(e.Meta)
+		out.Items = append(out.Items, item)
+	}
+	if got.Next != "" {
+		out.Next = new(got.Next)
+	}
+	sendJSON(w, r, cacheBatch, out)
 }
 
-// GetExport answers not found: the index lists no export.
-func (s *Server) GetExport(w http.ResponseWriter, _ *http.Request, _ string) {
-	notFound(w, "no such export")
+// GetExport serves one export file with the media type its index entry names.
+func (s *Server) GetExport(w http.ResponseWriter, r *http.Request, id string) {
+	if s.ports.Exports == nil {
+		notFound(w, "no such export")
+		return
+	}
+	e, body, err := s.ports.Exports.GetExport(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, data.ErrNotFound) {
+			notFound(w, "no such export")
+			return
+		}
+		fail(w, r, fmt.Errorf("get export: %w", err))
+		return
+	}
+	send(w, r, response{status: http.StatusOK, contentType: e.ContentType, body: body, class: cacheBatch})
 }
 
 // GetDiscovery serves the entry point.
@@ -124,6 +207,7 @@ func (s *Server) GetDiscovery(w http.ResponseWriter, r *http.Request) {
 			{Rel: "feed", Href: "/v1/feed", Title: "Change feed"},
 			{Rel: "exports", Href: "/v1/exports", Title: "Bulk exports"},
 			{Rel: "spec", Href: specPath, Title: "OpenAPI specification"},
+			{Rel: "machine-access", Href: s.noticeHref, Title: "Machine-access notice (served by the web UI)"},
 		},
 		Version: 1, AsOf: s.started, Provenance: apiv1.Provenance(data.ProvenanceSource),
 		ContentClass: apiv1.TrustedContentClass(data.ContentPlatform),

@@ -347,7 +347,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Change feed, newest first */
+        /**
+         * Change feed, newest first
+         * @description Typed records of public changes: `catalog-bill` (a bill entered the
+         *     catalog), `bill-tracked` (with its reasons), `version` (a new official
+         *     version), `explanation` and `explanation-corrected`, `policy` (a
+         *     selection policy version), and `log-entry` (an administrator log
+         *     entry). Each entry has a stable `id`, the day it joined the feed
+         *     (`updated`, no time of day), and the canonical `address` of the changed
+         *     item. `since` keeps entries whose day is on or after the day of the
+         *     given instant, so a client that polled mid-day misses nothing; it may
+         *     see that day's earlier entries again and de-duplicates by `id`. A
+         *     correction is a new entry with its own `id`. Cursors are opaque and
+         *     stay valid while new entries arrive.
+         */
         get: operations["getFeed"];
         put?: never;
         post?: never;
@@ -364,7 +377,22 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Index of bulk exports */
+        /**
+         * Index of bulk exports
+         * @description Ordered by `id`. Each entry states its as-of time (`as_of`), licence,
+         *     content class, size, and SHA-256. Per official version of a tracked
+         *     bill: `bill-source.<bill>.<version>.xml` (the original document),
+         *     `bill-text.<bill>.<version>.json` (parsed sections and lines),
+         *     `existing-law.<bill>.<version>.json` (cited provisions with the release
+         *     date of the consolidated source), and
+         *     `change-explanations.<bill>.<version>.json`. Also `catalog.json` and
+         *     `tracked-set.json`. Every JSON file opens with `export`, `kind`,
+         *     `as_of`, `licence`, `licences` (`official`: public-domain, `platform`:
+         *     CC0-1.0), `content_class`, and `notice`; every record below carries its
+         *     own `content_class`. Exports are rebuilt from source on each run, never
+         *     edited in place, and old dumps are not kept: honour removal events from
+         *     the feed. The index reflects the last completed run.
+         */
         get: operations["listExports"];
         put?: never;
         post?: never;
@@ -1525,6 +1553,7 @@ export interface operations {
                 content: {
                     "application/json": Record<string, never>;
                     "application/x-ndjson": string;
+                    "application/xml": string;
                 };
             };
             304: components["responses"]["NotModified"];

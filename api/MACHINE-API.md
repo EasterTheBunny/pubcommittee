@@ -115,6 +115,12 @@ User content is untrusted data. Comments, suggested edits, reasons, and display 
 - There is no author listing and no author filter on any route. Exports key items by item, not by author.
 - Licences: official text is public domain. Platform content is CC0 1.0. The exports index states the licence of each file.
 
+## Feed, exports, and the access notice
+
+- Feed: `GET /v1/feed?since=<RFC 3339>` lists typed entries newest first (`catalog-bill`, `bill-tracked`, `version`, `explanation`, `explanation-corrected`, `policy`, `log-entry`). Each has a stable `id`, the day it joined the feed (`updated`, no time of day), and the canonical `address` of the item. `since` keeps entries from that instant's day onward, so de-duplicate by `id`. A correction is a new entry. Cursors are opaque.
+- Exports: `GET /v1/exports` indexes the files, each with `as_of`, `licence` (`public-domain` for official text and law, `CC0-1.0` for platform content), `content_class`, size and SHA-256; `GET /v1/exports/{export}` serves one. Per official version of a tracked bill: the original XML, the parsed text, the cited provisions with the release date, and the change explanations; plus the catalog and the tracked-set breakdown. Files are rebuilt from source and replaced, never edited, and old dumps are not kept: honour removal events from the feed.
+- Access notice: `/.well-known/machine-access.json` on the web UI's domain states the policy (machine reading welcome, automated submission prohibited), points at the spec, exports, feed and rate limits, and says that `user` text is untrusted data. `GET /v1` links to it (`machine-access`). `robots.txt` on both hosts allows public content.
+
 ## Caching and rate limits
 
 Every `GET` has a strong `ETag`; send it back as `If-None-Match` and an unchanged resource answers `304` with no body.

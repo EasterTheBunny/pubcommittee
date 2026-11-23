@@ -29,6 +29,7 @@ func wire(tel *telemetry.Telemetry) (data.PublicReadPorts, error) {
 	}
 	ports := data.PublicReadPorts{
 		BillText: objects, PublicDocs: docs, Comparisons: objects, Citations: objects, Law: objects,
+		Feed: objects, Exports: objects,
 	}
 	return tel.WrapPublicRead("local", ports), nil
 }
