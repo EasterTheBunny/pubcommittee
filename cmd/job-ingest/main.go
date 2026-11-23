@@ -48,6 +48,11 @@ type config struct {
 	// PublishPolicy is "v1" or a policy file to store as a policy version.
 	PublishPolicy string
 	PolicyReason  string
+	// Law runs the existing-law ingest (M1-07) instead of a bill pull; Titles
+	// names the US Code titles to store ("all", or 3,42; fixtures: the titles
+	// the fixtures hold when empty).
+	Law    bool
+	Titles string
 }
 
 func main() {
@@ -87,11 +92,14 @@ func parseArgs(args []string, getenv func(string) string) (config, ingest.Option
 	fs.StringVar(&cfg.PublishPolicy, "publish-policy", "",
 		"store a selection policy version: 'v1' (built in) or a JSON file; local target only")
 	fs.StringVar(&cfg.PolicyReason, "reason", "initial selection policy", "public reason logged with --publish-policy")
+	fs.BoolVar(&cfg.Law, "law", false,
+		"existing-law ingest: store the newest US Code release point (a release already stored is left alone)")
+	fs.StringVar(&cfg.Titles, "titles", "", "with --law: comma-separated title numbers, or all")
 	fs.BoolVar(&opts.Verify, "verify", false, "re-fetch stored originals and compare SHA-256; never overwrites")
 	if err := fs.Parse(args); err != nil {
 		return cfg, opts, nil, fmt.Errorf("flags: %w", err)
 	}
-	if len(bills) == 0 && !cfg.Evaluate && cfg.PublishPolicy == "" {
+	if len(bills) == 0 && !cfg.Evaluate && cfg.PublishPolicy == "" && !cfg.Law {
 		return cfg, opts, nil, errNoBill
 	}
 	if cfg.Source != sourceFixtures && cfg.Source != sourceGovinfo {
@@ -132,6 +140,8 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 	var items int
 	var runErr error
 	switch {
+	case cfg.Law:
+		items, runErr = ingestLaw(context.Background(), deps, fetcher, cfg, opts, out)
 	case cfg.PublishPolicy != "":
 		runErr = publishPolicy(context.Background(), deps, cfg, out)
 	case cfg.Evaluate:

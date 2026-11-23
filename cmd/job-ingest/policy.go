@@ -27,7 +27,10 @@ const policyV1 = "v1"
 // policy the policy step is the evaluator of that policy; without one, the
 // manual evaluator stays and a warning says so.
 func pullSteps(ctx context.Context, d ingest.Deps) (ingest.Pipeline, *data.SelectionPolicy, error) {
-	steps := ingest.DefaultSteps()
+	steps, err := ingest.WithAnalysis(ingest.DefaultSteps())
+	if err != nil {
+		return nil, nil, fmt.Errorf("pipeline: %w", err)
+	}
 	p, err := d.Ports.PublicDocs.GetSelectionPolicy(ctx)
 	if errors.Is(err, data.ErrNotFound) || (err == nil && p.Mode == "") {
 		d.Log.Warn("no structured selection policy is stored; tracking only what --track names")

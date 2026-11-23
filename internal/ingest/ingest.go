@@ -23,6 +23,8 @@ const (
 	StepPolicy       = "policy"
 	StepVersions     = "versions"
 	StepAfterStore   = "after-store"
+	StepCitations    = "citations"
+	StepComparisons  = "comparisons"
 	StepWriteBill    = "write-bill"
 	StepWriteCatalog = "write-catalog"
 	StepIngestState  = "ingest-state"
@@ -62,6 +64,13 @@ type Report struct {
 	Present        []string  `json:"present"` // version codes already stored, untouched
 	WouldStore     []string  `json:"would_store,omitempty"`
 	Failures       []Failure `json:"failures,omitempty"`
+	// CitationSets and Comparisons count the stored sets and comparisons the
+	// analysis steps wrote or confirmed (M1-07, M1-08).
+	CitationSets int `json:"citation_sets,omitempty"`
+	Comparisons  int `json:"comparisons,omitempty"`
+	// Notes are non-failures an operator should see, for example a citation
+	// step skipped for want of a stored release point.
+	Notes []string `json:"notes,omitempty"`
 }
 
 // Failure is one version or step that did not complete.
