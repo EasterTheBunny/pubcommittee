@@ -110,12 +110,20 @@ func (s *Server) section(w http.ResponseWriter, r *http.Request, bill, n, sectio
 		return
 	}
 	canonical := versionPath(res.id, res.n) + "/s/" + sectionID(path)
+	var changed *apiv1.ChangedSince
+	if len(sec.Lines) > 0 {
+		changed, err = s.changedSince(r.Context(), res, path, sec.Lines[0].N, sec.Lines[len(sec.Lines)-1].N)
+		if err != nil {
+			fail(w, r, err)
+			return
+		}
+	}
 	out := apiv1.SectionResource{
-		Bill: res.id, N: res.n, Licence: licencePublicDomain,
+		ChangedSince: changed, Bill: res.id, N: res.n, Licence: licencePublicDomain,
 		Address: res.address(canonical, ""), Section: toSection(sec),
 	}
 	out.Version, out.AsOf, out.Provenance, out.ContentClass = meta(res.version.Meta)
-	sendJSONAt(w, r, res.class(), res.location(canonical), out)
+	sendJSONAt(w, r, s.pinnedClass(res), res.location(canonical), out)
 }
 
 // GetLineRange serves a line or range of a pinned or latest version.
@@ -160,13 +168,29 @@ func (s *Server) lineRange(w http.ResponseWriter, r *http.Request, bill, n, sect
 		fail(w, r, fmt.Errorf("lines %d-%d of %s: %w", from, to, sectionID(path), data.ErrNotFound))
 		return
 	}
+	changed, err := s.changedSince(r.Context(), res, path, from, to)
+	if err != nil {
+		fail(w, r, err)
+		return
+	}
 	all := toLines(path, sec.Lines)
 	canonical := versionPath(res.id, res.n) + "/s/" + sectionID(path) + "/l/" + rng
 	out := apiv1.LineRangeResource{
-		Bill: res.id, N: res.n, SectionId: sectionID(path), SectionPath: slices.Clone(path),
+		ChangedSince: changed, Bill: res.id, N: res.n, SectionId: sectionID(path), SectionPath: slices.Clone(path),
 		From: from, To: to, Licence: licencePublicDomain,
 		Address: res.address(canonical, fragmentOf(path, from, to)), Lines: all[i : j+1],
 	}
 	out.Version, out.AsOf, out.Provenance, out.ContentClass = meta(res.version.Meta)
-	sendJSONAt(w, r, res.class(), res.location(canonical), out)
+	sendJSONAt(w, r, s.pinnedClass(res), res.location(canonical), out)
+}
+
+// pinnedClass is the cache class of a section or line answer. The text of a
+// pinned version never changes, but a version older than the latest also
+// carries changed_since, which can change when another version arrives, so
+// that answer is cached short.
+func (s *Server) pinnedClass(res resolved) cacheClass {
+	if s.ports.Comparisons != nil && res.n < res.latest {
+		return cacheShort
+	}
+	return res.class()
 }

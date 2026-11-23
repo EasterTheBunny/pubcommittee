@@ -19,6 +19,7 @@ DATA_DIR=.local-data go run -tags local ./cmd/job-ingest --source govinfo --bill
 | `--evaluate` | Evaluate every stored catalog entry against the latest stored policy. Writes the entries that change (markup status, tracked, reasons, policy version) and the breakdown, and lists `newly_tracked` bills: pull their text with `--bill <id>`. Tracked bills are never untracked. With `--dry-run` it writes nothing. |
 | `--law` | Existing-law ingest (M1-07, architecture "Ingest existing law"): store the newest US Code release point with its date; a release already stored is left alone and nothing is fetched. `--source fixtures` reads `fixtures/uscode/`, `--source govinfo` the Law Revision Counsel (same politeness rules). |
 | `--titles <list>\|all` | With `--law`: the titles to store. Default: the titles the fixtures hold; for the live source a new release needs `--titles`. |
+| `--analyze` | Run the citation and comparison steps over stored versions of the `--bill` bills, or of every tracked bill in the catalog; fetches nothing. Catches up stored data, for example after `--law` stored a new release point. |
 | `--dry-run` | Report what would change; write nothing, fetch no text. |
 | `--verify` | Re-fetch stored originals and compare SHA-256; a mismatch is a failure and nothing is overwritten. |
 

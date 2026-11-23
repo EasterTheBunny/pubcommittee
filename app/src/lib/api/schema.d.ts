@@ -105,7 +105,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One section of an official version */
+        /**
+         * One section of an official version
+         * @description The text is immutable. A pinned version older than the latest also carries `changed_since`, which can change when a newer version arrives, so that answer is cached short; the latest pinned version's answer stays immutable.
+         */
         get: operations["getSection"];
         put?: never;
         post?: never;
@@ -124,7 +127,7 @@ export interface paths {
         };
         /**
          * A line or line range of an official version
-         * @description Each line carries its number, depth, text, and anchor, so a client can rebuild blocks without page scripts.
+         * @description Each line carries its number, depth, text, and anchor, so a client can rebuild blocks without page scripts. A pinned version older than the latest also carries `changed_since`, which can change when a newer version arrives, so that answer is cached short; the latest pinned version's answer stays immutable.
          */
         get: operations["getLineRange"];
         put?: never;
@@ -584,6 +587,7 @@ export interface components {
             licence: "public-domain";
             address: components["schemas"]["AddressInfo"];
             section: components["schemas"]["Section"];
+            changed_since?: components["schemas"]["ChangedSince"];
         };
         LineRangeResource: components["schemas"]["Meta"] & {
             bill: components["schemas"]["BillId"];
@@ -596,6 +600,7 @@ export interface components {
             /** @enum {string} */
             licence: "public-domain";
             address: components["schemas"]["AddressInfo"];
+            changed_since?: components["schemas"]["ChangedSince"];
             lines: components["schemas"]["Line"][];
         };
         AsAmendedPreview: {
@@ -666,6 +671,20 @@ export interface components {
             section_id: components["schemas"]["SectionId"];
             from: number;
             to: number;
+        };
+        /** @description Present on a pinned older version when a newer one exists and its comparison is stored: what became of the addressed lines in the latest version. `moved` is the same words elsewhere or renumbered, `changed` words altered with a counterpart, `removed` no counterpart (no `new_*` fields). A section is classified over all its lines. Derived from official text; carries none. */
+        ChangedSince: {
+            /** @description The latest version the lines were compared with. */
+            to_n: number;
+            /** @enum {string} */
+            class: "unchanged" | "moved" | "changed" | "removed";
+            new_section_id?: components["schemas"]["SectionId"];
+            new_from?: number;
+            new_to?: number;
+            /** @description Path of the best new location, for example `/v1/bills/<bill>/v/3/s/2/l/4-5`. */
+            new_address?: string;
+            /** @description Fragment of the new location, for example `#s2-l4-5`. */
+            new_anchor?: string;
         };
         /** @description Compared text sits in `before` and `after`, each with its own class. */
         ComparisonChange: {

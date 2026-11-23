@@ -72,3 +72,17 @@ func TestAnalysisSkippedForUntrackedAndDryRun(t *testing.T) {
 		t.Errorf("dry run: %v %+v", err, rep)
 	}
 }
+
+func TestAnalyzeRunsOverStoredData(t *testing.T) {
+	t.Parallel()
+	store := memory.New()
+	d := deps(store, fixtureSource(t, fixedTime()), fixedTime())
+	// Store the versions with no analysis steps, then analyze without fetching.
+	if _, err := ingest.Pull(t.Context(), d, ingest.Options{Track: true}, ingest.DefaultSteps(), bill(4313)); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := ingest.Analyze(t.Context(), d, ingest.Options{}, bill(4313))
+	if err != nil || rep.Failed() || rep.Comparisons != 5 {
+		t.Fatalf("Analyze = %+v, %v", rep, err)
+	}
+}

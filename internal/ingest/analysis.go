@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -134,4 +135,27 @@ func enrolledSet(
 		return data.CitationSet{}, false, fmt.Errorf("later laws: %w", err)
 	}
 	return set, true, nil
+}
+
+// Analyze runs the citation and comparison steps over a bill's stored
+// versions without fetching anything: the way to catch up stored data, for
+// example after a new release point. The bill must be tracked in the catalog.
+func Analyze(ctx context.Context, d Deps, o Options, bill data.BillRef) (Report, error) {
+	if err := bill.Validate(); err != nil {
+		return Report{}, fmt.Errorf("analyze: %w", err)
+	}
+	if d.Log == nil {
+		d.Log = slog.Default()
+	}
+	r := &Run{Deps: d, Options: o, Bill: bill, Decision: Decision{Tracked: true}}
+	r.Report = Report{Bill: bill.ID(), DryRun: o.DryRun, Tracked: true, Stored: []string{}, Present: []string{}}
+	for _, s := range []Step{
+		StepFunc{StepName: StepCitations, Fn: citationsStep},
+		StepFunc{StepName: StepComparisons, Fn: comparisonsStep},
+	} {
+		if err := s.Do(ctx, r); err != nil {
+			return r.Report, fmt.Errorf("analyze %s: step %s: %w", bill.ID(), s.Name(), err)
+		}
+	}
+	return r.Report, nil
 }

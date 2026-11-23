@@ -44,8 +44,8 @@ All routes are `GET`. The cache class comes from the `x-cache` extension in the 
 | `/v1/bills` | Tracked bills, or catalog entries with `scope=catalog` | short |
 | `/v1/bills/{bill}` | One bill with its version list | short |
 | `/v1/bills/{bill}/v/{n}` | One official version with sections, lines, and anchors | immutable |
-| `/v1/bills/{bill}/v/{n}/s/{section}` | One section of an official version | immutable |
-| `/v1/bills/{bill}/v/{n}/s/{section}/l/{range}` | A line or line range of an official version | immutable |
+| `/v1/bills/{bill}/v/{n}/s/{section}` | One section of an official version | immutable (short for a version older than the latest: carries `changed_since`) |
+| `/v1/bills/{bill}/v/{n}/s/{section}/l/{range}` | A line or line range of an official version | immutable (short for a version older than the latest: carries `changed_since`) |
 | `/v1/bills/{bill}/s/{section}` | A section of the latest version (version-less) | short |
 | `/v1/bills/{bill}/s/{section}/l/{range}` | A line range of the latest version (version-less) | short |
 | `/v1/bills/{bill}/v/{n}/explanations` | Change explanations for one version | short |
