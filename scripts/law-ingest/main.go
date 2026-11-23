@@ -31,6 +31,9 @@ import (
 	"github.com/easterthebunny/pubcommittee/internal/lawingest"
 )
 
+// billIDParts is the number of dash-separated parts of a bill id such as us-119-hr-4313.
+const billIDParts = 4
+
 var errUsage = errors.New("usage error")
 
 func main() {
@@ -93,7 +96,7 @@ func parseTitles(s string) ([]int, error) {
 		return lawingest.AllTitles(), nil
 	}
 	var out []int
-	for _, f := range strings.Split(s, ",") {
+	for f := range strings.SplitSeq(s, ",") {
 		n, err := strconv.Atoi(strings.TrimSpace(f))
 		if err != nil {
 			return nil, fmt.Errorf("titles %q: %w", s, errUsage)
@@ -121,7 +124,7 @@ func runCite(ctx context.Context, store *fsobject.Store, bills string, ids []str
 // loadBill stores every fixture version of a bill (id like "us-119-hr-4313").
 func loadBill(ctx context.Context, store *fsobject.Store, dir, id string) (data.BillRef, error) {
 	parts := strings.Split(id, "-")
-	if len(parts) != 4 {
+	if len(parts) != billIDParts {
 		return data.BillRef{}, fmt.Errorf("bill id %q: %w", id, errUsage)
 	}
 	num, err := strconv.Atoi(parts[3])
@@ -146,8 +149,10 @@ func loadBill(ctx context.Context, store *fsobject.Store, dir, id string) (data.
 			Ref: data.VersionRef{Bill: ref, Version: strings.Split(f, "/")[2]}, Type: "official",
 			PublishedAt:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 			SourceSHA256: doc.SourceSHA256, Sections: doc.DataSections(),
-			Meta: data.Meta{Version: 1, AsOf: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				Provenance: data.ProvenanceSource, ContentClass: data.ContentOfficial},
+			Meta: data.Meta{
+				Version: 1, AsOf: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+				Provenance: data.ProvenanceSource, ContentClass: data.ContentOfficial,
+			},
 		}
 		if err := store.PutVersion(ctx, v, src); err != nil {
 			return ref, fmt.Errorf("store %s: %w", f, err)

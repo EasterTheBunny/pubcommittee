@@ -27,6 +27,18 @@ var idPattern = regexp.MustCompile(`^[0-9A-Za-z]+(-[0-9A-Za-z]+)*$`)
 // stored as "130g-dup2".
 const DuplicateMarker = "-dup"
 
+// storedID returns the id a section is stored under. A few titles number two
+// sections alike (for example 10 U.S.C. 130g): the first keeps the number and
+// later ones are stored as "<id>-dup<N>", so no section is lost and a
+// resolver can tell the number is shared.
+func storedID(seen map[string]int, id string) string {
+	seen[id]++
+	if seen[id] == 1 {
+		return id
+	}
+	return fmt.Sprintf("%s%s%d", id, DuplicateMarker, seen[id])
+}
+
 // ParseTitle streams a US Code title file and calls fn once per top-level section, in document order.
 // release supplies the release date. An error from fn stops the parse and is returned unchanged.
 func ParseTitle(src []byte, release data.Release, fn func(data.LawSection) error) error {
@@ -59,15 +71,7 @@ func ParseTitle(src []byte, release data.Release, fn func(data.LawSection) error
 		if err != nil {
 			return err
 		}
-		// A few titles number two sections alike (for example 10 U.S.C. 130g).
-		// The first keeps the number; later ones are stored as "<id>-dup<N>",
-		// so no section is lost and a resolver can tell the number is shared.
-		seen[id]++
-		stored := id
-		if seen[id] > 1 {
-			stored = fmt.Sprintf("%s%s%d", id, DuplicateMarker, seen[id])
-		}
-		if err := fn(doc.lawSection(root, id, stored)); err != nil {
+		if err := fn(doc.lawSection(root, id, storedID(seen, id))); err != nil {
 			return err
 		}
 	}
@@ -99,7 +103,9 @@ func (d document) lawSection(root *node, id, stored string) data.LawSection {
 		Provenance:   data.ProvenanceSource,
 		ContentClass: data.ContentOfficial,
 	}
-	b := sectionBuilder{title: d.title, id: stored, cite: id, prefix: root.identifier + "/", release: d.release, meta: meta}
+	b := sectionBuilder{
+		title: d.title, id: stored, cite: id, prefix: root.identifier + "/", release: d.release, meta: meta,
+	}
 	provisions := []data.Provision{{
 		ID:          data.ProvisionID(d.title, stored),
 		Citation:    b.citation(nil),

@@ -229,14 +229,23 @@ func (r *Resolver) resolveUSC(
 		return e, nil
 	}
 	// A number shared by two sections is ambiguous: link both.
-	if dup, ok, err := r.section(ctx, title, sec+uslm.DuplicateMarker+"2"); err != nil {
+	ids, err := r.sharedNumber(ctx, title, sec, s)
+	if err != nil {
 		return e, err
-	} else if ok {
-		e.State, e.Reason = data.CitationAmbiguous, reasonDuplicate
-		e.ProvisionIDs = []string{s.Provisions[0].ID, dup.Provisions[0].ID}
+	}
+	if len(ids) > 1 {
+		e.State, e.Reason, e.ProvisionIDs = data.CitationAmbiguous, reasonDuplicate, ids
 		return e, nil
 	}
-	// Deepest stored provision along the path.
+	return linkDeepest(e, s, title, sec, path, etSeq, note), nil
+}
+
+// linkDeepest links the deepest stored provision along the cited path and
+// sets the state: resolved when the whole path exists, ambiguous when it
+// does not or the cite is a range.
+func linkDeepest(
+	e data.CitationEntry, s data.LawSection, title int, sec string, path []string, etSeq bool, note string,
+) data.CitationEntry {
 	found, depth := s.Provisions[0].ID, 0
 	for d := len(path); d >= 0; d-- {
 		id := data.ProvisionID(title, sec, path[:d]...)
@@ -254,5 +263,19 @@ func (r *Resolver) resolveUSC(
 	default:
 		e.State, e.Reason = data.CitationResolved, note
 	}
-	return e, nil
+	return e
+}
+
+// sharedNumber returns the section ids that carry the number: the section
+// itself, plus the second section stored under the same number, if any.
+func (r *Resolver) sharedNumber(ctx context.Context, title int, sec string, first data.LawSection) ([]string, error) {
+	ids := []string{first.Provisions[0].ID}
+	dup, ok, err := r.section(ctx, title, sec+uslm.DuplicateMarker+"2")
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		ids = append(ids, dup.Provisions[0].ID)
+	}
+	return ids, nil
 }

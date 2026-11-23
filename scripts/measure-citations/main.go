@@ -69,7 +69,7 @@ func run(lawDir, fixtures, release, releaseDate, bills, labelsFile, only string)
 	if err != nil {
 		return fmt.Errorf("release date: %w", err)
 	}
-	raw, err := os.ReadFile(labelsFile)
+	raw, err := fs.ReadFile(os.DirFS(filepath.Dir(labelsFile)), filepath.Base(labelsFile))
 	if err != nil {
 		return fmt.Errorf("labels: %w", err)
 	}
@@ -100,45 +100,61 @@ func run(lawDir, fixtures, release, releaseDate, bills, labelsFile, only string)
 
 func loadLaw(ctx context.Context, store *memory.Store, rel data.Release, lawDir, fixtures string) error {
 	put := func(s data.LawSection) error { return store.PutLawSection(ctx, s) }
+	var err error
 	switch {
 	case lawDir != "":
-		zips, err := filepath.Glob(filepath.Join(lawDir, "xml_usc*@"+rel.ID+".zip"))
-		if err != nil || len(zips) == 0 {
-			return fmt.Errorf("no title zips in %s: %w", lawDir, errInput)
-		}
-		for _, z := range zips {
-			b, err := readZipXML(z)
-			if err != nil {
-				return err
-			}
-			if err := uslm.ParseTitle(b, rel, put); err != nil {
-				return fmt.Errorf("%s: %w", z, err)
-			}
-		}
+		err = loadZips(lawDir, rel, put)
 	case fixtures != "":
-		files, err := filepath.Glob(filepath.Join(fixtures, rel.ID, "t*-s*.xml"))
-		if err != nil || len(files) == 0 {
-			return fmt.Errorf("no sections in %s: %w", fixtures, errInput)
-		}
-		for _, f := range files {
-			var title int
-			if _, err := fmt.Sscanf(filepath.Base(f), "t%d-", &title); err != nil {
-				return fmt.Errorf("%s: %w", f, err)
-			}
-			frag, err := os.ReadFile(f) //nolint:gosec // developer tool reading a path given on the command line
-			if err != nil {
-				return fmt.Errorf("read %s: %w", f, err)
-			}
-			doc := fmt.Sprintf(`<uscDoc identifier="/us/usc/t%d"><main>%s</main></uscDoc>`, title, frag)
-			if err := uslm.ParseTitle([]byte(doc), rel, put); err != nil {
-				return fmt.Errorf("%s: %w", f, err)
-			}
-		}
+		err = loadFixtureSections(fixtures, rel, put)
 	default:
-		return fmt.Errorf("give -law or -fixtures: %w", errInput)
+		err = fmt.Errorf("give -law or -fixtures: %w", errInput)
+	}
+	if err != nil {
+		return err
 	}
 	if err := store.PutRelease(ctx, rel); err != nil {
 		return fmt.Errorf("store release: %w", err)
+	}
+	return nil
+}
+
+func loadZips(dir string, rel data.Release, put func(data.LawSection) error) error {
+	zips, err := filepath.Glob(filepath.Join(dir, "xml_usc*@"+rel.ID+".zip"))
+	if err != nil || len(zips) == 0 {
+		return fmt.Errorf("no title zips in %s: %w", dir, errInput)
+	}
+	for _, z := range zips {
+		b, err := readZipXML(z)
+		if err != nil {
+			return err
+		}
+		if err := uslm.ParseTitle(b, rel, put); err != nil {
+			return fmt.Errorf("%s: %w", z, err)
+		}
+	}
+	return nil
+}
+
+// loadFixtureSections reads the cited sections committed under fixtures/uscode.
+func loadFixtureSections(dir string, rel data.Release, put func(data.LawSection) error) error {
+	root := os.DirFS(dir)
+	files, err := fs.Glob(root, path.Join(rel.ID, "t*-s*.xml"))
+	if err != nil || len(files) == 0 {
+		return fmt.Errorf("no sections in %s: %w", dir, errInput)
+	}
+	for _, f := range files {
+		var title int
+		if _, err := fmt.Sscanf(path.Base(f), "t%d-", &title); err != nil {
+			return fmt.Errorf("%s: %w", f, err)
+		}
+		frag, err := fs.ReadFile(root, f)
+		if err != nil {
+			return fmt.Errorf("read %s: %w", f, err)
+		}
+		doc := fmt.Sprintf(`<uscDoc identifier="/us/usc/t%d"><main>%s</main></uscDoc>`, title, frag)
+		if err := uslm.ParseTitle([]byte(doc), rel, put); err != nil {
+			return fmt.Errorf("%s: %w", f, err)
+		}
 	}
 	return nil
 }
@@ -281,8 +297,7 @@ func report(w io.Writer, rel data.Release, labels []label, sets map[string]data.
 // scoreLabel compares the first n detected entries with this text of one
 // version with the label.
 func scoreLabel(l label, code string, n int, set data.CitationSet, used map[int]bool, mism *[]string) tally {
-	var t tally
-	t.total = n
+	t := tally{total: n}
 	if l.State == string(data.CitationResolved) {
 		t.labelResolved = n
 	}
@@ -299,36 +314,45 @@ func scoreLabel(l label, code string, n int, set data.CitationSet, used map[int]
 		}
 		used[i] = true
 		got++
-		t.found++
-		okState := string(e.State) == l.State
-		okProv := slices.Equal(nonNil(e.ProvisionIDs), nonNil(l.Provisions))
-		if okState {
-			t.stateOK++
-		}
-		if okState && okProv {
-			t.provOK++
-		}
-		if e.State == data.CitationResolved {
-			t.detResolved++
-			if okState && okProv {
-				t.detResolvedOK++
-			}
-		}
-		if l.State == string(data.CitationResolved) && okState && okProv {
-			t.labelResolvedFound++
-		}
-		if l.State != string(data.CitationUnresolved) && e.State != data.CitationUnresolved {
-			t.labelLinkedFound++
-		}
-		if !okState || !okProv {
-			*mism = append(*mism, fmt.Sprintf("%s/%s %q: got %s %v (%s), want %s %v",
-				l.Bill, code, l.Text, e.State, e.ProvisionIDs, e.Reason, l.State, l.Provisions))
+		if msg := t.scoreEntry(l, e); msg != "" {
+			*mism = append(*mism, fmt.Sprintf("%s/%s %q: %s", l.Bill, code, l.Text, msg))
 		}
 	}
 	if got < n {
 		*mism = append(*mism, fmt.Sprintf("%s/%s %q: found %d of %d labelled occurrences", l.Bill, code, l.Text, got, n))
 	}
 	return t
+}
+
+// scoreEntry counts one detected entry against its label and returns a
+// description when it differs.
+func (t *tally) scoreEntry(l label, e data.CitationEntry) string {
+	t.found++
+	okState := string(e.State) == l.State
+	okProv := slices.Equal(nonNil(e.ProvisionIDs), nonNil(l.Provisions))
+	right := okState && okProv
+	t.count(&t.stateOK, okState)
+	t.count(&t.provOK, right)
+	if e.State == data.CitationResolved {
+		t.detResolved++
+		t.count(&t.detResolvedOK, right)
+	}
+	if l.State == string(data.CitationResolved) {
+		t.count(&t.labelResolvedFound, right)
+	}
+	if l.State != string(data.CitationUnresolved) && e.State != data.CitationUnresolved {
+		t.labelLinkedFound++
+	}
+	if right {
+		return ""
+	}
+	return fmt.Sprintf("got %s %v (%s), want %s %v", e.State, e.ProvisionIDs, e.Reason, l.State, l.Provisions)
+}
+
+func (*tally) count(n *int, ok bool) {
+	if ok {
+		*n++
+	}
 }
 
 func nonNil(s []string) []string {
@@ -346,18 +370,22 @@ func printReport(
 	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format+"\n", a...) }
 	p("# Citation resolution report")
 	p("")
-	p("Release point `%s` (current through %s). Counts are occurrences in the labelled bill versions.", rel.ID, rel.Date.Format(time.DateOnly))
+	p("Release point `%s` (current through %s). Counts are occurrences in the labelled bill versions.",
+		rel.ID, rel.Date.Format(time.DateOnly))
 	p("")
 	p("| Measure | Value |")
 	p("| --- | --- |")
 	p("| Labelled citations | %d |", all.total)
-	p("| Resolution rate (labelled citations resolved correctly / all labelled) | %s |", pct(all.detResolvedOK, all.total))
+	p("| Resolution rate (labelled citations resolved correctly / all labelled) | %s |",
+		pct(all.detResolvedOK, all.total))
 	p("| Detection (labelled citations found) | %s |", pct(all.found, all.total))
 	p("| State correct | %s |", pct(all.stateOK, all.total))
 	p("| State and provision correct | %s |", pct(all.provOK, all.total))
 	p("| Precision of `resolved` (detected resolved that are right) | %s |", pct(all.detResolvedOK, all.detResolved))
-	p("| Coverage of `resolved` (labelled resolved that were resolved right) | %s |", pct(all.labelResolvedFound, all.labelResolved))
-	p("| Linked coverage (labelled resolved or ambiguous that were linked) | %s |", pct(all.labelLinkedFound, all.labelLinked))
+	p("| Coverage of `resolved` (labelled resolved that were resolved right) | %s |",
+		pct(all.labelResolvedFound, all.labelResolved))
+	p("| Linked coverage (labelled resolved or ambiguous that were linked) | %s |",
+		pct(all.labelLinkedFound, all.labelLinked))
 	p("| Detected but not labelled | %d |", all.extra)
 	p("")
 	p("| Kind | Labelled | Found | State correct | Precision of resolved | Coverage of resolved |")

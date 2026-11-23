@@ -229,8 +229,9 @@ func TestUnresolvedListedForExitBills(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var open []string
-	for _, e := range set.Unresolved() {
+	unresolved := set.Unresolved()
+	open := make([]string, 0, len(unresolved))
+	for _, e := range unresolved {
 		if e.Reason == "" {
 			t.Errorf("%q is listed without a reason", e.Text)
 		}
