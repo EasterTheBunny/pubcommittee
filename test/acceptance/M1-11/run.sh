@@ -9,6 +9,10 @@
 # whose /.well-known/machine-access.json and /robots.txt are checked as well).
 set -eu
 cd "$(dirname "$0")/../../.."
+[ -f go.mod ] || {
+	echo "skip: Go module not present (go.mod); this script runs in the dev container with the repository mounted"
+	exit 0
+}
 port=${M1_11_PORT:-18111}
 api=http://127.0.0.1:$port
 data=$(mktemp -d)

@@ -5,6 +5,10 @@
 # Environment: DATA_DIR (optional) a data root to use; a fresh temporary one is used when unset.
 set -eu
 cd "$(dirname "$0")/../../.."
+[ -f go.mod ] || {
+	echo "skip: Go module not present (go.mod); this script runs in the dev container with the repository mounted"
+	exit 0
+}
 fail=0
 log=$(mktemp)
 check() { # name, command...
