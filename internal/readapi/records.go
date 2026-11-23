@@ -76,6 +76,10 @@ func (s *Server) ListModerationLog(w http.ResponseWriter, r *http.Request, p api
 			Id: e.ID, At: openapi_types.Date{Time: e.At.UTC().Truncate(hoursPerDay * time.Hour)},
 			Kind: e.Kind, Subject: e.Subject, Reason: e.Reason,
 		}
+		items[i].Actor, items[i].Operator = logOperator(e.Actor), logOperator(e.Operator)
+		if e.Bootstrap {
+			items[i].Bootstrap = new(true)
+		}
 		items[i].Version, items[i].AsOf, items[i].Provenance, items[i].ContentClass = meta(e.Meta)
 	}
 	out := apiv1.LogEntryPage{Items: items}
@@ -218,4 +222,12 @@ func (s *Server) GetDiscovery(w http.ResponseWriter, r *http.Request) {
 // GetOpenAPI serves the embedded specification.
 func (s *Server) GetOpenAPI(w http.ResponseWriter, r *http.Request) {
 	send(w, r, response{status: http.StatusOK, contentType: "application/yaml", body: api.OpenAPI, class: cacheShort})
+}
+
+// logOperator maps a logged administrator to its contract type; nil stays nil.
+func logOperator(o *data.LogOperator) *apiv1.LogOperator {
+	if o == nil {
+		return nil
+	}
+	return &apiv1.LogOperator{Id: o.ID, Name: o.Name}
 }

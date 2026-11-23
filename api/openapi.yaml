@@ -1149,6 +1149,21 @@ components:
             kind: { type: string }
             subject: { type: string, description: Canonical address of the affected item. }
             reason: { type: string }
+            actor:
+              $ref: '#/components/schemas/LogOperator'
+              description: The administrator who made the change, or for a roster entry the approving operator. Never a Google principal.
+            operator:
+              $ref: '#/components/schemas/LogOperator'
+              description: Roster entries only; the operator added, renamed, or removed, with the public name after the change.
+            bootstrap:
+              type: boolean
+              description: Roster entries only; true for the first roster, which needs no approving operator.
+    LogOperator:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, description: Stable operator id. }
+        name: { type: string, description: Public display name. }
     LogEntryPage:
       allOf:
         - $ref: '#/components/schemas/Page'

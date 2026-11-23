@@ -769,6 +769,18 @@ export interface components {
             /** @description Canonical address of the affected item. */
             subject: string;
             reason: string;
+            /** @description The administrator who made the change, or for a roster entry the approving operator. Never a Google principal. */
+            actor?: components["schemas"]["LogOperator"];
+            /** @description Roster entries only; the operator added, renamed, or removed, with the public name after the change. */
+            operator?: components["schemas"]["LogOperator"];
+            /** @description Roster entries only; true for the first roster, which needs no approving operator. */
+            bootstrap?: boolean;
+        };
+        LogOperator: {
+            /** @description Stable operator id. */
+            id: string;
+            /** @description Public display name. */
+            name: string;
         };
         LogEntryPage: components["schemas"]["Page"] & {
             items?: components["schemas"]["LogEntry"][];

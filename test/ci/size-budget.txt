@@ -1,3 +1,5 @@
 read-api 20000000
 job-ingest 20000000
 job-exports 20000000
+admin-api 20000000
+pubctl 20000000

@@ -334,7 +334,25 @@ type LogEntry struct {
 	Kind    string    `json:"kind"`
 	Subject string    `json:"subject"`
 	Reason  string    `json:"reason"`
-	Meta    Meta      `json:"meta"`
+	// Actor is the named administrator of an administrator action (M1-12):
+	// operator id and public name, never a Google principal. Empty for
+	// entries no administrator made.
+	Actor *LogOperator `json:"actor,omitempty"`
+	// Operator is the subject of a roster entry (operator_added,
+	// operator_renamed, operator_removed): the id and public name after the
+	// change (the last public name, for a removal). Actor is then the
+	// approving operator.
+	Operator *LogOperator `json:"operator,omitempty"`
+	// Bootstrap marks a roster entry of the very first roster, which needs
+	// no approving operator.
+	Bootstrap bool `json:"bootstrap,omitempty"`
+	Meta      Meta `json:"meta"`
+}
+
+// LogOperator is an administrator as the public log names one.
+type LogOperator struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 // IngestState records the progress of ingestion for one source.
