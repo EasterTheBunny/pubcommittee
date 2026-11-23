@@ -63,6 +63,7 @@ type BillRecord struct {
 	UpdatedAt         time.Time
 	SponsorID         string // bioguide id; empty when the bill has no sponsor
 	Sponsor           string // display name as the source prints it
+	SponsorParty      string // party code as the source prints it (D, R, I); disclosure counts only
 	LatestAction      Action
 	PolicyArea        string
 	Subjects          []string

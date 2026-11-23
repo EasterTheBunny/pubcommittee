@@ -787,6 +787,8 @@ components:
             reasons:
               type: array
               items: { type: string }
+            policy_version: { type: integer, minimum: 1, description: The selection policy version that tracked the bill; present only when tracked. }
+            tracked_since: { type: string, format: date, description: Day the bill was first tracked; present only when tracked. }
             markup_status: { type: string, enum: [in-review, eligible, not-a-candidate] }
             exclusion_reason:
               type: string
@@ -1058,6 +1060,37 @@ components:
             rules:
               type: array
               items: { type: string }
+            scope:
+              type: string
+              description: Plain-language scope statement derived from the structured fields; absent on versions that carry only `rules`.
+            mode: { type: string, enum: [pilot, general] }
+            phase: { type: string, enum: [early_pilot, steward_signoff] }
+            measure_kinds:
+              type: array
+              items: { type: string, enum: [bill, joint_resolution, simple_resolution, concurrent_resolution] }
+            exclude_kinds:
+              type: array
+              items: { type: string, enum: [war_powers_resolution, commemorative] }
+            committee_activity:
+              type: array
+              items: { type: string, enum: [hearing, markup, reported, discharged, floor, calendar] }
+            follow_companions: { type: boolean }
+            topics:
+              type: object
+              description: Focus topics by name, with the legislature's own policy areas and legislative subjects and the title terms that match before subject indexing arrives.
+              additionalProperties: { $ref: '#/components/schemas/PolicyTopic' }
+    PolicyTopic:
+      type: object
+      properties:
+        policy_areas:
+          type: array
+          items: { type: string }
+        subjects:
+          type: array
+          items: { type: string }
+        title_terms:
+          type: array
+          items: { type: string }
     LogEntry:
       allOf:
         - $ref: '#/components/schemas/Meta'

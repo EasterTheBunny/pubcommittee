@@ -5,22 +5,26 @@ import (
 	"slices"
 
 	"github.com/easterthebunny/pubcommittee/internal/data"
+	"github.com/easterthebunny/pubcommittee/internal/selection"
 )
 
 // ReasonManual is the tracked reason of a bill an operator pulled with --track.
-const ReasonManual = "manual-pull"
+// Whether the string is shown publicly is an open question for the operator.
+const ReasonManual = selection.ReasonManual
 
 // Decision is the outcome of selection policy for one bill.
 type Decision struct {
 	Tracked         bool
 	Reasons         []string
 	PolicyVersion   int
+	TrackedSince    string // YYYY-MM-DD the bill was first tracked; empty when untracked or unknown
 	MarkupStatus    string
 	ExclusionReason string
 }
 
-// Evaluator decides whether a bill is tracked. M1-06 supplies the real one;
-// ManualEvaluator is the M1-05 stand-in.
+// Evaluator decides whether a bill is tracked. PolicyEvaluator (selection.go)
+// applies the published selection policy; ManualEvaluator is the stand-in used
+// when no policy is stored.
 type Evaluator interface {
 	Evaluate(ctx context.Context, r *Run) (Decision, error)
 }
@@ -68,6 +72,8 @@ func PolicyStep(e Evaluator) Step {
 		r.Decision = d
 		r.Entry.Tracked = d.Tracked
 		r.Entry.Reasons = nonNil(d.Reasons)
+		r.Entry.PolicyVersion = d.PolicyVersion
+		r.Entry.TrackedSince = d.TrackedSince
 		r.Entry.MarkupStatus = d.MarkupStatus
 		r.Entry.ExclusionReason = d.ExclusionReason
 		r.Report.Tracked = d.Tracked

@@ -27,3 +27,7 @@ func newFetcher(cfg config) (data.BillFetcher, error) {
 	}
 	return s, nil
 }
+
+// localTarget is true where the data directory is local: --publish-policy
+// only writes there. A cloud policy version is published by an operator.
+const localTarget = true

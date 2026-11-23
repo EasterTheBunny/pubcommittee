@@ -73,7 +73,8 @@ func buildCatalog(_ context.Context, r *Run) error {
 		Bill: r.Bill, Title: rec.Title, Status: StatusOf(rec), Chamber: rec.Chamber,
 		Subjects: slices.Clone(rec.Subjects), CommitteeActivity: HasCommitteeAction(rec.CommitteeActivity),
 		OfficialLinks: OfficialLinks(rec), SearchTerms: SearchTerms(rec),
-		SponsorID: rec.SponsorID, Sponsor: rec.Sponsor, Introduced: rec.Introduced, PolicyArea: rec.PolicyArea,
+		SponsorID: rec.SponsorID, Sponsor: rec.Sponsor, SponsorParty: rec.SponsorParty,
+		Introduced: rec.Introduced, PolicyArea: rec.PolicyArea,
 		Committees: slices.Clone(rec.CommitteeActivity), Related: slices.Clone(rec.Related),
 		Reasons: []string{}, Meta: r.meta(),
 	}

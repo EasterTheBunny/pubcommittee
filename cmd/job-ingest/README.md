@@ -14,7 +14,9 @@ DATA_DIR=.local-data go run -tags local ./cmd/job-ingest --source govinfo --bill
 | --- | --- |
 | `--bill <id>` | Bill id with jurisdiction and session, `us-119-hr-4313`. Repeat or comma-separate for several. |
 | `--source fixtures\|govinfo` | Where status and text come from (env `INGEST_SOURCE`, default `fixtures`; `--fixtures-dir` / `FIXTURES_DIR`, default `fixtures`). |
-| `--track` | Track the bill (reason `manual-pull`): fetch, store and parse every text version. A bill already tracked stays tracked. Without it the pull writes the catalog entry only and never fetches text. Selection policy (M1-06) replaces this decision. |
+| `--track` | Track the bill (reason `manual-pull`): fetch, store and parse every text version. A bill already tracked stays tracked. Without it, selection policy decides: a tracked bill's text is fetched, any other bill gets a catalog entry only. A bill of an excluded measure kind is never tracked, `--track` or not. |
+| `--publish-policy v1\|<file>` | Store a selection policy version in the local data directory (`v1` is built in; a file is a JSON policy document) with its public log entry (`--reason`). Local target only; republishing identical content is a no-op, changed content for a stored version is refused. |
+| `--evaluate` | Evaluate every stored catalog entry against the latest stored policy. Writes the entries that change (markup status, tracked, reasons, policy version) and the breakdown, and lists `newly_tracked` bills: pull their text with `--bill <id>`. Tracked bills are never untracked. With `--dry-run` it writes nothing. |
 | `--dry-run` | Report what would change; write nothing, fetch no text. |
 | `--verify` | Re-fetch stored originals and compare SHA-256; a mismatch is a failure and nothing is overwritten. |
 
@@ -25,4 +27,14 @@ Stored, as in [architecture § Data recorded per ingest](../../architecture/READ
 
 A repeat pull fetches only versions not stored yet. Pulls of the same bill may overlap: stored versions are write-once and the other documents are rewritten with identical content.
 
-Extending the pull: `internal/ingest.DefaultSteps()` is an ordered list; insert steps with `Pipeline.After(name, step)` or swap one with `Replace`. M1-06 replaces `policy`; M1-07 and M1-08 insert after `after-store` and read `Run.Stored`.
+Selection policy (M1-06): with a policy stored (`--publish-policy v1`), every pull evaluates it and sets the entry's `markup_status`, `reasons`, `policy_version` and `tracked_since`. With none stored, a pull warns and only `--track` tracks. Every pull run and every `--evaluate` run writes the tracked-set breakdown (counts by topic, by sponsor party, companions, administrator-selected) to `exports/tracked-set-breakdown.json`.
+
+```sh
+DATA_DIR=.local-data go run -tags local ./cmd/job-ingest --publish-policy v1
+DATA_DIR=.local-data go run -tags local ./cmd/job-ingest --bill us-119-hr-84 --bill us-119-s-6
+DATA_DIR=.local-data go run -tags local ./cmd/job-ingest --evaluate
+```
+
+In the fixtures source a bill the policy tracks from the catalog sample has no text to fetch; that pull reports a failure for each version and keeps the catalog entry.
+
+Extending the pull: `internal/ingest.DefaultSteps()` is an ordered list; insert steps with `Pipeline.After(name, step)` or swap one with `Replace`. M1-06 replaced `policy` (in `cmd/job-ingest/policy.go`); M1-07 and M1-08 insert after `after-store` and read `Run.Stored`.

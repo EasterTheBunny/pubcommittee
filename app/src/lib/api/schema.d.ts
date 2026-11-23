@@ -517,6 +517,13 @@ export interface components {
             committee_activity?: boolean;
             tracked: boolean;
             reasons?: string[];
+            /** @description The selection policy version that tracked the bill; present only when tracked. */
+            policy_version?: number;
+            /**
+             * Format: date
+             * @description Day the bill was first tracked; present only when tracked.
+             */
+            tracked_since?: string;
             /** @enum {string} */
             markup_status: "in-review" | "eligible" | "not-a-candidate";
             /** @description Present only when `markup_status` is `not-a-candidate`. */
@@ -684,6 +691,25 @@ export interface components {
         SelectionPolicy: components["schemas"]["Meta"] & {
             policy_version: number;
             rules: string[];
+            /** @description Plain-language scope statement derived from the structured fields; absent on versions that carry only `rules`. */
+            scope?: string;
+            /** @enum {string} */
+            mode?: "pilot" | "general";
+            /** @enum {string} */
+            phase?: "early_pilot" | "steward_signoff";
+            measure_kinds?: ("bill" | "joint_resolution" | "simple_resolution" | "concurrent_resolution")[];
+            exclude_kinds?: ("war_powers_resolution" | "commemorative")[];
+            committee_activity?: ("hearing" | "markup" | "reported" | "discharged" | "floor" | "calendar")[];
+            follow_companions?: boolean;
+            /** @description Focus topics by name, with the legislature's own policy areas and legislative subjects and the title terms that match before subject indexing arrives. */
+            topics?: {
+                [key: string]: components["schemas"]["PolicyTopic"];
+            };
+        };
+        PolicyTopic: {
+            policy_areas?: string[];
+            subjects?: string[];
+            title_terms?: string[];
         };
         LogEntry: components["schemas"]["Meta"] & {
             id: string;

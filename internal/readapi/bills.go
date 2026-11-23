@@ -251,6 +251,7 @@ func toCatalogEntry(e data.CatalogEntry) apiv1.CatalogEntry {
 	if e.Tracked {
 		out.Address = new(billPath(id))
 	}
+	addTracking(&out, e)
 	return out
 }
 
