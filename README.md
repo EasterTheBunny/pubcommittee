@@ -109,6 +109,28 @@ For a question not covered above, follow these steps in order:
 
 ## Run the app
 
+The whole app runs locally in Docker (Docker with Compose v2 is the only requirement): the web app, `read-api`, `admin-api`, and an OpenTelemetry Collector, over a data directory filled from the example bills in `fixtures/`. No cloud account and no model calls; explanations and summaries come from the fake generator.
+
+```sh
+scripts/local.sh build    # build every image
+scripts/local.sh up       # serve; Ctrl+C stops it and removes every container and network
+scripts/local.sh down     # stop and remove the stack (use after `up -d`, or to clean up after a crash)
+```
+
+| Service | Address |
+| --- | --- |
+| Web app | http://localhost:3000 |
+| `read-api` | http://localhost:8080 (spec at `/v1/openapi.yaml`) |
+| `admin-api` | http://localhost:8081, for `pubctl` ([cmd/pubctl/README.md](cmd/pubctl/README.md)) |
+
+- **First run.** `up` fills `.local-data/` when it is empty: US Code provisions, selection policy v1, the 200-bill catalog sample, the three exit bills with every version, citations and comparisons, generated explanations, exports, and the change feed. `scripts/local.sh seed` refills it on demand.
+- **In the background.** `scripts/local.sh up -d` returns once every service is healthy; stop it with `scripts/local.sh down`.
+- **Start over.** Your data stays in `.local-data/` (git-ignored) across runs. Delete that directory to start from the example data again.
+- **Settings.** `COMPOSE_PROJECT` names the Compose project (default `pubcommittee`). `RATE_LIMITS` overrides `read-api`'s limits, which the script raises for one local browser.
+- **One job at a time.** `docker compose --profile jobs run --rm job-ingest --bill <id> --track` (likewise `job-summarize`, `job-exports`; flags in each `cmd/<job>/README.md`).
+
+Front-end work with hot reload, against a running stack:
+
 ```sh
 cd app
 npm install

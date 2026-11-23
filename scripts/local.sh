@@ -40,6 +40,8 @@ build() {
 seed() {
 	# Created here, owned by you, so Docker does not create it as root.
 	mkdir -p .local-data
+	# The jobs push metrics to the collector; without it each job waits out its flush timeout.
+	dc up -d --wait otel-collector >/dev/null
 	echo "seed: US Code provisions and selection policy"
 	job job-ingest --law
 	job job-ingest --publish-policy v1 --reason "local run"
@@ -93,7 +95,10 @@ up)
 	up "$@"
 	;;
 down) down ;;
-seed) seed ;;
+seed)
+	seed
+	down >/dev/null 2>&1
+	;;
 -h | --help | help) usage ;;
 *) usage 2 ;;
 esac
