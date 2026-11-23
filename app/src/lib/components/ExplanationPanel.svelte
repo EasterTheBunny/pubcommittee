@@ -29,15 +29,20 @@
 					{/each}
 				</div>
 
-				<div>
-					<h4 class="eyebrow">What changes</h4>
-					<p data-content-class={e.content_class}>{e.what_changes}</p>
-				</div>
+				<!-- Each part shows only when the explanation has it (design/tasks/m1/FEEDBACK.md item 1). -->
+				{#if e.what_changes?.trim()}
+					<div>
+						<h4 class="eyebrow">What changes</h4>
+						<p data-content-class={e.content_class}>{e.what_changes}</p>
+					</div>
+				{/if}
 
-				<div>
-					<h4 class="eyebrow">Why it matters</h4>
-					<p data-content-class={e.content_class}>{e.why_it_matters}</p>
-				</div>
+				{#if e.why_it_matters?.trim()}
+					<div>
+						<h4 class="eyebrow">Why it matters</h4>
+						<p data-content-class={e.content_class}>{e.why_it_matters}</p>
+					</div>
+				{/if}
 
 				{#if e.current_text}
 					<div>

@@ -56,7 +56,8 @@ async function catalogEntry(f: Fetch, billId: string): Promise<CatalogEntry | nu
 	const r = await readApi.listBills(f, { scope: 'catalog', q: billId, limit: 50 });
 	if (!r.ok) return null;
 	const items = (r.data.items ?? []) as CatalogEntry[];
-	return items.find((e) => e.id === billId && !e.tracked) ?? null;
+	// Untracked, or tracked with no official text stored yet (the text pull is its own step).
+	return items.find((e) => e.id === billId) ?? null;
 }
 
 export async function loadBillPage(

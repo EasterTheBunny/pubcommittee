@@ -2,7 +2,8 @@
 	import { catalogHref } from '#lib/links.ts';
 	import type { CatalogEntry } from '#lib/types.ts';
 
-	// A catalog entry that is not in review: links to the legislature's pages and never shows text.
+	// A catalog entry with no text here: not in review (links to the legislature's pages and never
+	// shows text), or in review with its official text not stored yet.
 	let { entry }: { entry: CatalogEntry } = $props();
 </script>
 
@@ -14,10 +15,17 @@
 			{entry.ref.number}{#if entry.status}
 				· {entry.status}{/if}
 		</p>
-		<p class="mt-3 text-[15px] text-ink-2">
-			This bill is not in review, so PubCommittee does not show its text. Read it on the
-			legislature's own pages.
-		</p>
+		{#if entry.tracked}
+			<p class="mt-3 text-[15px] text-ink-2">
+				This bill is in review, but its official text has not been added here yet. Until it is, read
+				it on the legislature's own pages.
+			</p>
+		{:else}
+			<p class="mt-3 text-[15px] text-ink-2">
+				This bill is not in review, so PubCommittee does not show its text. Read it on the
+				legislature's own pages.
+			</p>
+		{/if}
 		{#if entry.exclusion_reason}
 			<p class="mt-2 text-sm text-muted">Why it is not a candidate: {entry.exclusion_reason}</p>
 		{/if}

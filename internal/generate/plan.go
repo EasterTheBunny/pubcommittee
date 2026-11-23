@@ -244,11 +244,14 @@ func (b builder) linked(set data.CitationSet) (tasks []Task, cited map[string]bo
 	return tasks, cited, nil
 }
 
-// freestanding plans a bill-only explanation for each section not in cited.
+// freestanding plans a bill-only explanation for each section not in cited,
+// except a section that only gives the Act its short title: its text says all
+// there is to say, so an explanation would only repeat it (operator feedback,
+// design/tasks/m1/FEEDBACK.md item 2).
 func (b builder) freestanding(cited map[string]bool) ([]Task, error) {
 	var tasks []Task
 	for _, s := range b.ver.Sections {
-		if len(s.Lines) == 0 || cited[strings.Join(s.Path, ".")] {
+		if len(s.Lines) == 0 || cited[strings.Join(s.Path, ".")] || shortTitleOnly(s) {
 			continue
 		}
 		t, err := b.explanation(data.TaskBillExplanation, strings.Join(s.Path, "."), s, nil)
@@ -308,4 +311,20 @@ func sectionNamed(v data.OfficialVersion, path []string) *data.Section {
 		}
 	}
 	return nil
+}
+
+// shortTitleOnly reports whether every line of s only names the Act ("This Act
+// may be cited as ..."), as a short-title section does. A section that also
+// carries a table of contents or other provisions is not.
+func shortTitleOnly(s data.Section) bool {
+	if len(s.Lines) == 0 {
+		return false
+	}
+	for _, l := range s.Lines {
+		t := strings.ToLower(strings.TrimSpace(l.Text))
+		if !strings.Contains(t, " may be cited as ") {
+			return false
+		}
+	}
+	return true
 }

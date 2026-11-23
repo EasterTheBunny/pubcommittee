@@ -6,9 +6,9 @@ Context for every item: the local run uses the fake generator (`adapters/fakegen
 
 | # | Seen | Status |
 | --- | --- | --- |
-| 1 | "What changes" repeats the bill text; "Why it matters" is empty | Open: proposal below |
-| 2 | Sections whose text needs no explanation (the short title) still get an auto-generated block | Open: proposal below |
-| 3 | Most bill links answer 404 | Open: needs the links clicked |
+| 1 | "What changes" repeats the bill text; "Why it matters" is empty | Done: each part shows only when it has content |
+| 2 | Sections whose text needs no explanation (the short title) still get an auto-generated block | Done: short-title-only sections are not explained |
+| 3 | Most bill links answer 404 | Done: a tracked bill with no stored text has a page |
 
 ## 1. "What changes" repeats the bill text; "Why it matters" is empty
 
@@ -26,6 +26,8 @@ Context for every item: the local run uses the fake generator (`adapters/fakegen
 - Show "Why it matters" only when it has content.
 - Owners: M1-13 (UI), M1-09 (whether `bill-explanation` should ask for a `why`, and how the panel tells a copy from a paraphrase).
 
+**Decided (operator, 2026-11-22).** With a live model "What changes" is a paraphrase, so keep it, and show "What changes" and "Why it matters" each only when it has content. Done in `app/src/lib/components/ExplanationPanel.svelte`. The fake generator's verbatim "What changes" is a local-run artefact and stays.
+
 ## 2. No explanation for sections that need none
 
 **Seen (2026-11-22).** When the bill title does not change, there is nothing to explain, yet the section (for example "This Act may be cited as ...") carries an auto-generated block.
@@ -33,6 +35,8 @@ Context for every item: the local run uses the fake generator (`adapters/fakegen
 **Cause.** Planning creates a `bill-explanation` task for every section without a resolved citation, including the short title (`internal/generate/plan.go`).
 
 **Proposal.** Skip the explanation for short-title sections, and for any section whose text is unchanged from the previous version when the explanation would only restate it; show no auto-generated block there. Owner: M1-09 (planning), with M1-08 (unchanged-section data from the stored comparison).
+
+**Done (2026-11-22).** Planning no longer creates an explanation for a section whose every line only names the Act ("... may be cited as ..."); a short title that sits with a table of contents or other provisions is still explained (`shortTitleOnly` in `internal/generate/plan.go`, tested in `plan_shorttitle_test.go`). Explanations already stored stay until the data is rebuilt. Skipping unchanged sections across versions is not built.
 
 ## 3. Most bill links answer 404
 
@@ -43,4 +47,6 @@ Context for every item: the local run uses the fake generator (`adapters/fakegen
 - Congress.gov answers `403` to every automated request, so their status could not be checked from the local run.
 - The local seed tracks only the three exit bills; every other catalog bill has a catalog entry and no text, so an in-app page for it shows no text by design (01 § Public catalog).
 
-**Needed.** Which links were clicked (page and link text, or the URL), to tell a wrong link from an untracked bill or from Congress.gov itself. Owner: M1-13 (links), M1-05 (link source).
+**Found (2026-11-22): `/bills/us-119-s-219`.** The selection policy tracks this bill, but the fixtures hold only its status record, so no text version is stored (the text pull is its own step). The app looked for a catalog entry only among untracked bills, found none, and answered 404, although `read-api` serves the bill.
+
+**Done.** The bill page now falls back to the catalog entry whether or not the bill is tracked, and says "This bill is in review, but its official text has not been added here yet", with the official links (`app/src/lib/server/bill.ts`, `UntrackedBill.svelte`). `test/acceptance/M1-16/check.mjs` checks that such a bill answers 200 with that notice.

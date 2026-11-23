@@ -266,6 +266,16 @@ report('every summary statement points at lines that exist in the page', 'summar
 	const untracked = all.find((e) => !e.tracked);
 	const up = await get(app, `/bills/${untracked.id}`);
 	check('an untracked catalog bill shows no text', up.status === 200 && !/data-line=/.test(up.body), `${untracked.id}`);
+	// Tracked by the policy before its text was pulled (the pull is its own step): a page, not a 404.
+	const noText = [];
+	for (const e of all.filter((x) => x.tracked && !bills.includes(x.id))) {
+		const v = await fetch(`${api}/v1/bills/${e.id}/v/latest`);
+		if (v.status === 404) noText.push(e.id);
+	}
+	if (noText.length) {
+		const nt = await get(app, `/bills/${noText[0]}`);
+		check('a tracked bill with no stored text has a page that says so', nt.status === 200 && /has not been added here yet/.test(visible(nt.body)) && !/data-line=/.test(nt.body), `${noText[0]} answered ${nt.status}`);
+	}
 	const tr = await get(app, `/bills/${bills[0]}`);
 	check('a tracked bill shows why it is in review', /In review because/.test(tr.body), 'reason missing');
 }
