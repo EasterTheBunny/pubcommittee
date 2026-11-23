@@ -18,8 +18,9 @@ type Store struct {
 	mu sync.RWMutex
 
 	// billtext.go: keyed by data.VersionRef.String().
-	versions map[string]data.OfficialVersion
-	sources  map[string][]byte
+	versions   map[string]data.OfficialVersion
+	sources    map[string][]byte
+	sourceInfo map[string]data.SourceInfo
 	// billtext.go: published files keyed by path; once marks write-once paths.
 	files map[string][]byte
 	once  map[string]bool
@@ -48,6 +49,7 @@ func New() *Store {
 	return &Store{
 		versions:     map[string]data.OfficialVersion{},
 		sources:      map[string][]byte{},
+		sourceInfo:   map[string]data.SourceInfo{},
 		files:        map[string][]byte{},
 		once:         map[string]bool{},
 		bills:        map[string]data.Bill{},

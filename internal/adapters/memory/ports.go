@@ -4,14 +4,15 @@ import "github.com/easterthebunny/pubcommittee/internal/data"
 
 // Compile-time port checks.
 var (
-	_ data.BillText     = (*Store)(nil)
-	_ data.Publisher    = (*Store)(nil)
-	_ data.PublicDocs   = (*Store)(nil)
-	_ data.PlatformDocs = (*Store)(nil)
-	_ data.Moderation   = (*Store)(nil)
-	_ data.BillSource   = (*Store)(nil)
-	_ data.LawSource    = (*Store)(nil)
-	_ data.Generator    = (*Store)(nil)
+	_ data.BillText         = (*Store)(nil)
+	_ data.Publisher        = (*Store)(nil)
+	_ data.PublicDocs       = (*Store)(nil)
+	_ data.PlatformDocs     = (*Store)(nil)
+	_ data.Moderation       = (*Store)(nil)
+	_ data.BillSource       = (*Store)(nil)
+	_ data.SourceInfoReader = (*Store)(nil)
+	_ data.LawSource        = (*Store)(nil)
+	_ data.Generator        = (*Store)(nil)
 )
 
 // PlatformPorts returns the platform group backed by s.

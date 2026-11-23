@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<billStatus>
+  <version>3.0.0</version>
+  <bill>
+    <number>500</number>
+    <updateDate>2026-06-23T19:54:25Z</updateDate>
+    <updateDateIncludingText>2026-06-23T19:54:25Z</updateDateIncludingText>
+    <originChamber>Senate</originChamber>
+    <originChamberCode>S</originChamberCode>
+    <type>S</type>
+    <introducedDate>2025-02-10</introducedDate>
+    <congress>119</congress>
+    <legislationUrl>https://www.congress.gov/bill/119th-congress/senate-bill/500</legislationUrl>
+    <committees>
+      <item>
+        <systemCode>ssbk00</systemCode>
+        <name>Banking, Housing, and Urban Affairs Committee</name>
+        <chamber>Senate</chamber>
+        <type>Standing</type>
+        <activities>
+          <item>
+            <name>Referred To</name>
+            <date>2025-02-10T23:10:23Z</date>
+          </item>
+        </activities>
+      </item>
+    </committees>
+    <relatedBills>
+      <item>
+        <title>SUPPORT for Patients and Communities Reauthorization Act of 2025</title>
+        <congress>119</congress>
+        <number>2121</number>
+        <type>S</type>
+        <latestAction>
+          <actionDate>2025-06-18</actionDate>
+          <text>Read twice and referred to the Committee on Health, Education, Labor, and Pensions.</text>
+        </latestAction>
+        <relationshipDetails>
+          <item>
+            <type>Related bill</type>
+            <identifiedBy>CRS</identifiedBy>
+          </item>
+        </relationshipDetails>
+      </item>
+      <item>
+        <title>SUPPORT for Patients and Communities Reauthorization Act of 2025</title>
+        <congress>119</congress>
+        <number>2483</number>
+        <type>HR</type>
+        <latestAction>
+          <actionDate>2025-12-01</actionDate>
+          <text>Became Public Law No: 119-44.</text>
+        </latestAction>
+        <relationshipDetails>
+          <item>
+            <type>Contained in public law</type>
+            <identifiedBy>CRS</identifiedBy>
+          </item>
+          <item>
+            <type>Related bill</type>
+            <identifiedBy>CRS</identifiedBy>
+          </item>
+        </relationshipDetails>
+      </item>
+      <item>
+        <title>Bipartisan Health Care Act</title>
+        <congress>119</congress>
+        <number>891</number>
+        <type>S</type>
+        <latestAction>
+          <actionDate>2025-03-06</actionDate>
+          <text>Read twice and referred to the Committee on Finance.</text>
+        </latestAction>
+        <relationshipDetails>
+          <item>
+            <type>Related bill</type>
+            <identifiedBy>CRS</identifiedBy>
+          </item>
+        </relationshipDetails>
+      </item>
+      <item>
+        <title>Lower Costs for Everyday Americans Act</title>
+        <congress>119</congress>
+        <number>1768</number>
+        <type>HR</type>
+        <latestAction>
+          <actionDate>2025-03-03</actionDate>
+          <text>Referred to the Committee on Energy and Commerce, and in addition to the Committees on Ways and Means, the Budget, the Judiciary, and Education and Workforce, for a period to be subsequently determined by the Speaker, in each case for consideration of such provisions as fall within the jurisdiction of the committee concerned.</text>
+        </latestAction>
+        <relationshipDetails>
+          <item>
+            <type>Related bill</type>
+            <identifiedBy>CRS</identifiedBy>
+          </item>
+        </relationshipDetails>
+      </item>
+    </relatedBills>
+    <actions>
+      <item>
+        <actionDate>2025-02-10</actionDate>
+        <committees>
+          <item>
+            <systemCode>ssbk00</systemCode>
+            <name>Banking, Housing, and Urban Affairs Committee</name>
+          </item>
+        </committees>
+        <sourceSystem>
+          <name>Senate</name>
+        </sourceSystem>
+        <text>Read twice and referred to the Committee on Banking, Housing, and Urban Affairs.</text>
+        <type>IntroReferral</type>
+      </item>
+      <item>
+        <actionDate>2025-02-10</actionDate>
+        <text>Introduced in Senate</text>
+        <type>IntroReferral</type>
+        <actionCode>10000</actionCode>
+        <sourceSystem>
+          <code>9</code>
+          <name>Library of Congress</name>
+        </sourceSystem>
+      </item>
+    </actions>
+    <sponsors>
+      <item>
+        <bioguideId>M000355</bioguideId>
+        <fullName>Sen. McConnell, Mitch [R-KY]</fullName>
+        <firstName>Mitch</firstName>
+        <lastName>McConnell</lastName>
+        <party>R</party>
+        <state>KY</state>
+        <isByRequest>N</isByRequest>
+      </item>
+    </sponsors>
+    <cosponsors>
+      <item>
+        <bioguideId>H000601</bioguideId>
+        <fullName>Sen. Hagerty, Bill [R-TN]</fullName>
+        <firstName>Bill</firstName>
+        <lastName>Hagerty</lastName>
+        <party>R</party>
+        <state>TN</state>
+        <sponsorshipDate>2025-02-10</sponsorshipDate>
+        <isOriginalCosponsor>True</isOriginalCosponsor>
+      </item>
+      <item>
+        <bioguideId>F000479</bioguideId>
+        <fullName>Sen. Fetterman, John [D-PA]</fullName>
+        <firstName>John</firstName>
+        <lastName>Fetterman</lastName>
+        <party>D</party>
+        <state>PA</state>
+        <middleName>K.</middleName>
+        <sponsorshipDate>2025-02-10</sponsorshipDate>
+        <isOriginalCosponsor>True</isOriginalCosponsor>
+      </item>
+      <item>
+        <bioguideId>M001242</bioguideId>
+        <fullName>Sen. Moreno, Bernie [R-OH]</fullName>
+        <firstName>Bernie</firstName>
+        <lastName>Moreno</lastName>
+        <party>R</party>
+        <state>OH</state>
+        <sponsorshipDate>2025-05-01</sponsorshipDate>
+        <isOriginalCosponsor>False</isOriginalCosponsor>
+      </item>
+    </cosponsors>
+    <notes>
+      <item>
+        <text><![CDATA[The text of <a href="https://www.congress.gov/bill/119/S/500" target="_blank">S.500</a> is contained in the text of <a href="https://www.congress.gov/bill/119/HR/2483" target="_blank">H.R.2483</a>, which became Public Law 119-44.]]></text>
+      </item>
+    </notes>
+    <policyArea>
+      <name>Labor and Employment</name>
+    </policyArea>
+    <subjects>
+      <legislativeSubjects>
+        <item>
+          <name>Drug, alcohol, tobacco use</name>
+          <updateDate>2026-01-23T18:31:52Z</updateDate>
+        </item>
+        <item>
+          <name>Employment and training programs</name>
+          <updateDate>2026-01-23T18:32:06Z</updateDate>
+        </item>
+        <item>
+          <name>Housing and community development funding</name>
+          <updateDate>2026-01-23T18:32:16Z</updateDate>
+        </item>
+        <item>
+          <name>Labor market</name>
+          <updateDate>2026-01-23T18:32:01Z</updateDate>
+        </item>
+        <item>
+          <name>Long-term, rehabilitative, and terminal care</name>
+          <updateDate>2026-01-23T18:31:57Z</updateDate>
+        </item>
+        <item>
+          <name>Unemployment</name>
+          <updateDate>2026-01-23T18:32:11Z</updateDate>
+        </item>
+      </legislativeSubjects>
+      <policyArea>
+        <name>Labor and Employment</name>
+        <updateDate>2025-03-12T16:37:03Z</updateDate>
+      </policyArea>
+    </subjects>
+    <summaries>
+      <summary>
+        <versionCode>00</versionCode>
+        <actionDate>2025-02-10</actionDate>
+        <actionDesc>Introduced in Senate</actionDesc>
+        <updateDate>2026-06-23T19:54:18Z</updateDate>
+        <text><![CDATA[<p><strong>Comprehensive Addiction Recovery through Effective Employment and Reentry Act of 2025 or the CAREER Act of 2025</strong></p><p>This bill reauthorizes and expands programs to assist individuals in substance use disorder&nbsp;treatment and recovery to live independently and participate in the workforce.</p><p>Specifically, the bill reauthorizes through FY2030 the Substance Abuse and Mental Health Services Administration (SAHMSA)&nbsp;Treatment, Recovery, and Workforce Support Grant Program, which provides employment training and recovery support services in coordination&nbsp;with state and local stakeholders. The bill further authorizes using 5% of such grant&nbsp;funds for transportation services and requires grantees to report on the employment and earnings outcomes of program participants.</p><p>The bill also reauthorizes through FY20230 the Department of Housing and Urban Development (HUD) Recovery Housing Pilot Program, which assists states in providing individuals in recovery from a substance use disorder with stable, temporary housing for up to two years.</p>]]></text>
+      </summary>
+    </summaries>
+    <title>CAREER Act of 2025</title>
+    <titles>
+      <item>
+        <titleType>Display Title</titleType>
+        <titleTypeCode>45</titleTypeCode>
+        <title>CAREER Act of 2025</title>
+        <updateDate>2025-05-02T11:03:16Z</updateDate>
+      </item>
+      <item>
+        <titleType>Short Title(s) as Introduced</titleType>
+        <titleTypeCode>101</titleTypeCode>
+        <title>CAREER Act of 2025</title>
+        <updateDate>2025-03-12T02:38:22Z</updateDate>
+        <billTextVersionName>Introduced in Senate</billTextVersionName>
+        <billTextVersionCode>IS</billTextVersionCode>
+      </item>
+      <item>
+        <titleType>Short Title(s) as Introduced</titleType>
+        <titleTypeCode>101</titleTypeCode>
+        <title>Comprehensive Addiction Recovery through Effective Employment and Reentry Act of 2025</title>
+        <updateDate>2025-03-12T02:38:22Z</updateDate>
+        <billTextVersionName>Introduced in Senate</billTextVersionName>
+        <billTextVersionCode>IS</billTextVersionCode>
+      </item>
+      <item>
+        <titleType>Official Title as Introduced</titleType>
+        <titleTypeCode>6</titleTypeCode>
+        <title>A bill to reauthorize certain programs under the SUPPORT for Patients and Communities Act, and for other purposes.</title>
+        <updateDate>2025-03-12T02:33:35Z</updateDate>
+        <billTextVersionName>Introduced in Senate</billTextVersionName>
+        <billTextVersionCode>IS</billTextVersionCode>
+      </item>
+    </titles>
+    <textVersions>
+      <item>
+        <type>Introduced in Senate</type>
+        <date>2025-02-10T05:00:00Z</date>
+        <formats>
+          <item>
+            <url>https://www.govinfo.gov/content/pkg/BILLS-119s500is/xml/BILLS-119s500is.xml</url>
+          </item>
+        </formats>
+      </item>
+    </textVersions>
+    <latestAction>
+      <actionDate>2025-02-10</actionDate>
+      <text>Read twice and referred to the Committee on Banking, Housing, and Urban Affairs.</text>
+    </latestAction>
+  </bill>
+  <dublinCore xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:format>text/xml</dc:format>
+    <dc:language>EN</dc:language>
+    <dc:rights>Pursuant to Title 17 Section 105 of the United States Code, this file is not subject to copyright protection and is in the public domain.</dc:rights>
+    <dc:contributor>Congressional Research Service, Library of Congress</dc:contributor>
+    <dc:description>This file contains bill summaries and statuses for federal legislation. A bill summary describes the most significant provisions of a piece of legislation and details the effects the legislative text may have on current law and federal programs. Bill summaries are authored by the Congressional Research Service (CRS) of the Library of Congress. As stated in Public Law 91-510 (2 USC 166 (d)(6)), one of the duties of CRS is "to prepare summaries and digests of bills and resolutions of a public general nature introduced in the Senate or House of Representatives". For more information, refer to the User Guide that accompanies this file.</dc:description>
+  </dublinCore>
+</billStatus>

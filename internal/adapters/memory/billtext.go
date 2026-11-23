@@ -122,6 +122,8 @@ func (s *Store) PutVersion(ctx context.Context, v data.OfficialVersion, sourceXM
 		return fmt.Errorf("put version: %w", err)
 	}
 	key := v.Ref.String()
+	info := v.Source
+	v.Source = data.SourceInfo{} // provenance is kept beside the source, not in the version
 	want := cloneVersion(v)
 	wantSrc := cloneBytes(sourceXML)
 	s.mu.Lock()
@@ -134,7 +136,26 @@ func (s *Store) PutVersion(ctx context.Context, v data.OfficialVersion, sourceXM
 	}
 	s.versions[key] = want
 	s.sources[key] = wantSrc
+	s.sourceInfo[key] = info
 	return nil
+}
+
+// GetSourceInfo returns where the original of a version came from; the first
+// write wins, as with the source itself.
+func (s *Store) GetSourceInfo(ctx context.Context, ref data.VersionRef) (data.SourceInfo, error) {
+	if err := ctx.Err(); err != nil {
+		return data.SourceInfo{}, fmt.Errorf("get source info: %w", err)
+	}
+	if err := ref.Validate(); err != nil {
+		return data.SourceInfo{}, fmt.Errorf("get source info: %w", err)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	info, ok := s.sourceInfo[ref.String()]
+	if !ok {
+		return data.SourceInfo{}, fmt.Errorf("get source info %s: %w", ref, data.ErrNotFound)
+	}
+	return info, nil
 }
 
 // PutImmutable stores a file at a write-once path. Identical bytes are a

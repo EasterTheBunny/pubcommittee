@@ -15,8 +15,8 @@
 // generations and preconditions beyond PutReplaceableIf, bucket and object
 // IAM, retention locks, Cloud CDN behavior, listing consistency limits,
 // object size and request rate limits, and source URL and retrieved-at
-// metadata (the Publisher port does not carry them; the sidecar fields stay
-// empty until the port does). Paths ending in ".meta.json" are reserved.
+// metadata beyond what OfficialVersion.Source carries (recorded in the
+// source.xml sidecar by PutVersion). Paths ending in ".meta.json" are reserved.
 package fsobject
 
 import (
@@ -32,6 +32,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/easterthebunny/pubcommittee/internal/adapters/fsutil"
 	"github.com/easterthebunny/pubcommittee/internal/data"
@@ -59,6 +60,8 @@ type Store struct {
 var (
 	_ data.BillText  = (*Store)(nil)
 	_ data.Publisher = (*Store)(nil)
+
+	_ data.SourceInfoReader = (*Store)(nil)
 )
 
 // New validates cfg and returns a Store. It touches only the data root.
@@ -233,13 +236,38 @@ func (s *Store) PutVersion(ctx context.Context, v data.OfficialVersion, sourceXM
 		return fmt.Errorf("put version: encode: %w: %w", data.ErrInvalid, err)
 	}
 	dir := versionDir(v.Ref)
-	if err := s.putOnce(path.Join(dir, "source.xml"), sourceXML); err != nil {
+	if err := s.putOnce(path.Join(dir, "source.xml"), sourceXML, v.Source); err != nil {
 		return fmt.Errorf("put version %s: %w", v.Ref, err)
 	}
-	if err := s.putOnce(path.Join(dir, "text.json"), text); err != nil {
+	if err := s.putOnce(path.Join(dir, "text.json"), text, data.SourceInfo{}); err != nil {
 		return fmt.Errorf("put version %s: %w", v.Ref, err)
 	}
 	return nil
+}
+
+// GetSourceInfo returns the source URL and retrieval time recorded with the
+// original XML of a version; both are zero when the version was written
+// without them.
+func (s *Store) GetSourceInfo(ctx context.Context, ref data.VersionRef) (data.SourceInfo, error) {
+	if err := ctx.Err(); err != nil {
+		return data.SourceInfo{}, fmt.Errorf("get source info: %w", err)
+	}
+	if err := ref.Validate(); err != nil {
+		return data.SourceInfo{}, fmt.Errorf("get source info: %w", err)
+	}
+	m, err := s.readMeta(path.Join(versionDir(ref), "source.xml"))
+	if err != nil {
+		return data.SourceInfo{}, fmt.Errorf("get source info %s: %w", ref, err)
+	}
+	info := data.SourceInfo{URL: m.SourceURL}
+	if m.RetrievedAt != "" {
+		t, err := time.Parse(time.RFC3339, m.RetrievedAt)
+		if err != nil {
+			return data.SourceInfo{}, fmt.Errorf("get source info %s: %w: %w", ref, data.ErrUnavailable, err)
+		}
+		info.RetrievedAt = t
+	}
+	return info, nil
 }
 
 // PutImmutable stores a file at a write-once path. Identical bytes are a
@@ -256,7 +284,7 @@ func (s *Store) PutImmutable(ctx context.Context, p string, body []byte) error {
 		return fmt.Errorf("put immutable %s: %w", p, err)
 	}
 	defer unlock()
-	if err := s.putOnce(p, body); err != nil {
+	if err := s.putOnce(p, body, data.SourceInfo{}); err != nil {
 		return fmt.Errorf("put immutable %s: %w", p, err)
 	}
 	return nil
@@ -351,7 +379,7 @@ func (s *Store) ETag(ctx context.Context, p string) (string, error) {
 
 // putOnce writes body at a write-once path. An existing identical write-once
 // file is a no-op; anything else already there is ErrConflict.
-func (s *Store) putOnce(p string, body []byte) error {
+func (s *Store) putOnce(p string, body []byte, info data.SourceInfo) error {
 	abs := s.abs(p)
 	created, err := writeOnce(abs, body)
 	if err != nil {
@@ -359,9 +387,12 @@ func (s *Store) putOnce(p string, body []byte) error {
 	}
 	if created {
 		// The body is complete before its sidecar; readers of the body need none.
-		return s.writeMeta(p, Meta{
-			ContentType: contentType(p), CacheControl: cacheImmutable, Immutable: true, SHA256: sum(body),
-		})
+		m := Meta{ContentType: contentType(p), CacheControl: cacheImmutable, Immutable: true, SHA256: sum(body)}
+		m.SourceURL = info.URL
+		if !info.RetrievedAt.IsZero() {
+			m.RetrievedAt = info.RetrievedAt.UTC().Format(time.RFC3339)
+		}
+		return s.writeMeta(p, m)
 	}
 	if s.sameOnce(p, body) {
 		return nil
