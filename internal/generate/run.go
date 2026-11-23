@@ -18,6 +18,10 @@ type Deps struct {
 	Cfg   Config
 	Now   func() time.Time
 	Log   *slog.Logger
+	// Retry makes Submit plan again the tasks whose stored output is not ready (rejected by validation, refused,
+	// truncated or invalid). Collect always stores a ready result for a key whose stored output is not ready as
+	// the revised record of the key, so a paid retry is never lost. A ready output is never replaced.
+	Retry bool
 	// Record reports one finished generation to telemetry; may be nil.
 	Record func(ctx context.Context, task, model, status string, tokensIn, tokensOut int)
 }
@@ -85,7 +89,7 @@ func (d Deps) plan(ctx context.Context, rep *SubmitReport, bill data.BillRef) ([
 	var todo []Task
 	for _, t := range all {
 		rep.Planned++
-		stored, err := isStored(ctx, d.Ports.Generated, t.Key)
+		stored, err := d.isDone(ctx, t.Key)
 		if err != nil {
 			return nil, err
 		}
@@ -140,6 +144,20 @@ func pendingKeys(ctx context.Context, w data.GeneratedWriter) (map[string]bool, 
 		}
 	}
 	return out, nil
+}
+
+// isDone reports whether the key needs no new generation: it has a stored output, except under Retry a stored
+// output that is not ready.
+func (d Deps) isDone(ctx context.Context, k data.GenKey) (bool, error) {
+	stored, err := isStored(ctx, d.Ports.Generated, k)
+	if err != nil || !stored || !d.Retry {
+		return stored, err
+	}
+	old, err := d.Ports.Generated.GetGenerated(ctx, k)
+	if err != nil {
+		return false, fmt.Errorf("get generated %s: %w", k, err)
+	}
+	return old.Status == data.GenReady, nil
 }
 
 func isStored(ctx context.Context, r data.GeneratedReader, k data.GenKey) (bool, error) {
@@ -296,7 +314,7 @@ func (d Deps) finish(ctx context.Context, it data.GenBatchItem, r data.GenResult
 }
 
 // keep stores the output write-once; when a crashed earlier collect already
-// stored one, the stored one wins.
+// stored one, the stored one wins, unless it is not ready and the new one is (a retry).
 func (d Deps) keep(ctx context.Context, rec data.GeneratedOutput) (data.GeneratedOutput, error) {
 	err := d.Ports.GeneratedStore.PutGenerated(ctx, rec)
 	if err == nil {
@@ -308,6 +326,12 @@ func (d Deps) keep(ctx context.Context, rec data.GeneratedOutput) (data.Generate
 	old, gerr := d.Ports.Generated.GetGenerated(ctx, rec.Key)
 	if gerr != nil {
 		return rec, fmt.Errorf("stored %s: %w", rec.Key, gerr)
+	}
+	if old.Status != data.GenReady && rec.Status == data.GenReady {
+		if err := d.Ports.GeneratedStore.PutRevised(ctx, rec); err != nil {
+			return rec, fmt.Errorf("revise %s: %w", rec.Key, err)
+		}
+		return rec, nil
 	}
 	return old, nil
 }

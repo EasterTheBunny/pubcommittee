@@ -53,13 +53,35 @@ func (s *GeneratedStore) PutGenerated(ctx context.Context, o GeneratedOutput) er
 	return nil
 }
 
-// GetGenerated returns the output stored under exactly this key.
+// PutRevised stores the revised record of an output beside its write-once record.
+func (s *GeneratedStore) PutRevised(ctx context.Context, o GeneratedOutput) error {
+	if err := o.Key.Validate(); err != nil {
+		return fmt.Errorf("put revised: %w", err)
+	}
+	if _, err := s.files.GetFile(ctx, o.Key.ObjectPath()); err != nil {
+		return fmt.Errorf("put revised %s: write-once record: %w", o.Key, err)
+	}
+	body, err := json.Marshal(o)
+	if err != nil {
+		return fmt.Errorf("put revised %s: encode: %w: %w", o.Key, ErrInvalid, err)
+	}
+	if _, err := s.files.PutReplaceable(ctx, o.Key.RevisedPath(), body); err != nil {
+		return fmt.Errorf("put revised %s: %w", o.Key, err)
+	}
+	return nil
+}
+
+// GetGenerated returns the output stored under exactly this key: the revised record when there is one.
 func (s *GeneratedStore) GetGenerated(ctx context.Context, key GenKey) (GeneratedOutput, error) {
 	var o GeneratedOutput
 	if err := key.Validate(); err != nil {
 		return o, fmt.Errorf("get generated: %w", err)
 	}
-	if err := s.read(ctx, key.ObjectPath(), &o); err != nil {
+	err := s.read(ctx, key.RevisedPath(), &o)
+	if errors.Is(err, ErrNotFound) {
+		err = s.read(ctx, key.ObjectPath(), &o)
+	}
+	if err != nil {
 		return o, fmt.Errorf("get generated %s: %w", key, err)
 	}
 	return o, nil

@@ -94,6 +94,7 @@ func Generated(t *testing.T, factory func(t *testing.T) (data.GeneratedReader, d
 		{"get unknown", checkGenGetUnknown},
 		{"current pointer", checkGenCurrent},
 		{"set current not ready", checkGenSetCurrentNotReady},
+		{"revised record replaces the stored one for readers", checkGenRevised},
 		{"grade round trip", checkGenGrade},
 		{"batch pending", checkGenBatches},
 		{"batch invalid id", checkGenBatchInvalid},
@@ -212,6 +213,32 @@ func checkGenSetCurrentNotReady(t *testing.T, _ data.GeneratedReader, w data.Gen
 		if err := w.SetCurrent(ctx, o); !errors.Is(err, data.ErrInvalid) {
 			t.Errorf("SetCurrent status %q: err = %v, want ErrInvalid", status, err)
 		}
+	}
+}
+
+func checkGenRevised(t *testing.T, r data.GeneratedReader, w data.GeneratedWriter) {
+	t.Helper()
+	ctx := context.Background()
+	key := sampleKey()
+	first := sampleOutput(key, "Summary")
+	first.Status = data.GenUnverified
+	first.Findings = []string{"statement 1: no anchor"}
+	if err := w.PutRevised(ctx, first); !errors.Is(err, data.ErrNotFound) {
+		t.Errorf("PutRevised with no stored record: err = %v, want ErrNotFound", err)
+	}
+	if err := w.PutGenerated(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	second := sampleOutput(key, "Summary")
+	if err := w.PutRevised(ctx, second); err != nil {
+		t.Fatalf("PutRevised: %v", err)
+	}
+	got, err := r.GetGenerated(ctx, key)
+	if err != nil || !reflect.DeepEqual(got, second) {
+		t.Errorf("GetGenerated after PutRevised: got %+v, err %v; want the revised record", got, err)
+	}
+	if err := w.PutGenerated(ctx, first); err != nil {
+		t.Errorf("PutGenerated of the original after a revision: %v, want no-op", err)
 	}
 }
 

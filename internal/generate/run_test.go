@@ -311,3 +311,115 @@ func TestFallbackAnswerIsRecordedOnTheOutput(t *testing.T) {
 		t.Errorf("FallbackModel = %q, want fallback-model", out.FallbackModel)
 	}
 }
+
+// collectRejectedSummaries stores every summary of bill 4313 as unverified (no anchor) and everything else as the
+// fake generator answers, and returns the deps and the store.
+func collectRejectedSummaries(t *testing.T) (generate.Deps, *memory.Store) {
+	t.Helper()
+	store := seeded(t)
+	base := fakegen.New(fakegen.Config{})
+	d := deps(store, base)
+	over := map[string]data.GenResult{}
+	for _, r := range plannedRequests(t, store, d) {
+		res, err := base.Generate(t.Context(), r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if r.Task == data.TaskBillSummary {
+			res.Text = `{"headline":"h","statements":[{"text":"No anchor.","anchors":[],"provision_ids":[]}]}`
+		}
+		over[r.ID] = res
+	}
+	d.Gen = fakegen.New(fakegen.Config{Overrides: over})
+	if _, err := generate.Submit(t.Context(), d, hr(4313), false); err != nil {
+		t.Fatal(err)
+	}
+	if col, err := generate.Collect(t.Context(), d); err != nil || col.ByStatus[data.GenUnverified] != 4 {
+		t.Fatalf("Collect = %+v, %v; want 4 unverified summaries", col, err)
+	}
+	return d, store
+}
+
+// submitted runs a submit of bill 4313 and returns how many tasks it submitted.
+func submitted(t *testing.T, d generate.Deps) int {
+	t.Helper()
+	rep, err := generate.Submit(t.Context(), d, hr(4313), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rep.Submitted
+}
+
+func TestRetryReplacesRejectedOutputsOnly(t *testing.T) {
+	t.Parallel()
+	d, store := collectRejectedSummaries(t)
+	// Without Retry a stored output blocks the key.
+	if n := submitted(t, d); n != 0 {
+		t.Fatalf("Submit = %d, want nothing submitted", n)
+	}
+	// With Retry only the four rejected summaries are planned again; a good answer replaces them for readers.
+	d.Retry, d.Gen = true, fakegen.New(fakegen.Config{})
+	if n := submitted(t, d); n != 4 {
+		t.Fatalf("Submit with Retry = %d, want 4", n)
+	}
+	if col, err := generate.Collect(t.Context(), d); err != nil || col.ByStatus[data.GenReady] != 4 {
+		t.Fatalf("Collect = %+v, %v; want 4 ready", col, err)
+	}
+	vs, _ := store.ListVersions(t.Context(), hr(4313))
+	got, err := store.PublicReadPorts().Generated.GetCurrent(t.Context(), data.TaskBillSummary, vs[0].Ref, "")
+	if err != nil || got.Status != data.GenReady {
+		t.Fatalf("GetCurrent = %+v, %v; want a ready summary", got, err)
+	}
+	if n := submitted(t, d); n != 0 {
+		t.Fatalf("Submit after the retry = %d, want nothing submitted", n)
+	}
+}
+
+// firstSummaryKey returns the key of the summary of the first version of bill 4313.
+func firstSummaryKey(t *testing.T, d generate.Deps) data.GenKey {
+	t.Helper()
+	vs, _ := d.Ports.BillText.ListVersions(t.Context(), hr(4313))
+	tasks, _, err := generate.PlanAll(t.Context(), d, hr(4313))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tk := range tasks {
+		if tk.Key.Task == data.TaskBillSummary && tk.Key.Version == vs[0].Ref {
+			return tk.Key
+		}
+	}
+	t.Fatal("no summary planned")
+	return data.GenKey{}
+}
+
+// markRejected stores a revised record that marks the output of key as rejected by an older rule.
+func markRejected(t *testing.T, d generate.Deps, key data.GenKey) {
+	t.Helper()
+	o, err := d.Ports.Generated.GetGenerated(t.Context(), key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	o.Status, o.Findings = data.GenUnverified, []string{"statement 1: provision \"x\" is not in the input"}
+	if err := d.Ports.GeneratedStore.PutRevised(t.Context(), o); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRevalidateRevisesStoredOutputWithoutAModel(t *testing.T) {
+	t.Parallel()
+	_, store := collectWith(t, func(_ data.GenRequest, base data.GenResult) data.GenResult { return base })
+	d := deps(store, nil)
+	key := firstSummaryKey(t, d)
+	markRejected(t, d, key)
+	rep, err := generate.Revalidate(t.Context(), d, hr(4313))
+	if err != nil || rep.Moves["unverified->ready"] != 1 || len(rep.Changed) != 1 || rep.Unchanged != rep.Checked-1 {
+		t.Fatalf("Revalidate = %+v, %v; want one output moved to ready", rep, err)
+	}
+	got, err := d.Ports.Generated.GetGenerated(t.Context(), key)
+	if err != nil || got.Status != data.GenReady || len(got.Findings) != 0 {
+		t.Fatalf("GetGenerated = %+v, %v; want ready", got, err)
+	}
+	if again, err := generate.Revalidate(t.Context(), d, hr(4313)); err != nil || len(again.Changed) != 0 {
+		t.Fatalf("second Revalidate = %+v, %v; want no change", again, err)
+	}
+}
