@@ -72,6 +72,6 @@
 - Which jobs run on a schedule in M1, and at what cadence, when bill pulls are manual ([M1-05](05-manual-bill-pull-and-storage.md))?
 - Is `<domain>` chosen, or does M1 run on provider domains?
 - What scrape interval and histogram buckets keep metrics cost down?
-- Which project holds the shared registry (shared with [M1-17](17-continuous-delivery.md))?
+- Which project holds the shared registry (shared with [M1-17](17-continuous-delivery.md))? **Decided (operator, 2026-11-23):** the shared admin project, which also holds the state bucket and the workload identity pool and outlives the environments. The registry is created by the deployment repository's bootstrap root; only `deploy-dev` pushes, and each environment project's Cloud Run service agent gets `roles/artifactregistry.reader`.
 - Are budget alerts wanted per project? The architecture does not mention them.
 - Is a local pre-commit secret scanner wanted in addition to CI scanning?
