@@ -49,6 +49,7 @@ The amendment loop returns to step 2 for the lines that changed.
 When a new version arrives:
 
 1. Compute a text mapping from the previous version to the new one, at the line/section level.
+   - **As built (M1-08, `internal/versiondiff`, method `versiondiff/1`):** lines are classified by text and section pairing, not by anchor number. A line with the same text in a paired section with the same label is *unchanged*. A same-text line whose section label differs, or that sits out of order or in another section, is *moved*; so is a line that differs only by its leading enumerator (`(b)` to `(c)`, `SEC. 3.` to `SEC. 4.`). Otherwise, old and new lines with word-multiset Dice similarity of at least 0.5 are paired best-first, one to one, as *changed*; an old line with no such pair is *removed*. Whitespace-only differences are not changes; punctuation and wording are. Comparisons are stored for consecutive version pairs and for each older version against the latest.
 2. Classify each existing anchored item (comment thread, suggested edit, rider tag):
 
 | Classification | Meaning | Treatment |

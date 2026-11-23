@@ -110,6 +110,7 @@ The UI is a **progressive web app** and must be installable ([08](../design/08-o
 
 ### Object store (immutable or regenerated files)
 - Official versions: original XML and parsed sections/lines with anchors. Written once at ingestion; never changed ([01](../design/01-bill-ingestion-and-display.md)).
+- Version comparisons: `bills/{bill}/compare/{from}..{to}/{method}.json`, write-once, where method is `<parser version>+versiondiff/1` with `/` written as `_` ([02](../design/02-versions-and-review-lifecycle.md)).
 - Existing-law provisions cited, with source effective date.
 - Count snapshots per bill and item, per batch.
 - Bulk exports and the change feed ([10](../design/10-machine-access.md)).
@@ -196,6 +197,7 @@ Ports are grouped by the boundary they sit behind. A service receives only the g
 M1 notes (from M1-01):
 - The public read group holds only `BillText` and `PublicDocs` in M1; `Snapshots` arrives in M2.
 - `PublicDocs` also has `GetSelectionPolicyVersion` (M1-10).
+- Comparisons (M1-08): `ComparisonReader` in the public read group (`PublicReadPorts.Comparisons`), `ComparisonWriter` in the platform group (`PlatformPorts.ComparisonStore`); `fsobject` and `memory` implement both, and `gcp`/`emulator` wiring leaves the reader nil (route answers 404) until M1-03b.
 - `PlatformDocs` also has `PutBill`, `GetIngestState`, and `PutIngestState`. `ApplyLogged` takes a `Change`, which carries exactly one of a bill, catalog entry, policy, or explanation, plus a `LogEntry`.
 - `BillSource` declares `ListChanged(ctx, since, page)` in M1. Manual pulls ([M1-05](../design/tasks/m1/05-manual-bill-pull-and-storage.md)) pass an empty watermark.
 

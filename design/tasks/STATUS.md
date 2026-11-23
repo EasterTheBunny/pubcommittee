@@ -21,7 +21,7 @@ Integration branch: `m1-integration`.
 | [M1-05](m1/05-manual-bill-pull-and-storage.md) | local, cloud | in-progress | `task/M1-05` | sonnet | | Run r20261122-1412, batch 4, worktree `.claude/worktrees/m1-05` |
 | [M1-06](m1/06-selection-policy.md) | local, cloud | todo | | | | |
 | [M1-07](m1/07-us-code-and-citations.md) | local | todo | | | | |
-| [M1-08](m1/08-version-history-and-stale.md) | local | in-progress | `task/M1-08` | sonnet | | Run r20261122-1412, batch 4, worktree `.claude/worktrees/m1-08` |
+| [M1-08](m1/08-version-history-and-stale.md) | local | in-progress | `task/M1-08` | sonnet | none (part 1: 0 workers, 1 commit, rewrite 0) | Run r20261122-1412. Part 1 merged (library `internal/versiondiff`, storage, read port, compare route). Part 2 after M1-05: run `versiondiff.Step` from job-ingest over tracked bills; additive `changed_since` in api/openapi.yaml for old line addresses; 50-anchor manual check needs a larger corpus (fixtures have 18-45 lines per version) |
 | [M1-09](m1/09-ai-generation.md) | local, cloud | todo | | | | Live run needs the operator's API key and spend approval |
 | [M1-10](m1/10-read-api.md) | local, cloud | done-local | `task/M1-10` | sonnet | none (2 sub-tasks, 0 redone, 1 commit; rewrite 1.80 from regenerating `api.gen.go` without client, below the 3-commit rule) | Run r20261122-1412, batch 3; merged. Summary, changes, compare, citations, feed, exports need read ports from M1-07/08/09/11. Cloud-phase criteria open |
 | [M1-11](m1/11-exports-feed-machine-notice.md) | local, cloud | todo | | | | |

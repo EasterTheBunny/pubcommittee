@@ -58,4 +58,6 @@ Compute, for every pair of consecutive official versions of a tracked bill, a ma
 
 - Which unit computes comparisons in M1? **Decided for the local phase:** each step runs as its own command over stored data; nothing chains steps automatically ([README § Example data and local triggers](../README.md#example-data-and-local-triggers)). Automatic chaining is a cloud-phase question. Remaining for the cloud phase: [architecture § Bill source § Recommendation](../../../architecture/README.md#recommendation) hands new versions to stale classification through the queue and `worker`, which arrive in M3.
 - What rule or threshold separates *changed* from *removed*? Record it in [02](../../02-versions-and-review-lifecycle.md).
+  - **Answered (M1-08):** word-multiset Dice similarity of at least 0.5; recorded in 02. Not yet tuned on real borderline pairs (fixtures too small).
 - Are comparisons kept for non-consecutive version pairs?
+  - **Answered (M1-08):** consecutive pairs plus each older version against the latest are stored; other pairs can be computed with `versiondiff.Compare`.
