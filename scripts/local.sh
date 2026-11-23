@@ -41,9 +41,21 @@ build() {
 	dc pull --ignore-buildable --quiet
 }
 
-seed() {
+# The jobs and admin-api run as you and take a lock file in .local-data/. A directory that Docker
+# created as root (a bind mount of a missing path, or an older run) makes that fail with
+# "permission denied"; hand everything in it back to you, through a container so no sudo is needed.
+ensure_data_dir() {
 	# Created here, owned by you, so Docker does not create it as root.
 	mkdir -p .local-data
+	if [ ! -w .local-data ] || [ -n "$(find .local-data ! -user "$LOCAL_UID" -print -quit 2>/dev/null)" ]; then
+		echo "local data: .local-data/ has files you do not own (created by Docker as root); giving them back to $(id -un)"
+		docker run --rm -v "$PWD/.local-data:/data" alpine@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf \
+			chown -R "$LOCAL_UID:$LOCAL_GID" /data
+	fi
+}
+
+seed() {
+	ensure_data_dir
 	# The jobs push metrics to the collector; without it each job waits out its flush timeout.
 	dc up -d --wait otel-collector >/dev/null
 	echo "seed: US Code provisions and selection policy"
@@ -78,7 +90,7 @@ run_job() {
 		exit 2
 		;;
 	esac
-	mkdir -p .local-data
+	ensure_data_dir
 	if [ -z "$(dc ps -q --status running otel-collector)" ]; then
 		trap 'trap - EXIT INT TERM HUP; dc down --remove-orphans >/dev/null 2>&1 || true' EXIT
 		trap 'exit 130' INT TERM HUP
@@ -97,6 +109,7 @@ cleanup() {
 }
 
 up() {
+	ensure_data_dir
 	[ -d .local-data/bills ] || seed
 	if [ "${1:-}" = "-d" ]; then
 		dc up -d --wait --remove-orphans $serve
