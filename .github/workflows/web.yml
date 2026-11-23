@@ -1,0 +1,49 @@
+name: web
+on:
+  push:
+    paths: ["app/**", "demo/**", "api/**", ".github/workflows/web.yml"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    # The archived M0 demo: type-checked and built with its own dependencies.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check and build demo/
+        run: |
+          docker run --rm --cpus 2 --memory 3g -v "$PWD":/src -w /src/demo \
+            node:24-bookworm-slim sh -c 'npm ci && npm run check && npm run build'
+
+  app:
+    # The M1 app against a read-api built with the memory target and invented fixtures.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start read-api (memory target, fixtures)
+        run: |
+          docker build -f docker/Dockerfile --build-arg SERVICE=read-api --build-arg TARGET=memory -t pc-read-api:ci .
+          docker network create pc-ci
+          docker run -d --name read-api --network pc-ci --cpus 0.5 --memory 192m \
+            -e PORT=8080 -e SEED_FIXTURES=1 -e RATE_LIMITS=text=100000,live=100000,bulk=100000,discovery=100000 \
+            pc-read-api:ci
+      - name: Check, lint, build, and test
+        run: |
+          docker run --rm --cpus 2 --memory 3g --network pc-ci -v "$PWD":/src -w /src/app \
+            -e READ_API_URL=http://read-api:8080 -e PUBLIC_API_URL=http://read-api:8080 \
+            -e BASE_URL=http://localhost:3000 -e STUB_URL=http://localhost:3001 \
+            mcr.microsoft.com/playwright:v1.65.1-noble sh -c '
+              set -eu
+              npm ci
+              npm run check
+              npm run lint
+              npm run build
+              node tests/stub-api.mjs 4010 &
+              node build &
+              READ_API_URL=http://localhost:4010 PUBLIC_API_URL=http://localhost:4010 PORT=3001 node build &
+              sleep 3
+              npx playwright test
+            '

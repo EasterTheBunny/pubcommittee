@@ -1,59 +1,71 @@
 <script lang="ts">
-	import type { Explanation, Section } from '#lib/types.ts';
-	import FutureButton from './FutureButton.svelte';
+	import type { Explanation, ExplanationFlag } from '#lib/types.ts';
 
-	// Bill against law: an explanation, never a literal diff (design/01).
-	let { explanation: x, section }: { explanation: Explanation | undefined; section: Section } =
-		$props();
+	// Platform-written explanation of one section. Blue-tinted and always kept apart from the literal bill text.
+	let { explanations }: { explanations: Explanation[] } = $props();
 
-	const provenanceLabel = {
+	const flagLabels: Record<ExplanationFlag, string> = {
 		auto: 'Auto-generated',
-		'steward-checked': 'Steward checked',
-		'bill-only': 'Written from the bill alone'
+		'steward-checked': 'Checked by a steward',
+		'bill-only': 'Bill-only (drawn from the bill text alone)'
 	};
+
+	// Provenance label per flag; an explanation with no flags is auto-generated.
+	function provenance(flags: ExplanationFlag[]): string[] {
+		return flags.length > 0 ? flags.map((f) => flagLabels[f]) : ['Auto-generated'];
+	}
 </script>
 
-<div class="flex flex-col gap-3.5 card p-5" data-content-class="platform">
-	<div class="flex flex-wrap items-center gap-2">
-		<span class="eyebrow">Bill against law</span>
-		<span class="text-xs text-muted">· explanation, not a diff</span>
-	</div>
-	<h3 class="m-0 font-display text-[19px] font-semibold">
-		What {section.label} changes in current law
-	</h3>
+{#if explanations.length > 0}
+	<aside
+		aria-label="Explanation of this section"
+		class="rounded-xl border border-support-line bg-support-soft p-4"
+	>
+		{#each explanations as e (e.provision_id ?? e.what_changes)}
+			<article class="flex flex-col gap-3">
+				<div class="flex flex-wrap gap-2">
+					{#each provenance(e.flags) as label, i (i)}
+						<span class="chip bg-card text-ins-ink">{label}</span>
+					{/each}
+				</div>
 
-	{#if x}
-		{#if x.currentText}
-			<div
-				class="rounded-lg border border-line bg-subtle px-3.5 py-3"
-				data-content-class="official"
-			>
-				<div class="mb-1.5 text-xs font-semibold text-muted">Current law · {x.citation}</div>
-				<div class="font-serif text-[15px] leading-relaxed">{x.currentText}</div>
-			</div>
-		{:else if x.citation}
-			<div class="text-xs font-semibold text-muted">Adds to {x.citation}</div>
-		{/if}
-		<div class="flex flex-col gap-2 text-[15px] leading-relaxed">
-			<p class="m-0"><strong>What the bill does.</strong> {x.whatChanges}</p>
-			<p class="m-0"><strong>Why it matters.</strong> {x.whyItMatters}</p>
-		</div>
-		<div class="flex flex-wrap gap-2">
-			{#each x.provenance as p (p)}
-				<span
-					class="chip {p === 'steward-checked' ? 'bg-ok-soft text-ok' : 'bg-line-soft text-ink-2'}"
-				>
-					{provenanceLabel[p]}
-				</span>
-			{/each}
-		</div>
-		{#if x.asAmended}
-			<FutureButton id="as-amended">Preview as amended (unofficial)</FutureButton>
-		{/if}
-	{:else}
-		<p class="m-0 text-sm text-muted">
-			No change to existing law is linked to this section. In M1, citations are parsed automatically
-			and unresolved ones go to a steward.
-		</p>
-	{/if}
-</div>
+				<div>
+					<h4 class="eyebrow">What changes</h4>
+					<p data-content-class={e.content_class}>{e.what_changes}</p>
+				</div>
+
+				<div>
+					<h4 class="eyebrow">Why it matters</h4>
+					<p data-content-class={e.content_class}>{e.why_it_matters}</p>
+				</div>
+
+				{#if e.current_text}
+					<div>
+						<h4 class="eyebrow">Existing law cited</h4>
+						{#if e.provision_id}
+							<p class="text-sm text-muted">Provision {e.provision_id}</p>
+						{/if}
+						<blockquote
+							data-content-class={e.current_text.content_class}
+							class="mt-1 border-l-4 border-line-strong bg-card px-3 py-2 text-ink-2"
+						>
+							{e.current_text.text}
+						</blockquote>
+					</div>
+				{/if}
+
+				{#if e.as_amended}
+					<div>
+						<div class="flex flex-wrap items-center gap-2">
+							<h4 class="eyebrow">Preview as amended</h4>
+							<span class="chip bg-oppose-soft text-oppose-ink">Unofficial</span>
+						</div>
+						<p class="mt-1" data-content-class={e.as_amended.content_class}>{e.as_amended.text}</p>
+					</div>
+				{/if}
+
+				<p class="text-xs text-muted">Explanation as of {e.as_of.slice(0, 10)}</p>
+			</article>
+		{/each}
+	</aside>
+{/if}

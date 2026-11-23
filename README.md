@@ -22,7 +22,7 @@ PubCommittee lets the public review active bills the way an editor reviews a dra
 
 It is not a vote and it does not change bill text. It gives existing representatives a more specific signal. The first version covers the US Congress.
 
-The current code is the **M0 proof of concept**: a static SvelteKit site on mocked data with no backend. See [`design/MILESTONES.md`](design/MILESTONES.md) for the roadmap.
+The M0 proof of concept (a static SvelteKit site on mocked data with no backend) is archived in [`demo/`](demo/README.md). The M1 web app in [`app/`](app/README.md) renders real bill text from `read-api`. See [`design/MILESTONES.md`](design/MILESTONES.md) for the roadmap.
 
 ## Guide for AI agents
 
@@ -34,7 +34,7 @@ Start here, then read only the files your task needs.
 2. [`design/README.md`](design/README.md): index of the feature docs (01–11) and how they depend on each other.
 3. [`design/MILESTONES.md`](design/MILESTONES.md): what each milestone (M0–M6) delivers.
 4. [`architecture/README.md`](architecture/README.md): stack, hosting, and storage decisions from M1 onward.
-5. [`app/README.md`](app/README.md): how to run the demo app and where its code lives.
+5. [`app/README.md`](app/README.md): how to run the web app and where its code lives. [`demo/README.md`](demo/README.md) covers the archived M0 demo.
 
 ### Folder map
 
@@ -55,31 +55,25 @@ pubcommittee/
 ├── architecture/
 │   └── README.md          implementation architecture (Go on Google Cloud,
 │                          REST/OpenAPI, adapters, ingest, notifications)
-└── app/                   M0 proof of concept (SvelteKit 3, Svelte 5,
-    │                      Tailwind 4, adapter-static, PWA)
+├── demo/                  archived M0 proof of concept (static SvelteKit site
+│                          on mock data; served from the Netlify site)
+└── app/                   M1 web app (SvelteKit 3, Svelte 5, Tailwind 4,
+    │                      adapter-node, PWA), renders from read-api
     ├── README.md          run commands and code map
-    ├── package.json       scripts: dev, build, check, lint, format
+    ├── package.json       scripts: dev, build, start, check, lint, test
     ├── static/            PWA manifest, icons, robots.txt
+    ├── tests/             Playwright UI tests
     └── src/
-        ├── app.html
+        ├── hooks.server.ts    content negotiation (303 to read-api)
         ├── service-worker/    offline caching for the PWA
         ├── lib/
-        │   ├── types.ts       domain types, named after design-doc terms
-        │   ├── mock/          mock bills, issues, personas, catalog, feed, seed
-        │   ├── state/         demo state (localStorage) and UI dialog state
+        │   ├── api/           generated types and the read-api client
+        │   ├── server/        server-only code (environment, client)
         │   ├── components/    Svelte UI components
-        │   ├── anchors.ts     line anchors, URL hashes, stale detection
-        │   ├── diff.ts        word-level diff for suggested edits
+        │   ├── anchors.ts     line anchors, URL hashes, ranges
         │   ├── links.ts       URL builders
-        │   ├── rules.ts       steward conflict rule
         │   └── placeholders.ts  registry of not-yet-built features
         └── routes/            pages (file-based routing)
-            ├── +page.svelte               home
-            ├── bills/[bill]/v/[version]/  bill text, sections, line ranges
-            ├── issues/[issue]/            competing bills compared
-            ├── briefs/[bill]/             legislator brief
-            ├── catalog/                   public bill catalog
-            └── inbox/                     notifications
 ```
 
 ### Where to look for a task
@@ -90,7 +84,7 @@ pubcommittee/
 | What is in scope now versus later | `design/MILESTONES.md` |
 | Build work for a milestone | `design/tasks/README.md`, then the task file |
 | Stack, hosting, data stores, API shape | `architecture/README.md` |
-| Change demo data | `app/src/lib/mock/` |
+| Change demo data (archived M0) | `demo/src/lib/mock/` |
 | Change a page | `app/src/routes/` |
 | Change shared UI | `app/src/lib/components/` |
 | Domain vocabulary | `app/src/lib/types.ts` and the design docs |
@@ -111,16 +105,19 @@ For a question not covered above, follow these steps in order:
 
 - The design docs name no languages, frameworks, or vendors. Put stack choices in `architecture/`, not `design/`.
 - Code names follow design-doc vocabulary, for example steward, rider tag, brief, and suggested edit.
-- Features not built in M0 appear as dashed buttons. They open a pop-up that names the milestone and design doc, through `app/src/lib/placeholders.ts`.
+- Features not built yet appear as dashed buttons. They open a pop-up that names the milestone and design doc, through `app/src/lib/placeholders.ts`.
 
 ## Run the app
 
 ```sh
 cd app
 npm install
-npm run dev      # http://localhost:5173
+READ_API_URL=http://localhost:8080 npm run dev      # http://localhost:5173
 npm run check    # type check
-npm run build    # static site in app/build/
+npm run build    # Node server in app/build/ (run with `npm start`)
+
+# The archived M0 demo builds on its own:
+cd ../demo && npm install && npm run build   # static site in demo/build/
 ```
 
 ## License
