@@ -22,7 +22,15 @@ jobs:
               set -eu
               test -z "$(gofmt -l cmd internal)"
               go vet -tags memory ./...
+              # One lint run per build target: memory uses the repository config; the others use
+              # it without run.build-tags (the config pins memory).
               go tool golangci-lint run ./...
+              sed "/^  build-tags:/,/^    - memory/d" .golangci.yml > /tmp/gl.yml
+              for tag in local gcp emulator; do
+                go tool golangci-lint run --config /tmp/gl.yml --build-tags "$tag" ./...
+              done
+              (cd app && npm ci)
+              sh api/check.sh
               go test -tags memory -count=1 ./...
               sh test/ci/tags.sh
               sh test/ci/deps.sh
