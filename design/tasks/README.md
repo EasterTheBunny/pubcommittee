@@ -49,7 +49,7 @@ Local phase
                               all local ─► 16 local gate
 
 Cloud phase
-00 ─► 03b ─► 15 ─► 17 ─► cloud-phase criteria of 05, 06, 09, 10, 11, 12, 13, 14 ─► 16 hosted gate
+start: next operator sample (M1-09) ─► 00 ─► 03b ─► 15 ─► 17 ─► cloud-phase criteria of 05, 06, 09, 10, 11, 12, 13, 14 ─► 16 hosted gate
 ```
 
 Parallel tracks once 01 lands: contract and read path (02, 10, 13, 14); ingest (03a, 04, 05, 06); law and generation (07, 08, 09); operations (12). Cloud-phase work may start early, as long as no local-phase task waits on it.
@@ -70,7 +70,7 @@ Parallel tracks once 01 lands: contract and read path (02, 10, 13, 14); ingest (
   - Layout: `fixtures/bills/<bill-id>/status.xml`, `fixtures/bills/<bill-id>/v/<version-code>/source.xml`, `fixtures/catalog/`, `fixtures/uscode/`, and `fixtures/README.md` with each file's source URL, retrieval date, SHA-256, and what it covers.
   - Originals byte for byte. At most 2 MB per bill and 20 MB in all. Exit bills are short (about 30 KB or less per version), because live generation costs scale with bill length; M1-04 lists pre-selected exit bills. US government works, so committing them is fine; nothing else goes in `fixtures/`.
   - Larger local pulls (full catalog, whole US Code release points) go to `.local-data/`, never into git.
-- **Local triggers.** In the local phase each pipeline step is its own command over stored data: `job-ingest --bill <id>` (pull, parse, policy evaluation, citations, version comparison), `job-summarize`, `job-exports`. Nothing chains steps automatically; automatic chaining, scheduling, and whether a pull is an `admin-api` action are cloud-phase questions.
+- **Local triggers.** In the local phase each pipeline step is its own command over stored data: `job-ingest --bill <id>` (pull, parse, policy evaluation, citations, version comparison), `job-ingest --publish-policy v1|<file> --reason <text>` and `job-ingest --evaluate` (re-evaluate the stored catalog), `scripts/law-ingest` (US Code release point and citation sets, until wired into a job), `job-summarize`, `job-exports`. Nothing chains steps automatically; automatic chaining, scheduling, and whether a pull is an `admin-api` action are cloud-phase questions.
 
 ## Status and running tasks with agents
 

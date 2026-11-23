@@ -70,5 +70,8 @@ Give named operators privileged system access to run M1: select catalog bills fo
 ## Open questions
 
 - How does `bills track` lead to a pull of the bill's text? Locally, `bills track` sets `tracked` and the pull runs as its own command (`job-ingest --bill <id>`). Cloud phase: [architecture § Actions](../../../architecture/README.md#actions) enqueues a `worker` task, and `worker` arrives in M3. Shared with [M1-05](05-manual-bill-pull-and-storage.md).
+  - **As built (M1-12 follow-up):** `bills track` writes the logged catalog and bill change only, and its response names the pull: `pubctl bills reingest <id>` or `job-ingest --bill <id>`. `bills reingest` is the logged pull and runs the same pipeline as `job-ingest` (`ingest.PullSteps`), including policy, citations, and comparisons.
 - Cloud phase: is the manual pull an `admin-api` action, and so logged publicly like other privileged actions, or a job run outside `admin-api`? Shared with M1-05.
 - When does the administrator phase rule end ([01](../../01-bill-ingestion-and-display.md#open-questions))? M1 only needs the `phase` field.
+  - M1-12 reads only `phase`; `steward_signoff` answers `409` and changes nothing. The end of the phase is an operator decision.
+- Re-parse beside the old version: parsed text is write-once per version and only `billxml/1` exists; a storage path for a second parser version is open (M1-03/M1-04 layout).

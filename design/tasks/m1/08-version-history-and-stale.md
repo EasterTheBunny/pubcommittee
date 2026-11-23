@@ -51,6 +51,7 @@ Compute, for every pair of consecutive official versions of a tracked bill, a ma
 ## Acceptance criteria
 
 - For the M1 multi-version exit bill, every old anchor has a classification, and a manual check of 50 sampled anchors agrees with it.
+  - **Met (operator decision, 2026-11-22):** the exit-bill fixtures have 18 to 45 lines per version, so 50 distinct sampled anchors do not exist across the changed pairs. The one differing pair (hr-4313 `ih` to `rh`) was checked in full and agrees with the classification.
 - Opening an old-version line address whose words changed yields the notice data and a new location.
 - Tests show a renumbered identical subsection classified *moved*.
 
@@ -58,4 +59,6 @@ Compute, for every pair of consecutive official versions of a tracked bill, a ma
 
 - Which unit computes comparisons in M1? **Decided for the local phase:** each step runs as its own command over stored data; nothing chains steps automatically ([README § Example data and local triggers](../README.md#example-data-and-local-triggers)). Automatic chaining is a cloud-phase question. Remaining for the cloud phase: [architecture § Bill source § Recommendation](../../../architecture/README.md#recommendation) hands new versions to stale classification through the queue and `worker`, which arrive in M3.
 - What rule or threshold separates *changed* from *removed*? Record it in [02](../../02-versions-and-review-lifecycle.md).
+  - **Answered (M1-08):** word-multiset Dice similarity of at least 0.5; recorded in 02. Not yet tuned on real borderline pairs (fixtures too small).
 - Are comparisons kept for non-consecutive version pairs?
+  - **Answered (M1-08):** consecutive pairs plus each older version against the latest are stored; other pairs can be computed with `versiondiff.Compare`.

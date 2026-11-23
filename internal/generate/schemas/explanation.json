@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["headline", "statements"],
+  "properties": {
+    "headline": {"type": "string"},
+    "statements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "text", "anchors", "provision_ids"],
+        "properties": {
+          "role": {"type": "string", "enum": ["now", "changes", "why"]},
+          "text": {"type": "string"},
+          "anchors": {"type": "array", "items": {"type": "string"}},
+          "provision_ids": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

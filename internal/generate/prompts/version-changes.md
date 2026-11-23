@@ -1,0 +1,1 @@
+Task: describe what changed between the previous version (anchors prefixed `prev:`) and the new version of the bill, using the list of changes in the request. Give a one-sentence `headline`, then one statement per significant change, naming the section. Cite the new-version anchors of added or modified text and the `prev:` anchors of removed or modified text.

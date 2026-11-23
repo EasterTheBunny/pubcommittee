@@ -1,0 +1,103 @@
+# golangci-lint v2, strict: every linter is on unless disabled below with a reason.
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  build-tags:
+    - memory
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/easterthebunny/pubcommittee
+
+linters:
+  default: all
+  disable:
+    # Each disabled linter carries its reason.
+    - exhaustruct   # demands every struct field be set; fights the zero-value-friendly domain types
+    - exhaustruct_v5 # same linter, v5 name in golangci-lint 2.15
+    - nonamedreturns # port wrappers record the outcome in a defer, which needs the named error result
+    - wsl           # whitespace opinions beyond gofumpt; deprecated in favor of wsl_v5
+    - wsl_v5        # same: style opinion with no correctness value
+    - nlreturn      # blank line before return; style only
+    - varnamelen    # short names (i, t, ctx, ok) are idiomatic Go
+    - ireturn       # ports are interfaces; constructors and factories return them on purpose
+    - godox         # TODO tracking is done in the task files, not by lint
+    - gochecknoinits # no init functions are used; enabled linters cover misuse, this adds nothing
+    - testpackage   # conformance suites and white-box tests need package-internal access
+    - tagliatelle   # JSON tags follow the OpenAPI contract (snake_case), checked by M1-02
+    - funcorder     # method order follows port declaration order, not exported-first
+    - noinlineerr   # inline `if err := ...; err != nil` is idiomatic Go
+    - gomodguard    # deprecated since v2.12.0; gomodguard_v2 (enabled by default: all) replaces it
+  exclusions:
+    rules:
+      # Decorators return the wrapped port's error unchanged so errors.Is and identity hold.
+      - path: internal/telemetry/wrap(_generated)?\.go
+        linters: [wrapcheck]
+      # Fixtures and suites use literal line numbers, ids, and repeated strings on purpose.
+      - path: (_test\.go|internal/data/conformance/)
+        linters: [mnd, goconst, lll, forcetypeassert]
+  settings:
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+    depguard:
+      rules:
+        read-api-no-sql-or-keys:
+          files:
+            - "**/cmd/read-api/**"
+            - "**/internal/readapi/**"
+          deny:
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/postgres
+              desc: read-api never touches SQL
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/kmsgcp
+              desc: read-api never touches keys
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/localkeys
+              desc: read-api never touches keys
+            - pkg: github.com/jackc/pgx
+              desc: read-api never touches SQL
+            - pkg: cloud.google.com/go/kms
+              desc: read-api never touches keys
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adminapi
+              desc: read-api never links the privileged admin handler
+        admin-api-no-readapi:
+          files:
+            - "**/cmd/admin-api/**"
+            - "**/internal/adminapi/**"
+          deny:
+            - pkg: github.com/easterthebunny/pubcommittee/internal/readapi
+              desc: admin-api stays out of read-api's code
+        gcp-no-local-adapters:
+          files:
+            - "**/wiring_gcp.go"
+          deny:
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/fsobject
+              desc: local-only adapter in a gcp build
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/fsdocs
+              desc: local-only adapter in a gcp build
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/localkeys
+              desc: local-only adapter in a gcp build
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/localauth
+              desc: local-only adapter in a gcp build
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adapters/fsutil
+              desc: local-only helper in a gcp build
+        no-vendor-in-data:
+          files:
+            - "**/internal/data/**"
+          deny:
+            - pkg: cloud.google.com
+              desc: vendor SDKs stay inside adapters
+            - pkg: github.com/jackc/pgx
+              desc: vendor SDKs stay inside adapters

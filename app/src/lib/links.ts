@@ -1,9 +1,13 @@
 import { resolve } from '$app/paths';
-import { anchorHash, rangeParam } from '#lib/anchors.ts';
+import { rangeParam } from '#lib/anchors.ts';
 import type { Anchor } from '#lib/types.ts';
 
 export const homeHref = () => resolve('/');
+export const catalogHref = () => resolve('/catalog');
+export const policyHref = () => resolve('/policy');
+export const logHref = () => resolve('/log');
 
+/** Bill page; without a version it shows the latest official version. */
 export const billHref = (billId: string, version?: number) =>
 	version === undefined
 		? resolve('/bills/[bill]', { bill: billId })
@@ -28,25 +32,16 @@ export const linesHref = (anchor: Anchor) =>
 		range: rangeParam(anchor.from, anchor.to)
 	});
 
-export const sectionSuggestionsHref = (
-	billId: string,
-	version: number,
-	sectionId: string,
-	from?: number,
-	to?: number
-) =>
-	resolve('/bills/[bill]/v/[version]/sec/[section]', {
-		bill: billId,
-		version: String(version),
-		section: sectionId
-	}) + (from === undefined ? '' : anchorHash(sectionId, from, to));
+/** Version-less addresses resolve to the latest official version (design/10). */
+export const latestSectionHref = (billId: string, sectionId: string) =>
+	resolve('/bills/[bill]/s/[section]', { bill: billId, section: sectionId });
 
-export const issuesHref = () => resolve('/issues');
-export const catalogHref = () => resolve('/catalog');
-export const inboxHref = () => resolve('/inbox');
-export const issueHref = (issueId: string) => resolve('/issues/[issue]', { issue: issueId });
-export const briefsHref = () => resolve('/briefs');
-export const briefHref = (billId: string) => resolve('/briefs/[bill]', { bill: billId });
+export const latestLinesHref = (billId: string, sectionId: string, from: number, to: number) =>
+	resolve('/bills/[bill]/s/[section]/l/[range]', {
+		bill: billId,
+		section: sectionId,
+		range: rangeParam(from, to)
+	});
 
 /** Public source repository (design/09: the code is open source). */
 export const repoHref = 'https://github.com/EasterTheBunny/pubcommittee';

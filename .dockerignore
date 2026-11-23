@@ -1,0 +1,13 @@
+# Private and local-only paths never enter a build context.
+deploy/
+contacts/
+.local-data/
+.env
+.env.*
+.task/
+.git/
+.claude/
+node_modules/
+app/
+design/
+architecture/

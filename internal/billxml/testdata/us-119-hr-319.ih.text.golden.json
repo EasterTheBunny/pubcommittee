@@ -1,0 +1,48 @@
+{
+  "parser_version": "billxml/1",
+  "source_sha256": "7f0415ab7b81067638753cd1d3ad06f80102f7ee4b0da116793f95652ae5bc99",
+  "kind": "bill",
+  "stage": "Introduced-in-House",
+  "legis_num": "H. R. 319",
+  "official_title": "To authorize an additional district judgeship for the district of Idaho.",
+  "source_id": "H66E69FF1FE324CDB91612A1487315A7C",
+  "sections": [
+    {
+      "path": [
+        "s1"
+      ],
+      "enum": "1.",
+      "label": "Sec. 1",
+      "heading": "District judgeship for the district of Idaho",
+      "source_id": "H3CDF37B5CB8D4C5DA2BEE21FB7DF6B23",
+      "lines": [
+        {
+          "n": 1,
+          "anchor": "s1-l1",
+          "depth": 0,
+          "text": "(a) In general The President shall appoint, by and with the advice and consent of the Senate, 1 additional district judge for the district of Idaho.",
+          "source_id": "H781493939AA74B609DC1A76E27F77995",
+          "kind": "text"
+        },
+        {
+          "n": 2,
+          "anchor": "s1-l2",
+          "depth": 0,
+          "text": "(b) Technical and conforming amendment In order that the table contained in section 133(a) of title 28, United States Code, will reflect the change in the number of judgeships authorized by subsection (a), such table is amended by striking the item relating to Idaho and inserting the following:",
+          "source_id": "H2AF9514697534DCC8D9425CF641221CD",
+          "kind": "text"
+        },
+        {
+          "n": 3,
+          "anchor": "s1-l3",
+          "depth": 1,
+          "text": "Idaho 3.",
+          "kind": "table",
+          "quoted": true,
+          "raw": "<table align-to-level=\"section\" blank-lines-before=\"1\" colsep=\"0\" frame=\"none\" line-rules=\"no-gen\" rowsep=\"0\" rule-weights=\"0.0.0.0.0.0\" table-template-name=\"Generic: 1 text, 1 num\" table-type=\"\"><tgroup cols=\"2\" grid-typeface=\"1.1\" rowsep=\"0\" thead-tbody-ldg-size=\"10.10.12\"><colspec coldef=\"txt\" colname=\"column1\" colwidth=\"269pts\" min-data-value=\"200\"></colspec><colspec coldef=\"fig\" colname=\"column2\" colwidth=\"56pts\" min-data-value=\"10\"></colspec><tbody><row><entry align=\"left\" colname=\"column1\" leader-modify=\"force-ldr\" stub-definition=\"txt-ldr\" stub-hierarchy=\"1\">Idaho</entry><entry align=\"right\" colname=\"column2\" leader-modify=\"clr-ldr\" rowsep=\"0\">3</entry></row></tbody></tgroup></table>"
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

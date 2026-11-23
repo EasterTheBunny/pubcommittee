@@ -1,5 +1,5 @@
-// Registry of features that are not built in M0. Every "future" button opens a
-// pop-up from this list, naming the milestone and the design doc (design/MILESTONES.md).
+// Registry of features that are not built yet. Every "future" control opens an inline note
+// from this list (PlaceholderLink.svelte), naming the milestone and the design doc (design/MILESTONES.md).
 
 export interface Placeholder {
 	title: string;
@@ -163,13 +163,13 @@ export const placeholders = {
 		title: 'Data for machines',
 		milestone: 'M1',
 		doc: 'design/10-machine-access.md',
-		body: 'Every page gets a structured form, plus bulk exports, a change feed, and a read-only agent tool interface. Machines can read everything the public can; nothing lets software write on a person’s behalf. User content is always labelled as such. In M0, line ranges already have their own address, e.g. /bills/hr-4127/v/2/s/s4/l/12-13.'
+		body: 'Every page gets a structured form, plus bulk exports, a change feed, and a read-only agent tool interface. Machines can read everything the public can; nothing lets software write on a person’s behalf. User content is always labelled as such. Line ranges already have their own address, e.g. /bills/us-119-hr-4127/v/2/s/s4/l/1-3.'
 	},
 	'count-batching': {
 		title: 'Counts update in batches',
 		milestone: 'M2',
 		doc: 'design/11-ai-security.md',
-		body: 'Published counts change at a fixed interval, never the moment someone acts, so a change cannot be tied to one person. Small counts show as “fewer than N”. In M0, counts update instantly so the demo is easy to follow.'
+		body: 'Published counts change at a fixed interval, never the moment someone acts, so a change cannot be tied to one person. Small counts show as “fewer than N”.'
 	},
 	'automation-disclosure': {
 		title: 'Automation disclosure',
@@ -181,7 +181,7 @@ export const placeholders = {
 		title: 'Official bill page and text',
 		milestone: 'M1',
 		doc: 'design/01-bill-ingestion-and-display.md',
-		body: 'Opens the legislature’s own page for the bill, or the official text of the chosen version. The catalog never republishes text of bills that are not in review. These mock bills have no official page.'
+		body: 'Opens the legislature’s own page for the bill, or the official text of the chosen version. The catalog never republishes text of bills that are not in review.'
 	},
 	'markup-decision': {
 		title: 'Steward decision on a markup request',
@@ -199,7 +199,7 @@ export const placeholders = {
 		title: 'Device notifications by Web Push',
 		milestone: 'M2',
 		doc: 'design/08-onboarding-and-verification.md',
-		body: 'Turning notifications on subscribes this device. After each count batch, the server checks your own items against public updates and sends a content-free “You have updates” message. No email or phone number is needed, and no list of who supported what is kept. In M0 the message is shown locally.'
+		body: 'Turning notifications on subscribes this device. After each count batch, the server checks your own items against public updates and sends a content-free “You have updates” message. No email or phone number is needed, and no list of who supported what is kept.'
 	},
 	'district-breakdown': {
 		title: 'District breakdowns',

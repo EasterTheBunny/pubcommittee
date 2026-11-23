@@ -1,0 +1,43 @@
+import { expect, test } from '@playwright/test';
+
+// These run against the app wired to tests/stub-api.mjs (STUB_URL), which serves a comparison and
+// a very long bill. Skipped when STUB_URL is not set.
+const stub = process.env.STUB_URL;
+test.skip(!stub, 'STUB_URL not set');
+test.use({ baseURL: stub });
+
+test('old-version address to changed words shows the notice and a one-tap link to the current version', async ({
+	page
+}) => {
+	await page.goto('/bills/us-119-hr-1/v/1/s/s2/l/2');
+	const notice = page.getByRole('status');
+	await expect(notice).toContainText('These words changed in a newer version.');
+	await notice.getByRole('link', { name: 'See the current version' }).click();
+	await expect(page).toHaveURL(/\/bills\/us-119-hr-1\/s\/s2\/l\/2$/);
+});
+
+test('old-version address to unchanged words says so', async ({ page }) => {
+	await page.goto('/bills/us-119-hr-1/v/1/s/s2/l/1');
+	await expect(page.getByRole('status')).toContainText('unchanged in version 2');
+	await page.goto('/bills/us-119-hr-1/v/1/s/s1');
+	await expect(page.getByRole('status')).toContainText('unchanged in version 2');
+});
+
+test('the current version has no notice', async ({ page }) => {
+	await page.goto('/bills/us-119-hr-1/v/2/s/s2/l/2');
+	await expect(page.getByRole('status')).toHaveCount(0);
+});
+
+test('a very long bill renders every line, fast, without horizontal overflow', async ({ page }) => {
+	const t0 = Date.now();
+	const res = await page.goto('/bills/us-119-hr-2');
+	const ms = Date.now() - t0;
+	expect(res?.status()).toBe(200);
+	await expect(page.locator('[data-bill-text] [data-line]')).toHaveCount(10000);
+	// server time to first full HTML; generous bound for a shared CI container
+	expect(ms).toBeLessThan(5000);
+	const overflow = await page.evaluate(
+		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+	);
+	expect(overflow).toBeLessThanOrEqual(0);
+});

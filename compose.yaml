@@ -1,0 +1,234 @@
+# Local stack on the shared data volume. M1-01 shipped the placeholder
+# read-api on the memory target; M1-03a runs it on the local target. No emulators
+# and no Postgres in M1; the emulator profile arrives with M1-03b.
+# The full local app (web, admin-api, and the jobs that fill .local-data) is driven by
+# scripts/local.sh: build, up (Ctrl+C stops and removes everything), down. See README § Run the app.
+name: pubcommittee
+services:
+  read-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE: read-api
+        TARGET: local
+    environment:
+      PORT: "8080"
+      METRICS_PORT: "9464"
+      OTEL_SERVICE_NAME: read-api
+      DATA_DIR: /data
+      # Empty means the published defaults; scripts/local.sh raises them for one local browser.
+      RATE_LIMITS: ${RATE_LIMITS:-}
+      PUBLIC_UI_URL: ${PUBLIC_UI_URL:-}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./.local-data:/data
+    read_only: true
+    healthcheck:
+      test: ["CMD", "/service", "-healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    mem_reservation: 64M
+
+  # Stands in for a platform job in another container: writes the invented
+  # fixture bills into the shared data volume, so read-api (a different
+  # container) can be shown serving documents it did not write (M1-10).
+  #   docker compose --profile seed run --rm seed
+  seed:
+    profiles: ["seed", "acceptance"]
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    working_dir: /src
+    command: ["go", "run", "-tags", "local", "./test/acceptance/M1-10/seed"]
+    environment:
+      DATA_DIR: /data
+      GOFLAGS: -buildvcs=false
+      GOCACHE: /tmp/gocache
+    volumes:
+      - ./go.mod:/src/go.mod:ro
+      - ./go.sum:/src/go.sum:ro
+      - ./api:/src/api:ro
+      - ./cmd:/src/cmd:ro
+      - ./internal:/src/internal:ro
+      - ./test:/src/test:ro
+      - ./.local-data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+    mem_reservation: 256M
+
+  # Web app (profile app): the SvelteKit server, reading only from read-api.
+  web:
+    profiles: ["app"]
+    build:
+      context: ./app
+      dockerfile: ../docker/app.Dockerfile
+    environment:
+      READ_API_URL: http://read-api:8080
+      PUBLIC_API_URL: http://localhost:8080
+      PORT: "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    depends_on:
+      read-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    mem_reservation: 128M
+
+  # Administration (profile app) on the local target with localauth and placeholder operators;
+  # pubctl reaches it at http://localhost:8081 (cmd/pubctl/README.md).
+  admin-api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE: admin-api
+        TARGET: local
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      PORT: "8080"
+      METRICS_PORT: "9464"
+      OTEL_SERVICE_NAME: admin-api
+      DATA_DIR: /data
+      INGEST_SOURCE: fixtures
+      FIXTURES_DIR: /fixtures
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - ./.local-data:/data
+      - ./fixtures:/fixtures:ro
+    read_only: true
+    healthcheck:
+      test: ["CMD", "/service", "-healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    mem_reservation: 64M
+
+  # Jobs (profile jobs): run once each with `docker compose run --rm <job> <flags>`;
+  # scripts/local.sh seed runs them in order over the example data in fixtures/.
+  job-ingest:
+    profiles: ["jobs"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE: job-ingest
+        TARGET: local
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment: &job-env
+      DATA_DIR: /data
+      INGEST_SOURCE: fixtures
+      FIXTURES_DIR: /fixtures
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    volumes: &job-volumes
+      - ./.local-data:/data
+      - ./fixtures:/fixtures:ro
+    read_only: true
+    deploy: &job-limits
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    mem_reservation: 128M
+
+  job-exports:
+    profiles: ["jobs"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE: job-exports
+        TARGET: local
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment: *job-env
+    volumes: *job-volumes
+    read_only: true
+    deploy: *job-limits
+    mem_reservation: 128M
+
+  # The fake generator only: local runs make no model calls (live runs: cmd/job-summarize/README.md).
+  job-summarize:
+    profiles: ["jobs"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE: job-summarize
+        TARGET: local
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment: *job-env
+    volumes: *job-volumes
+    read_only: true
+    deploy: *job-limits
+    mem_reservation: 128M
+
+  otel-collector:
+    image: otel/opentelemetry-collector@sha256:34b24b740c3c88d3467740e8642a397c13898ef76d7295c5425164c482ed1b73
+    command: ["--config=/etc/otelcol.yaml"]
+    volumes:
+      - ./docker/otelcol.yaml:/etc/otelcol.yaml:ro
+    depends_on:
+      read-api:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    mem_reservation: 128M
+
+  # Runs every task's acceptance script against the stack:
+  #   docker compose --profile acceptance run --rm acceptance
+  acceptance:
+    profiles: ["acceptance"]
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    working_dir: /src
+    volumes:
+      - ./test:/src/test:ro
+    environment:
+      READ_API_URL: http://read-api:8080
+      READ_API_METRICS_URL: http://read-api:9464
+      DATA_DIR: /data
+    command: ["sh", "-c", "for f in test/acceptance/*/run.sh; do [ -e \"$$f\" ] && sh \"$$f\" || exit 1; done"]
+    depends_on:
+      read-api:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    mem_reservation: 128M

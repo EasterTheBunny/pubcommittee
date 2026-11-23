@@ -86,7 +86,8 @@ Every backend unit is a standalone container image ([Service packaging](#service
 
 - **Hosting:** any web host that runs Node and SvelteKit, deployed from `app/`. The host is not part of the architecture; swapping it means changing the SvelteKit adapter and the API base URLs.
 - **The contract is the API.** The UI depends on nothing in the backend except the `read-api` and `write-api` HTTP interfaces ([API contract](#api-contract)). The backend does not know or care which host serves the UI.
-- **Rendering:** SvelteKit server rendering on the host, plus prerendering for pages that never change (official version text by canonical address). Pages are complete HTML without scripts.
+- **Rendering:** SvelteKit server rendering on the host, plus prerendering for pages that never change (official version text by canonical address). Pages are complete HTML without scripts. In M1 nothing is prerendered: `adapter-node` renders every page on request from `read-api`, so the build needs no API.
+- **Configuration (M1-13):** `READ_API_URL` (server-side calls) and `PUBLIC_API_URL` (links and `303` redirects for `Accept: application/json`), read from `process.env`. The server keeps a short in-memory cache of `GET` responses, because every reader's requests reach `read-api` from the web host's one address and share its rate-limit allowance; each environment sets `RATE_LIMITS` for that address.
 - **Data:** server-side `GET` calls to `read-api`. No direct access to any store.
 - **Caching:** immutable version pages cache long at the host's CDN; pages showing review items use a short TTL with stale-while-revalidate, so comments appear within minutes without waking the backend on every view.
 - **Signed-in features:** run in the browser. Server-rendered pages are always the signed-out view; the browser then calls `write-api` with credentials for "my signals", composing, and supporting.
@@ -105,12 +106,14 @@ The UI is a **progressive web app** and must be installable ([08](../design/08-o
   - **Receives device notifications** ([Notifications](#notifications)) and opens the inbox on tap.
 - **Build:** the SvelteKit service-worker support in `app/`, versioned with each deploy so a new release replaces old caches.
 - **Requirement checks in CI:** installability (manifest and service worker present and valid) and an offline load of a cached version page.
+- **As built (M1-14):** caches are named per release (`pubcommittee-{shell,text,fallback}-<version>`); fallback copies are bounded to 40; cross-origin `read-api` responses are stored only if `immutable`; responses with `private`, `no-store`, `Vary: *`, or `Set-Cookie` are never stored. The service worker injects `<meta name="pc-offline-copy">` into saved HTML, and `OfflineLabel.svelte` shows the out-of-date label from it and `navigator.onLine`. A never-opened page shows an offline page. Rules live in `app/src/service-worker/policy.ts` (pure, tested in Node); Playwright checks installability through the browser's own installability report. Fonts are cross-origin and not cached; offline pages fall back to system fonts.
 
 ## Data placement
 
 ### Object store (immutable or regenerated files)
 - Official versions: original XML and parsed sections/lines with anchors. Written once at ingestion; never changed ([01](../design/01-bill-ingestion-and-display.md)).
-- Existing-law provisions cited, with source effective date.
+- Version comparisons: `bills/{bill}/compare/{from}..{to}/{method}.json`, write-once, where method is `<parser version>+versiondiff/1` with `/` written as `_` ([02](../design/02-versions-and-review-lifecycle.md)).
+- Existing-law provisions cited, with source effective date: `law/usc/<release>/t<title>/<section>.json` and `law/usc/<release>/release.json` (write-once), `law/usc/current.json` (replaceable pointer). Citation sets: `bills/<bill>/v/<ver>/citations/<method>.json` (write-once), method `billxml/1+citations/1+usc@<release>`.
 - Count snapshots per bill and item, per batch.
 - Bulk exports and the change feed ([10](../design/10-machine-access.md)).
 - Rendered brief documents for delivery and export ([07](../design/07-legislator-brief-and-responses.md)).
@@ -193,6 +196,16 @@ Ports are grouped by the boundary they sit behind. A service receives only the g
 | Notification | `Notifier` | Send an encrypted Web Push message to a subscription; report subscriptions that are gone | `adapters/webpush` |
 | Generation | `Generator` | Submit summarization tasks as a batch, collect results; one synchronous call for steward-requested regeneration | `adapters/claude` |
 
+M1 notes (from M1-01):
+- The public read group holds only `BillText` and `PublicDocs` in M1; `Snapshots` arrives in M2.
+- `PublicDocs` also has `GetSelectionPolicyVersion` (M1-10).
+- Ingest (M1-05): `BillFetcher` (`FetchRecord`, `FetchOriginal`) sits beside `BillSource`; `ListChanged` and watermark ingestion stay out of M1. `OfficialVersion` gains `ParserVersion` and an unserialised `Source`; `IngestState` gains `Failed`. `CatalogEntry` gains `search_terms`, `sponsor_id`, `sponsor`, `introduced`, `latest_action`, `policy_area`, `committees`, and `related`; `Bill` gains `sponsor_id` (bioguide). After `after-store`, `ingest.WithAnalysis` stores citation sets and version comparisons for every stored version of a tracked bill; `job-ingest --analyze [--bill ...]` reruns both over stored data with no fetch. The pipeline is `internal/ingest.DefaultSteps()`, an ordered list of named steps (`fetch-record`, `catalog`, `policy`, `versions`, `after-store`, `write-bill`, `write-catalog`, `ingest-state`) that later tasks extend with `After` and `Replace`.
+- Existing law and citations (M1-07): `LawReader`/`LawWriter` and `CitationReader`/`CitationWriter` (`internal/data/citations.go`), in `PublicReadPorts.Law`/`Citations` and `PlatformPorts.LawStore`/`CitationStore`; `fsobject` and `memory` implement all four; `gcp`/`emulator` leave them nil (routes answer 404). A version with no stored citation set answers 404.
+- Feed and exports (M1-11): `FeedReader`/`FeedWriter` and `ExportReader`/`ExportWriter` (`internal/data/feed.go`, `exports.go`), backed by `Publisher` through shared helpers that cloud adapters reuse. `feed/entries.json` is append-only with a `Seq` cursor; `exports/_index.json` is the replaceable index. Per-version exports `bill-source.*.xml` and `bill-text.*.json` are write-once; `existing-law.*.json`, `change-explanations.*.json`, the catalog, and `tracked-set.json` (the M1-06 breakdown with an export header) are replaced whole. `read-api` reads `PUBLIC_UI_URL` for the discovery link to the UI's `/.well-known/machine-access.json`; the web host fills the notice from `PUBLIC_API_URL`.
+- Comparisons (M1-08): `ComparisonReader` in the public read group (`PublicReadPorts.Comparisons`), `ComparisonWriter` in the platform group (`PlatformPorts.ComparisonStore`); `fsobject` and `memory` implement both, and `gcp`/`emulator` wiring leaves the reader nil (route answers 404) until M1-03b.
+- `PlatformDocs` also has `PutBill`, `GetIngestState`, and `PutIngestState`. `ApplyLogged` takes a `Change`, which carries exactly one of a bill, catalog entry, policy, or explanation, plus a `LogEntry`.
+- `BillSource` declares `ListChanged(ctx, since, page)` in M1. Manual pulls ([M1-05](../design/tasks/m1/05-manual-bill-pull-and-storage.md)) pass an empty watermark.
+
 ### Interface rules
 1. **Domain types only.** Ports take and return types from `internal/data` (`Anchor`, `Thread`, `SignalKey`, `Snapshot`). No vendor types (document references, timestamps, rows, SDK errors) cross a port.
 2. **Domain operations, not generic queries.** `SignalLedger.Set(ctx, key, item, value)` is an idempotent upsert; there is no `Query(sql)` or `Collection(name)`. Each adapter decides how to make the operation atomic.
@@ -258,6 +271,8 @@ cmd/write-api/
 
 `wiring_none.go` references an undefined identifier, so a build with no target tag fails to compile instead of producing a binary with no storage.
 
+Each wiring file defines the same function, `wire(...)`, which `main.go` calls to get the service's port group.
+
 Build: `CGO_ENABLED=0 go build -tags gcp -trimpath -ldflags="-s -w" ./cmd/write-api`.
 
 `cmd/read-api` wiring files import read-port adapters only. CI runs `go list -deps -tags gcp ./cmd/read-api` and fails if `adapters/postgres`, `adapters/kmsgcp`, or their SDKs appear; a `depguard` rule in the linter enforces the same in review. This makes "the public read path never touches SQL" a property of the build, not a convention.
@@ -273,8 +288,8 @@ Build: `CGO_ENABLED=0 go build -tags gcp -trimpath -ldflags="-s -w" ./cmd/write-
 | `internal/adapters/postgres` | `SignalLedger`, `Identities`, `Accounts` | Any Postgres (Neon in production) |
 | `internal/adapters/kmsgcp` | `Keys` | Cloud KMS |
 | `internal/adapters/localkeys` | `Keys` | Keys from a local file; development only, excluded from `gcp` builds |
-| `internal/adapters/fsobject` | `BillText`, `Snapshots`, `Publisher` | Local filesystem, same paths as the bucket; write-once by exclusive create, atomic rename for replaceable files, content hash as `ETag`. Local only, excluded from `gcp` builds |
-| `internal/adapters/fsdocs` | `PublicDocs`, `ReviewItems`, `Moderation`, `PlatformDocs` | One JSON file per document on the local filesystem; atomic rename, lock file for change-plus-log operations. Local only, excluded from `gcp` builds |
+| `internal/adapters/fsobject` | `BillText`, `Snapshots`, `Publisher` | Local filesystem, same paths as the bucket; write-once by hard-linking a synced temporary file to the final path (exclusive and atomic), atomic rename for replaceable files, content hash as `ETag`. Local only, excluded from `gcp` builds |
+| `internal/adapters/fsdocs` | `PublicDocs`, `ReviewItems`, `Moderation`, `PlatformDocs` | One JSON file per document on the local filesystem; atomic rename, one lock file (`<root>/.lock`) serializing writes and change-plus-log operations. The catalog has no index file: file names encode the bill key, and a page lists the directory and reads only its entries (about 10 ms for the first page of 15,000). Local only, excluded from `gcp` builds |
 | `internal/adapters/localauth` | Operator authentication for `admin-api` | A fixed fake operator. Local only, excluded from `gcp` builds |
 | `internal/adapters/cloudtasks` | `Queue` | Cloud Tasks |
 | `internal/adapters/claude` | `Generator` | Claude through the Anthropic Go SDK: the Google Cloud client (`googlecloud`) in `gcp` builds, the first-party client elsewhere |
@@ -318,6 +333,7 @@ internal/
   httpx/               server bootstrap: health, readiness, metrics port, shutdown
   ...                  domain packages (auth, review, signals, ingest, briefs), each used by few binaries
 app/                   SvelteKit UI, deployed to any Node web host
+demo/                  archived M0 demo (static, mock data), served from its Netlify site
 docker/
   Dockerfile           one multi-stage file; SERVICE and TARGET build arguments
 compose.yaml           every backend service on a shared local data volume; emulators behind a profile
@@ -374,23 +390,27 @@ Build: multi-stage Dockerfile. A Go builder stage with module and build caches c
 | Go tools | `golangci-lint` and `oapi-codegen` pinned with the `tool` directive in `go.mod`, run with `go tool` | Versions live in the module; nothing to install by hand |
 | Lint | `golangci-lint` v2, strict: all linters enabled, each disabled linter justified in `.golangci.yml`, no issue limits, `//nolint` only with a named linter and reason | Findings fail CI |
 | Development container | `docker/dev.Dockerfile`; builds, tests, and lint run inside it, with explicit CPU and memory limits, for agents and CI alike | Same toolchain everywhere; parallel work cannot starve the host |
-| TypeScript types | `openapi-typescript` as a dev dependency in `app/` | Pinned by the app's lockfile |
+| Node | Node 24 (`node:24-bookworm-slim`, pinned by digest in `docker/dev.Dockerfile`) for `app/` | One runtime for UI builds, type generation, and Playwright |
+| TypeScript types | `openapi-typescript` as a dev dependency in `app/`, with the npm override `overrides.openapi-typescript.typescript=$typescript` because its peer range stops at TypeScript 5 | Pinned by the app's lockfile |
+| OpenAPI linter | Redocly CLI (`@redocly/cli`, dev dependency in `app/`), config in `api/redocly.yaml` | Validates OpenAPI 3.1 with no extra runtime |
+| API code generation | `oapi-codegen` (tool directive) generates `api/v1` (package `apiv1`); `sh api/generate.sh` regenerates Go and TypeScript, `sh api/check.sh` lints the spec and fails if generated code is stale | One command each to regenerate and to check |
 | Multi-arch images | Cross-compile in the builder stage (`--platform=$BUILDPLATFORM`, `GOOS`/`GOARCH` from `TARGETOS`/`TARGETARCH`) | Static Go binaries need no emulation; the final stage only copies the binary, so no QEMU or binfmt |
 | SBOM | BuildKit SBOM attestation (`--sbom=true`) | Generated at build with no separate tool |
 | CI | GitHub Actions, in this repository and the deployment repository | The repository is on GitHub; secret scanning with push protection and OIDC federation to Google Cloud are built in |
 | Infrastructure as code | OpenTofu | Open-source licence; the HCL also works with Terraform |
-| UI, no-script, and installability tests | Playwright, with manifest and service-worker checks and an offline reload | One browser tool for all UI checks; Lighthouse dropped its PWA audits in version 12 |
+| UI, no-script, and installability tests | Playwright (image `mcr.microsoft.com/playwright:v1.65.1-noble`, which bundles Node 26, so tests drive an app running on Node 24 in another container; 2 workers within 1.5 GiB), with manifest and service-worker checks and an offline reload | One browser tool for all UI checks; Lighthouse dropped its PWA audits in version 12 |
 | Firestore emulator | Container image under the `emulator` profile in `compose.yaml` (cloud phase) | CI and every machine run the same emulator |
 | Firebase CLI | Cloud phase only, in the deployment repository's CI | Local runs never use Firebase Hosting |
 | Postgres | Not in `compose.yaml` until M2 | No SQL in M1 |
+| Bill DTD validation | `xmllint --dtdvalid` (`libxml2-utils`) in a CI container, against the official `bill.dtd` and `res.dtd` committed under `internal/billxml/testdata/dtd/` | Uses the official DTDs unchanged; Go has no DTD validator |
 | Secret scanning | GitHub secret scanning with push protection, plus the format-based pattern check in CI | See [What stays private](#what-stays-private) |
 
-Open: the OpenAPI linter ([API contract](#contract-workflow)), whether DTD validation of bill XML runs in Go tests or with `xmllint` in a CI container, and whether a local pre-commit secret scanner is wanted beside CI scanning.
+Open: whether a local pre-commit secret scanner is wanted beside CI scanning.
 
 ### Keeping each service small
 - **One responsibility per binary.** A service that grows a second job is split.
 - **Few dependencies.** Standard library first. A new third-party module needs a reason in review. Vendor SDKs are imported only from adapter packages.
-- **Size budget per binary, checked in CI.** Google Cloud clients built on gRPC dominate binary size; services that do not need an adapter must not link it. The budget is set from the first M1 builds and fails the build when exceeded.
+- **Size budget per binary, checked in CI.** Google Cloud clients built on gRPC dominate binary size; services that do not need an adapter must not link it. The budget is set from the first M1 builds and fails the build when exceeded. First measurement (M1-01): `read-api` on the `memory` target, `linux/amd64`, `-trimpath -ldflags="-s -w"`, is 16.8 MB, most of it the OTLP exporter's gRPC and protobuf. The budget is 20 MB, in `test/ci/size-budget.txt`, checked by `test/ci/size.sh`.
 - **No work at startup** beyond reading config and constructing clients. Clients connect on first use.
 
 ### Contract for every image
@@ -406,6 +426,7 @@ Open: the OpenAPI linter ([API contract](#contract-workflow)), whether DTD valid
 - `GET /healthz` reports the process is alive. `GET /readyz` reports its adapters are configured and reachable.
 - `GET /metrics` on a separate port (`$METRICS_PORT`, default `9464`) serves metrics for scraping ([Observability](#observability)). The metrics port is never routed publicly.
 - On `SIGTERM`, stop accepting requests, finish in-flight ones, and exit within 10 seconds.
+- `read-api` reads `RATE_LIMITS` (form `text=600,live=300,bulk=120,discovery=600`, per minute per route class), `CLIENT_IP_HEADER`, and, on the `memory` target only, `SEED_FIXTURES=1` to load invented test fixtures.
 - Shared bootstrap lives in `internal/httpx`, so every service gets the same health, readiness, metrics, and shutdown behavior.
 
 ### Jobs
@@ -425,7 +446,7 @@ The `TARGET` build argument selects the build tag, and so the [wiring](#build-ti
 | `emulator` | `firestore` and `gcs` against the Firestore emulator and a Cloud Storage stand-in; `localkeys` | Conformance and integration tests of the cloud adapters, locally and in CI |
 | `memory` | `memory`, `localkeys` | Unit and conformance tests; nothing persists |
 
-A target only includes the adapters a given service's wiring imports, so a `read-api` image of any target contains no SQL or key adapter. CI also fails if a `gcp` binary links any local-only adapter (`fsobject`, `fsdocs`, `localkeys`, `localauth`), so a local stand-in can never reach a deployed service.
+A target only includes the adapters a given service's wiring imports, so a `read-api` image of any target contains no SQL or key adapter. CI also fails if a `gcp` binary links any local-only adapter (`fsobject`, `fsdocs`, `localkeys`, `localauth`, and their helper `fsutil`), so a local stand-in can never reach a deployed service.
 
 **Local first.** Every service and job builds and runs on `local` before any cloud adapter exists; cloud connections are added afterwards behind the same ports ([M1 phases](../design/tasks/README.md#phases)).
 
@@ -559,10 +580,14 @@ What carries over: the collector's directory layout and JSON schema are a well-k
 | govinfo bulk data, `BILLS` collection | Official XML of every bill text version | HTTPS, no key; `/json` or `/xml` listing per Congress, session, and bill type (requires an `Accept` header) | **Primary** for text |
 | govinfo bulk data, `BILLSTATUS` collection | Official bill status XML: titles, sponsors, actions, committees, related bills, list of text versions | HTTPS, no key; current Congress updated about every 4 hours; sitemap index with last-modified dates; RSS feed listing files changed in each batch | **Primary** for metadata and change detection |
 | `unitedstates/congress` collector (public domain, maintained) | The same official data, normalised to JSON | Run the Python tool; output to files | **Optional** backfill or fallback, read by its own adapter |
-| Office of the Law Revision Counsel | US Code as XML release points | HTTPS download | **Primary** for existing law ([01](../design/01-bill-ingestion-and-display.md)) |
+| Office of the Law Revision Counsel | US Code as XML release points | HTTPS download from `https://uscode.house.gov/download.html`; files at `download/releasepoints/us/pl/<congress>/<law>/xml_usc<TT>@<release>.zip`, where release `119-142` means current through Public Law 119-142. `priorreleasepoints.htm` answered 404 on 2026-11-22, so the adapter lists only the current release point | **Primary** for existing law ([01](../design/01-bill-ingestion-and-display.md)) |
 | `usgpo/bill-dtd` | DTDs for bill XML | Git repository | Parser tests and validation |
 
-Exact paths, listing formats, and update cadences are confirmed against GPO's published guides at M1 start.
+Exact paths, listing formats, and update cadences are confirmed against GPO's published guides at M1 start. Confirmed by M1-05:
+- Status: `https://www.govinfo.gov/bulkdata/BILLSTATUS/{congress}/{type}/BILLSTATUS-{congress}{type}{number}.xml`.
+- Text: the XML URL each status lists, of the form `https://www.govinfo.gov/content/pkg/BILLS-{congress}{type}{number}{code}/xml/BILLS-{congress}{type}{number}{code}.xml`. The version code is the part of the file name after the number, in lower case. A status lists XML only for versions already published; items without an XML URL are skipped.
+- Listings: `https://www.govinfo.gov/bulkdata/json/BILLSTATUS/{congress}/{type}` with `Accept: application/json`, about 4 MB for `hr`, including file sizes.
+- Servers send `Last-Modified` and no `ETag`, so conditional requests use `If-Modified-Since`. The `govinfo` adapter fetches only `www.govinfo.gov` URLs, one request at a time.
 
 ### Recommendation
 **Pull directly from govinfo in Go, behind a `BillSource` port.** No Python collector, no shared disk, no API key.
@@ -576,6 +601,9 @@ Exact paths, listing formats, and update cadences are confirmed against GPO's pu
 - **Politeness.** One request at a time per host with backoff, a descriptive user agent naming the project (no personal contact details), and conditional requests where the source supports them.
 
 The `usccollector` adapter keeps the collector as an option, for example to backfill older Congresses quickly from its output, without making it a dependency. The `fixturesrc` adapter lets every environment run ingestion with no network.
+
+### Parser
+`internal/billxml` parses official bill XML into sections and lines. It is a pure function (`Parse(src, logger)`), called by ingest ([M1-05](../design/tasks/m1/05-manual-bill-pull-and-storage.md)), never on a request. Its version, `ParserVersion` (now `billxml/1`), is stored with the parsed text; a change to parsing rules needs a new version and regenerated golden files. Line unit, non-prose units, continuation lines, and anchors are as [01 § Open questions](../design/01-bill-ingestion-and-display.md#open-questions) records them (M1-04 answers). Parsed `text.json` lines carry `n`, `anchor`, `depth`, `text`, `source_id`, `kind` (`text`, `group`, `table`, `toc`, `formula`, `graphic`), `quoted`, `continuation`, and `raw` for non-prose markup.
 
 ### Bill selection
 
@@ -609,6 +637,13 @@ Signals used, all from `BILLSTATUS`: bill type, committee activity names, action
 
 The same evaluation sets every catalog entry's `markup_status`: `in_review` (tracked), `eligible` (allowed measure kind, not yet selected), or `not_candidate` (excluded kind, with the reason shown).
 
+As built (M1-06, `internal/selection`):
+- The stored policy document carries the structured fields above plus `rules`, a plain-language statement generated from them. Version 1 is embedded at `internal/selection/policies/v1.json`; its topic terms are drafts until the operator confirms them ([policies/README.md](../internal/selection/policies/README.md)). `selection.Publish` stores a version and its public log entry atomically, requires a reason, refuses a version below the latest, and treats an identical republish as a no-op.
+- Reason vocabulary: `committee-action:<hearing|markup|reported|discharged|floor|calendar>`, `topic:<name>:<subject|policy-area|title-only>`, `companion:<bill id>`, `administrator`, and `manual-pull` (local `--track`). A companion is a related bill marked identical or companion that is already tracked; it needs no committee action or topic but must be an allowed kind. A `title-only` reason is upgraded when indexing later confirms the topic.
+- Catalog entries gain `policy_version`, `tracked_since`, and `sponsor_party`. `sponsor_party` is stored only for the disclosure counts and is not served by `read-api`; the evaluator's input type has no sponsor fields, and a test fails if one is added.
+- The tracked-set breakdown is written to `exports/tracked-set-breakdown.json` by every pull and every `job-ingest --evaluate` run. No `read-api` route serves it yet.
+- At scale (cloud phase) the policy step needs a `PublicDocs.GetCatalogEntry` read; locally it pages through `ListCatalog` once per run, which does not scale to a whole Congress.
+
 ### Public catalog
 - **Every catalog entry is public** through `read-api`, including bills that are not tracked.
 - **Official links.** The `govinfo` adapter records, from the bill status, the legislature's page for the bill and the official URL of each text version, stored as `official_links`. The UI links untracked bills there; their text is never fetched, stored, or re-rendered ([01](../design/01-bill-ingestion-and-display.md#public-catalog)).
@@ -631,10 +666,10 @@ Implements [01 Markup requests](../design/01-bill-ingestion-and-display.md#marku
 
 | Record | Where | Contents |
 | --- | --- | --- |
-| Original document | Object store, write-once | Source bytes, URL, retrieved-at, SHA-256 |
+| Original document | Object store, write-once | Source bytes; URL, retrieved-at, and SHA-256 in a sidecar (`source.xml.meta.json`), read through `SourceInfoReader` |
 | Parsed version | Object store, write-once | Sections, lines, anchors, parser version |
 | Bill metadata | `bills` | Status, titles, sponsors, actions, version list with source references |
-| Watermark | `ingest_state` | Last processed position per source and Congress; failures to retry |
+| Watermark | `ingest_state` | Last processed position per source and Congress; failures to retry. In M1 the key is `<source>/<session>` (for example `govinfo/119`) and it holds failed items only, with no watermark; its read-modify-write is not atomic, so overlapping pulls can drop a failure that the next pull records again |
 
 ## AI-generated content
 
@@ -693,6 +728,10 @@ job-ingest ──► new version stored ──► job-summarize (submit)
 
 Model ids, prices, and feature availability on the platform are confirmed at M1 start. The `claude` adapter keeps all of this behind the `Generator` port, so services never import the SDK.
 
+As built (M1-09, `internal/adapters/claude`): `anthropic-sdk-go/v2` v2.13.0. `New` is the first-party client for the local L3 run (key from the caller); `NewGoogleCloud` (build tag `gcp`) uses the SDK's `googlecloud` client with Application Default Credentials. Message Batches for submit and collect, one synchronous `Generate` for regeneration; structured output through `output_config.format`; effort `medium` on every task until tuned; the bill text is the cached first block. The grader is `claude-sonnet-5-5` (a different model from the generator). Model ids and prices come from the claude-api reference dated 2026-11-03 and are not yet confirmed against the live platform. **Refusals:** the synchronous `Generate` sends beta `server-side-fallback-2026-07-01` with `fallbacks: "default"` on both clients; batch submissions cannot (the Batches API rejects the parameter), so a batch refusal is recorded as `refusal` and never published. `GenResult.FallbackFrom` and `GeneratedOutput.FallbackModel` record an answer given by a fallback model, and the accuracy report counts them. Whether to move generation off batches to gain fallbacks is an operator cost choice. Live runs need `PUBCOMMITTEE_LIVE_MODEL_RUNS=1`; without it `--generator claude` is refused. `job-summarize` links the SDK and has a 30 MB size budget.
+
+Outputs: `generated/{task}/{bill}/v/{version code}/{key id}.json` (write-once), grades beside them as `.grade.json`, a `current-<target hash>.json` pointer for the published output, and pending batches under `generated/batches/`. The key id is a content hash of task, bill, version, target, prompt version, and model. Statement anchors are `<section path joined by .>-l<n>` or `-l<from>-<to>`; a version change summary may also cite `prev:` anchors of the earlier version. Outputs stay write-once; revalidation (`job-summarize --revalidate`) or a retry (`--submit --retry`, then `--collect`) may add a revised record (`.revised.json`) beside an output through `GeneratedWriter.PutRevised`, and reads prefer it. A retry replans only outputs that are not ready, and an unverified retry result is not stored. Validators compare provision ids in stored form (`usc/42/1395cc-7`); a printed citation resolves to that provision or to the stored section containing the cited subsection, never to a broader or different provision. `read-api` withholds a summary or change summary the grader marked contradicted; explanations cannot be withheld yet, because `PlatformDocs` has no delete.
+
 ### Accuracy checks (before stewards)
 Accuracy is measured against each statement's **cited lines**, which needs no reference text. Every statement in an output lists the bill line anchors and provision citations it rests on, so each check compares a statement with exactly those lines.
 
@@ -702,7 +741,7 @@ Accuracy is measured against each statement's **cited lines**, which needs no re
 | **Amendment consistency** (deterministic) | Parses the bill's amendment instructions ("striking X and inserting Y", "is amended by adding", "is repealed") in the cited lines, and checks the explanation names the same target provision, removed text, and inserted text | Same, for amendatory text | Same |
 | **Grounding grader** (model) | A grader model, different from the generating model, labels each statement *supported*, *unsupported*, or *contradicted* by its cited lines, and rates neutral wording | Local live runs only (stage L3), with operator approval; never in CI | *Contradicted* outputs are withheld; grades are stored beside the output |
 | **Planted errors** | Injects known errors into good outputs (changed numbers, swapped sections, reversed effect, evaluative wording) and measures how many each check catches | Deterministic checks in CI; grader in local live runs | Reports each check's catch rate |
-| **Operator sample** | The operator grades about 30 statements against their cited lines once, recorded as an operator check, not a steward review | Once in M1, before the first report | Reports grader agreement with the operator |
+| **Operator sample** | The operator grades about 30 statements against their cited lines once, recorded as an operator check, not a steward review | Once in M1, before the first report | Reports grader agreement with the operator. **Decided (operator, 2026-11-22):** later samples include statements the grader marked contradicted and statements the validators rejected, beside supported ones, so agreement also measures whether the grader catches errors. The M1 sample held only grader-supported statements (30/30 agreement) |
 | **CRS summary coverage** | For bill summaries, the grader compares our summary with the Congressional Research Service summary of the same version from `BILLSTATUS` (public domain): points covered, points contradicted | Local live runs | Reports coverage and contradictions |
 
 - **CRS summaries are references, never inputs.** They are not passed to the generating model, so the coverage check stays independent.
@@ -771,14 +810,19 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 | `GET /v1/markup-decisions`, `GET /v1/markup-decisions/{id}` | `read-api` | None | Short |
 | `GET /v1/bills/{bill}/v/{n}` | `read-api` | None | Immutable: metadata, sections, lines, anchors |
 | `GET /v1/bills/{bill}/v/{n}/s/{section}`, `.../s/{section}/l/{range}` | `read-api` | None | Immutable |
-| `GET /v1/bills/{bill}/v/{n}/explanations` | `read-api` | None | Short (stewards correct explanations) |
+| `GET /v1/bills/{bill}/s/{section}`, `.../s/{section}/l/{range}` | `read-api` | None | Short: latest version, with an `address` block naming the pinned and latest versions |
+| `GET /v1/bills/{bill}/v/{n}/summary`, `.../changes` | `read-api` | None | Short: bill summary and change summary against the previous version ([M1-09](../design/tasks/m1/09-ai-generation.md)) |
+| `GET /v1/bills/{bill}/v/{n}/citations?state=`, `.../citations/unresolved` | `read-api` | None | Short ([M1-07](../design/tasks/m1/07-us-code-and-citations.md)) |
+| `GET /v1/bills/{bill}/v/{n}/compare/{m}` | `read-api` | None | Immutable: base `n` against `m` ([M1-08](../design/tasks/m1/08-version-history-and-stale.md)) |
+| `GET /v1/bills/{bill}/v/{n}/explanations` | `read-api` | None | Short (stewards correct explanations). Each carries `line_from`, `line_to` (the lines it rests on) and `provision_citation` (for example `16 U.S.C. 824a(f)`); for explanations stored without line anchors they are derived on read from the citation lines, else the whole section. Sections that need no explanation (`data.Section.NeedsExplanation`) are left out, here and in the change-explanations export |
 | `GET /v1/bills/{bill}/v/{n}/review` | `read-api` | None | Short: threads and suggestions for that version |
 | `GET /v1/threads/{id}`, `GET /v1/suggestions/{id}` | `read-api` | None | Short |
 | `GET /v1/issues`, `GET /v1/issues/{id}` | `read-api` | None | Short |
 | `GET /v1/briefs/{bill}` | `read-api` | None | Until next brief |
 | `GET /v1/snapshots/bills/{bill}` | `read-api` | None | Until next batch |
 | `GET /v1/moderation-log` | `read-api` | None | Short |
-| `GET /v1/feed`, `GET /v1/exports/...` | `read-api` | None | Until next batch |
+| `GET /v1/feed`, `GET /v1/exports/{export}` | `read-api` | None | Until next batch |
+| `GET /v1`, `GET /v1/openapi.yaml` | `read-api` | None | Short |
 | `GET /auth/{provider}/start`, `GET /auth/{provider}/callback`, `POST /auth/signout` | `write-api` | Session created here | Never |
 | `GET /v1/me`, `GET /v1/me/signals` (includes markup requests) | `write-api` | Session cookie | Never |
 | `GET /v1/me/notifications`, `POST /v1/me/notifications/read` | `write-api` | Session cookie | Never |
@@ -793,15 +837,20 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 
 `PUT` and `DELETE` on signals make set and withdraw idempotent, matching `SignalLedger`. The paths above are a starting outline; `api/openapi.yaml` is authoritative once written.
 
+Path parameters (M1-02): `{n}` is the 1-based position in the bill's version list, or `latest`; the version code (for example `ih`) is the `code` field. `{range}` is `12` or `12-13`, inclusive, the same form as the UI fragment `#s4-l12-13`. A block has no syntax of its own: each line carries `block_to`, and the block is the range `n-block_to`. `markup-decisions` routes are not yet in the spec.
+
+Cache classes (M1-10): immutable `public, max-age=31536000, immutable`; short `public, max-age=60, stale-while-revalidate=300`; batch `public, max-age=900`. Answers resolved from `latest` use the short class. `GET /v1/bills` answers with `anyOf` bill summary or catalog entry, because a tracked catalog entry satisfies both.
+
 ### Conventions
 - **Versioning.** Major version in the path (`/v1`). Additive changes do not bump it. A new major version runs beside the old one for a published period ([10](../design/10-machine-access.md)).
 - **Representation.** Plain JSON, `snake_case` fields, UTC timestamps in RFC 3339 (public timestamps coarsened to the day where [11](../design/11-ai-security.md) requires). No envelope; collections return `{ "items": [...], "next": "<cursor>" }`.
 - **Provenance on every record.** `version`, `as_of`, `provenance`, and `content_class` (`official`, `platform`, `user`) on each record that carries text ([10](../design/10-machine-access.md#instruction-injection)).
 - **Pagination.** Opaque cursors from the adapter, passed as `?cursor=`. No offsets.
 - **Caching.** Strong `ETag` on every `GET`, with `If-None-Match` returning `304`. `Cache-Control` per resource as in the table; `immutable` for official text. Credentialed responses are `private, no-store`.
-- **Errors.** RFC 9457 problem details (`application/problem+json`) with a stable `type` per typed data error (`not-found`, `conflict`, `invalid`, `rate-limited`, `unavailable`). No stack traces or vendor errors.
+- **Errors.** RFC 9457 problem details (`application/problem+json`) with a stable `type` per typed data error, in the path form `/problems/<name>` (`not-found`, `conflict`, `invalid`, `rate-limited`, `unavailable`). No stack traces or vendor errors.
 - **Rate limits.** `429` with `Retry-After`; published limits per route class, as ranges. `read-api` limits in memory per instance, keyed on `HMAC(k_rate, ip ‖ day)` that never leaves memory; it holds no storage port for limits.
-- **Feed.** `GET /v1/feed?since=<RFC 3339>` in the collection convention; entries carry type, day-granular time, and canonical address.
+- **Public log.** Entries store the day only, like every public timestamp, plus a write sequence assigned by the store; the log lists later days first and, within a day, the last written first, across all entry kinds.
+- **Feed.** `GET /v1/feed?since=<RFC 3339>` in the collection convention; entries carry type, day-granular time, and canonical address. `since` is day-granular (entries whose day is on or after the day of `since`), so clients de-duplicate by entry id. An entry's `updated` is the UTC day it joined the feed, not the source event's time, so a late run never stamps entries before a client's last `since`. Titles come from templates and never repeat source or administrator text.
 - **Licences.** Official text and US Code provisions are marked public domain; platform-generated content is CC0 1.0.
 - **Writes.** JSON request bodies only; `Content-Type` checked. Every write requires the session cookie, an `Origin` of `https://<domain>`, and the anti-forgery token header.
 - **CORS.** `read-api`: any origin, no credentials. `write-api`: only `https://<domain>`, with credentials.
@@ -857,6 +906,12 @@ pubctl bills track us-119-hr-4127 --reason "pilot seed: healthcare, reported by 
 pubctl bills reparse us-119-hr-4127 --version 2 --reason "parser fix for tables"
 ```
 
+As built (M1-12, `internal/adminapi`, `cmd/admin-api`, `cmd/pubctl`):
+- Log entries carry `actor` (operator id and public name); roster entries carry `operator`, `actor` (the approver), and `bootstrap`. Roster entry ids are `roster-<8-digit seq>-<kind>-<operator id>`. Roster entries are written one at a time, so a failed call is rerun.
+- Single-document changes use `ApplyLogged`; re-ingest writes its log entry first through `Moderation.Record`. Track also updates the stored bill document's reasons, which a pull reads before the catalog. Locally, track does not pull; `bills reingest` runs the shared pipeline `ingest.PullSteps`, the same one `job-ingest` uses. Policy publishing calls `selection.PublishAs` with the operator as actor.
+- A re-parse with the current parser re-parses, compares, and reports; a different parser version answers `503` and writes nothing until a storage path for a second parser version is chosen. Regenerate answers `501` until a `Generator` is wired (M1-09). With `phase: steward_signoff`, track answers `409` and changes nothing.
+- Local `admin-api` reads `OPERATORS_FILE` (placeholder operators) and accepts a local-only `X-Local-Principal` header in place of a verified identity.
+
 ### Roster log
 The public log records every change to the operator roster, so administrator access is public without a public roster file.
 
@@ -892,7 +947,7 @@ The caller is the environment's deploy service account. It is `admin-api`'s only
 | Job | Cadence | Reads | Writes |
 | --- | --- | --- | --- |
 | Ingest | Every few hours for the current Congress (matching the source's update cycle); daily for prior Congresses | `BillSource` since the stored watermark | Object store originals and parsed text, `bills`, `ingest_state`, re-anchor queue, summarize trigger |
-| Ingest existing law | Weekly check for a new release point | `LawSource` | Object store provisions with release-point date; freshness flags |
+| Ingest existing law | Weekly check for a new release point | `LawSource` | Object store provisions with release-point date; freshness flags. Runs as `job-ingest --law [--titles 3,42\|all]` (M1-07), the same image as bill ingest; a stored release is a no-op |
 | Count batcher | Fixed interval (open question in [11](../design/11-ai-security.md)) | SQL `signals` (support, opposition, markup requests) | Snapshot JSON, SQL `snapshots`; applies small-count and complementary suppression; adds bills reaching the request threshold to `markup_queue` |
 | Brief builder | Weekly, plus before markup and floor events | Snapshots, public docs | `briefs`, rendered brief, delivery queue |
 | Export and feed builder | After each batch | Object store, public docs | Exports, feed; drops removed content |
@@ -1025,7 +1080,7 @@ Rules:
 - **Catalog search:** keyword matching on `search_terms` at first; a dedicated search index if volume or quality needs it, chosen to keep scale-to-zero.
 - **Markup request threshold** and steward capacity, shared with [01](../design/01-bill-ingestion-and-display.md#markup-requests).
 - **Topic subject terms** for healthcare, deficit reduction, and affordability, confirmed against the legislature's subject vocabulary before the pilot.
-- **Bill backfill depth:** current Congress only at M1, or earlier Congresses for lineage detection ([04](../design/04-bill-lineage-and-competing-bills.md)).
+- **Bill backfill depth:** **Decided (operator, 2026-11-22):** current Congress only in M1. Earlier Congresses for lineage detection ([04](../design/04-bill-lineage-and-competing-bills.md)) are a later decision.
 - **AI display policy:** per task, whether unreviewed output is shown, and the accuracy bar: from the accuracy checks in M1, and the evaluation set once stewards exist.
 - **Effort level per task**, and whether any task moves to a cheaper model, both decided from evaluation results.
 - **Key rotation** for HMAC keys: rotating `k_signal` requires re-keying every signal; plan the procedure before M2.

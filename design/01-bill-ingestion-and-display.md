@@ -143,13 +143,14 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 
 | Layer | Compares | Presentation |
 | --- | --- | --- |
-| Bill against law | Bill section vs. the provisions it touches | Explanation: current provision text, what changes, why it matters; optional unofficial preview |
+| Bill against law | Bill section vs. the provisions it touches | Explanation: current provision text, what changes, why it matters; optional unofficial preview. Shown directly above the lines it explains, naming the provision it changes, as one control per part that has content; one part is open at a time and pushes the text down. Readable without scripts (M1 operator feedback) |
 | Citizen edit against bill | Suggested edit vs. bill lines | Literal side-by-side: deletions struck, insertions marked (rendered by [03](03-review-features-and-support.md)) |
 
 ### Existing law freshness
 - Each provision records the effective date of the consolidated source.
 - If the bill cites a provision changed by a recent enactment not yet in the consolidated source, the explanation is flagged and routed to a steward.
 - Where no consolidated code exists, the explanation is written from the bill alone and marked as such.
+- A section that only gives the Act its short title gets no explanation: its text says all there is to say.
 
 ## Rules and invariants
 
@@ -175,10 +176,13 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 ## Open questions
 
 - What is the smallest line unit: the source document's own line numbering, sentence, or clause? Must be stable and meaningful for suggested edits.
+  - **Decided (M1-04):** one line per source element that carries its own text. A level element's head line joins its enum, header, and first text with single spaces; its children nest one level deeper. Neither the source's own line numbering nor sentences are used.
 - How are explanations generated at scale (rules, templates, assisted drafting), and what accuracy bar must they meet before display without steward review?
 - How quickly must a new version appear after publication? The product doc marks speed as low priority at launch.
 - How are tables, formulas, and other non-prose bill content made addressable?
+  - **Decided (M1-04):** tables, formulas, graphics, and tables of contents are one line each, with their kind, flattened text, and raw markup. Confirmed on real bills for tables; no real bill in the 119-1 House archive has a `<formula>`, so formulas are tested on constructed XML only.
 - How are wrapped continuation lines (one sentence split across lines at the same depth) told apart from separate items, so a selection never splits a sentence?
+  - **Decided (M1-04):** a sentence split across list items is finished by the source's continuation text, which is its own line at the parent's depth, flagged `continuation`, so a selection can extend over it. Punctuation after a quoted block is appended to the line before it.
 - Should excluded measure kinds (privileged resolutions, simple resolutions) offer a bill-level signal only, or stay out of the product entirely?
 - The legislature's subject indexing often arrives days or weeks after introduction. Is title matching enough in the meantime, or do pilot bills wait for indexing?
 - Which subject terms define each focus topic, and who maintains that list?
