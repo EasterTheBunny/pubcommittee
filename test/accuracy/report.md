@@ -6,35 +6,35 @@ Generated 2026-11-23 by `cmd/accuracy-report`.
 - Grader: `claude-sonnet-5-5` (must differ from the generator)
 - Bills: us-119-hr-4313, us-119-hr-3062, us-119-hr-3427
 - Prompt versions: bill-explanation=v1-f2a32231, bill-summary=v1-58de141b, change-explanation=v1-c8de06df, version-changes=v1-0adc248d
-- Reproduce: `accuracy-report --generator claude --grade` then `accuracy-report --generator claude --grade-planted --crs --out test/accuracy` (live runs, operator-approved)
+- Reproduce: `accuracy-report --generator claude --grade` after `job-summarize --revalidate` and `job-summarize --submit --retry --generator claude` (live runs, operator-approved); the earlier live run: `accuracy-report --generator claude --grade-planted --crs --out test/accuracy`
 
 ## Per task
 
 | Task | Outputs | Ready | Unverified | Withheld | Refused/truncated/invalid | Supported | Contradicted | Fidelity fail | Amendment fail | Neutral-wording fail | Answered by fallback |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| bill-explanation | 16 | 14 | 1 | 0 | 1 | 100.0% (23/23) | 0.0% (0/23) | 0.0% (0/16) | 0.0% (0/16) | 0.0% (0/16) | 0 |
-| bill-summary | 12 | 6 | 6 | 0 | 0 | 100.0% (44/44) | 0.0% (0/44) | 0.0% (0/12) | 0.0% (0/12) | 0.0% (0/12) | 0 |
-| change-explanation | 54 | 34 | 19 | 0 | 1 | 88.4% (152/172) | 5.2% (9/172) | 7.4% (4/54) | 16.7% (9/54) | 0.0% (0/54) | 0 |
+| bill-explanation | 16 | 16 | 0 | 0 | 0 | 100.0% (28/28) | 0.0% (0/28) | 0.0% (0/16) | 0.0% (0/16) | 0.0% (0/16) | 0 |
+| bill-summary | 12 | 12 | 0 | 0 | 0 | 100.0% (92/92) | 0.0% (0/92) | 0.0% (0/12) | 0.0% (0/12) | 0.0% (0/12) | 0 |
+| change-explanation | 54 | 45 | 9 | 0 | 0 | 88.4% (199/225) | 4.4% (10/225) | 1.9% (1/54) | 7.4% (4/54) | 0.0% (0/54) | 0 |
 | version-changes | 4 | 2 | 2 | 0 | 0 | 100.0% (3/3) | 0.0% (0/3) | 50.0% (2/4) | 0.0% (0/4) | 0.0% (0/4) | 0 |
 
 Validator failure rates are shares of outputs with at least one finding. Supported and contradicted shares are shares of graded statements, reported separately. Answered by fallback counts outputs a fallback model produced instead of the generator.
 
 ## Planted errors: catch rate per check
 
-Known errors injected into good outputs. Measured on the live outputs. Planted counts are smaller than in the harness report because only statements of the ready outputs were used.
+Known errors injected into good outputs. The deterministic checks run in CI on any outputs, so these rates are measured now; the grader column is from the earlier live run of 2026-11-22 (56 ready outputs) and was not re-run on the 75 now ready; the deterministic columns are measured on the 75 now ready outputs.
 
 | Planted error | Planted | Meant for | Caught by that check | Caught by the grader |
 | --- | --- | --- | --- | --- |
-| changed-number | 45 | fact-fidelity | 95.6% (43/45) | 80.0% (36/45) |
-| swapped-section | 8 | grader only | n/a | 100.0% (8/8) |
-| reversed-effect | 3 | amendment-consistency | 66.7% (2/3) | 100.0% (3/3) |
-| evaluative-wording | 56 | neutral-wording | 100.0% (56/56) | 96.4% (54/56) |
-| invented-number | 56 | fact-fidelity | 100.0% (56/56) | 98.2% (55/56) |
-| nonexistent-anchor | 56 | anchors | 100.0% (56/56) | 26.8% (15/56) |
+| changed-number | 63 | fact-fidelity | 96.8% (61/63) | 80.0% (36/45) (earlier run, 56 ready outputs) |
+| swapped-section | 14 | grader only | n/a | 100.0% (8/8) (earlier run, 56 ready outputs) |
+| reversed-effect | 3 | amendment-consistency | 66.7% (2/3) | 100.0% (3/3) (earlier run, 56 ready outputs) |
+| evaluative-wording | 75 | neutral-wording | 100.0% (75/75) | 96.4% (54/56) (earlier run, 56 ready outputs) |
+| invented-number | 75 | fact-fidelity | 100.0% (75/75) | 98.2% (55/56) (earlier run, 56 ready outputs) |
+| nonexistent-anchor | 75 | anchors | 100.0% (75/75) | 26.8% (15/56) (earlier run, 56 ready outputs) |
 
 ## Operator sample and grader agreement
 
-Sample prepared: 30 statements (`test/accuracy/operator-sample.md` and `.json`). Grader-to-operator agreement: pending the operator's labels (operator step; labels are blank).
+Sample unchanged from the earlier run: no statement in it changed status (`test/accuracy/operator-sample.md` and `.json`; 30 statements, labels blank). Grader-to-operator agreement: pending the operator's labels (operator step).
 
 ## CRS summary coverage (bill summaries)
 
@@ -43,41 +43,49 @@ Sample prepared: 30 statements (`test/accuracy/operator-sample.md` and `.json`).
 | us/119/hr/3062/ih | 7 | 100.0% (7/7) | 0 |
 | us/119/hr/3427/ih | 6 | 100.0% (6/6) | 0 |
 
+(CRS comparison from the earlier run; not re-run.)
+
 ## Proposed M3 target
 
 Proposed shape, from the live numbers, for operator review: zero published statements graded contradicted; contradicted share of graded statements at or below 1% for every task (live: change-explanation 5.2% (9/172), already withheld from publication); nonexistent-anchor catch rate 100% by the deterministic check (live: 100%); the grader is not an anchor check (26.8%). Not final until the operator grades the sample.
 
-## Live run facts (stage L3)
+## Validator fixes and the follow-up run (hand-written, 2026-11-22)
 
-- Run: 86 tasks, one Message Batch per bill, generator `claude-opus-5-5` at effort medium, grader `claude-sonnet-5-5`. Batches carry no fallbacks, so 0 outputs were answered by a fallback model; models that answered: `claude-opus-5-5` (generation) and `claude-sonnet-5-5` (grading).
-- Outcomes: 56 ready, 28 unverified, 2 invalid (schema: an empty statement), 0 refusals, 0 truncations.
-- Unverified and invalid outputs are stored but not served. The grader graded the 56 ready outputs (the stored grades).
-- Served outputs are labelled `auto`, `review_state: unreviewed`; none labelled steward-checked (read-api check on the local store).
+The first live run (86 tasks: 56 ready, 28 unverified, 2 invalid) was re-checked offline with the fixed validators (`job-summarize --revalidate`, no model call), then the outputs still not ready were retried once (`--submit --retry`, a paid batch), and the new ready outputs were graded.
 
-## Spend (upper-bound ledger, USD, from stored token counts at list prices; cache writes priced 1.25x, batch 0.5x)
+Outcomes of the 86 outputs (ready / unverified / invalid):
+
+| Stage | Ready | Unverified | Invalid |
+| --- | --- | --- | --- |
+| First live run (old validators) | 56 | 28 | 2 |
+| After revalidation with the fixed validators (no model) | 66 | 18 | 2 |
+| After one retry of the 20 not ready | 75 | 11 | 0 |
+
+Classification of the 30 outputs the old validators withheld (28 unverified, 2 invalid):
+
+| Family | Outputs | Verdict |
+| --- | --- | --- |
+| Provision citation form (en dash, subsection suffix, ids the summary was never given) | 6 (bill summaries) | false positive, fixed |
+| Citation number in text (`16 U.S.C. 796` read as numbers 16 and 796) | 1 | false positive, fixed |
+| Amendment text paraphrased | 3 | false positive, fixed |
+| Amendment text paraphrased through "this provision" (needs coreference) | 1 | false positive, not fixed on purpose |
+| Amendment explanation too vague (names no removed text or subsection) | 5 | true rejection |
+| Derived or reused number (a difference of two figures, a count not stated, a section number only in uncited lines) | 5 | true rejection |
+| No anchor, statement text "placeholder" | 7 | true rejection |
+| Empty statement (schema) | 2 | true rejection |
+
+So 10 false positives were fixed, 1 remains, 19 were true rejections. Fixes: (1) provision ids compare in stored form (`usc/42/1395cc-7`); a printed citation resolves to a stored provision or to the stored section that contains the cited subsection, never to a broader or another provision; bill summaries list the provision ids of the citation set (ids only, no text) in the checked context, so their texts support no fact; (2) a US Code citation of a provision of the input is not read as numbers; (3) an amendment text counts as named when one sentence of the explanation keeps at least half of its meaningful words (at least 2). Numbers are not loosened: derived values stay rejected.
+
+Deterministic planted-error catch rates before and after the fixes (same outputs, no grader): unchanged for every kind. Live set (56 ready outputs): changed-number 43/45, evaluative-wording 56/56, invented-number 56/56, nonexistent-anchor 56/56, reversed-effect 2/3, both before and after. On the 75 now ready: changed-number 61/63, evaluative-wording 75/75, invented-number 75/75, nonexistent-anchor 75/75, reversed-effect 2/3. Fakegen harness set: changed-number 74/74, evaluative-wording 86/86, invented-number 86/86, nonexistent-anchor 86/86, reversed-effect 10/16, before and after.
+
+Grading of the new ready outputs raised the graded total to 225 statements: 88.4% supported, 4.4% (10/225) contradicted, all in change explanations that are ready and served. The share is a measured result for the operator; no threshold is applied here.
+
+## Spend of the follow-up (upper bound, USD; list prices, batch 0.5x, cache writes 1.25x)
 
 | Phase | USD |
 | --- | --- |
-| Generation (batch) | 1.49 |
-| Grader pass (sync, estimated: grade token counts are not stored) | at most 1.5 |
-| Planted-error grading and CRS coverage (sync, estimated) | at most 4.5 |
-| Total | at most 7.5 (cap 20.00) |
+| Retry generation (batch, 20 requests; the 9 stored results used 37,162 input and 6,800 output tokens, the rest estimated by ratio) | at most 0.40 |
+| Grading of the 19 newly ready outputs (sync, estimated) | at most 0.50 |
+| Total of the follow-up | at most 0.90 (cap 5.00) |
 
-## Validator false positives on real model output
-
-The deterministic validators were first tested on synthetic text. On 86 real outputs, 28 were marked unverified. Reading the findings, many are validator weaknesses rather than model errors:
-
-- Amendment consistency (9/54 change explanations): "removed/inserted text ... not named" fires when the model paraphrases the quoted text instead of repeating it. Likely false positives for most of them; the grader found 0 contradicted among the cases checked is not established, so the operator should sample these.
-- Bill summary (6/12 unverified): provisions such as `42 U.S.C. 1395cc-7(a)(1)` are rejected as "not in the input" although the model cited real provisions. This looks like a citation-form mismatch (en dash in the cited form, sub-paragraph suffix) rather than an invented provision.
-- Fact fidelity (4/54 change explanations, 2/4 version summaries): numbers such as 2500000 and 1866 not literally in the cited lines. Some are formatting (a figure written with commas) and some derived values; unclear which are real.
-- "statement N: no anchor" and "no statement with role changes" (several change explanations): the model gave no anchor or no changed-role statement; these are model format failures and correct rejections.
-- Grader: contradicted 9/172 statements (5.2%) on change-explanation only; supported 88.4%. Unverified outputs were not graded.
-
-## Reversed-effect catch rate
-
-The deterministic amendment-consistency check caught 2 of 3 live planted reversed-effect errors (66.7%); the grader caught 3 of 3 (100%). Sample is small (3).
-
-## Proposals
-
-- Fix the citation-form match for provisions with en dashes and sub-paragraphs, and compare amendment text after normalisation, then re-run to recount the false positives.
-- Do not rely on the grader for nonexistent anchors (26.8%); keep the deterministic check.
+Earlier run total, from the first report: at most 7.5.
