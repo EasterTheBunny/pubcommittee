@@ -65,7 +65,7 @@ func run(args []string, getenv func(string) string) error {
 		return fmt.Errorf("config: RATE_LIMITS: %w", err)
 	}
 	handler, err := readapi.Handler(readapi.New(ports), readapi.Options{
-		RateLimits: limits, ClientIPHeader: getenv("CLIENT_IP_HEADER"), Logger: logger,
+		RateLimits: limits, ClientIPHeader: getenv("CLIENT_IP_HEADER"), Logger: logger, UIURL: getenv("PUBLIC_UI_URL"),
 	})
 	if err != nil {
 		return fmt.Errorf("handler: %w", err)

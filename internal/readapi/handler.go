@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	apiv1 "github.com/easterthebunny/pubcommittee/api/v1"
@@ -23,6 +24,10 @@ type Options struct {
 	Logger *slog.Logger
 	// Now is the clock; nil means time.Now.
 	Now func() time.Time
+	// UIURL is the public origin of the web UI, which serves the
+	// machine-access notice; discovery links to it. Empty means the link is
+	// the bare well-known path.
+	UIURL string
 }
 
 // Handler returns the full read-api handler: routes from the spec, then
@@ -37,12 +42,14 @@ func Handler(s *Server, opts Options) (http.Handler, error) {
 	if opts.Now == nil {
 		opts.Now = time.Now
 	}
+	s.noticeHref = strings.TrimRight(opts.UIURL, "/") + NoticePath
 	lim, err := newLimiter(opts.RateLimits, opts.ClientIPHeader, opts.Now)
 	if err != nil {
 		return nil, err
 	}
 	mux := http.NewServeMux()
 	apiv1.HandlerWithOptions(s, apiv1.StdHTTPServerOptions{BaseRouter: mux, ErrorHandlerFunc: bindError})
+	mux.HandleFunc("GET /robots.txt", robots)
 	mux.HandleFunc("/", fallback)
 	return logRequests(opts.Logger, cors(lim.middleware(mux))), nil
 }
@@ -119,5 +126,24 @@ func logRequests(log *slog.Logger, next http.Handler) http.Handler {
 			slog.Int("status", sw.status), slog.Int("bytes", sw.bytes),
 			slog.String("duration", strconv.FormatInt(time.Since(start).Milliseconds(), 10)+"ms"),
 		)
+	})
+}
+
+// NoticePath is the well-known path of the machine-access notice, served by
+// the web UI (design/10 § Published policy).
+const NoticePath = "/.well-known/machine-access.json"
+
+// robotsTxt allows every public path. The API has no sign-in and no write
+// routes; the web UI's own robots.txt disallows those of the UI.
+const robotsTxt = `# All public content may be read by machines (design/10 Published policy).
+# This host has no sign-in and no write routes.
+User-agent: *
+Allow: /
+`
+
+// robots answers the crawler directives of the API host.
+func robots(w http.ResponseWriter, r *http.Request) {
+	send(w, r, response{
+		status: http.StatusOK, contentType: "text/plain; charset=utf-8", body: []byte(robotsTxt), class: cacheShort,
 	})
 }

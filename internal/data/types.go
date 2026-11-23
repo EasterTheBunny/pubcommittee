@@ -337,15 +337,6 @@ type LogEntry struct {
 	Meta    Meta      `json:"meta"`
 }
 
-// FeedEntry is one item of a published feed.
-type FeedEntry struct {
-	ID      string    `json:"id"`
-	Updated time.Time `json:"updated"`
-	Title   string    `json:"title"`
-	Link    string    `json:"link"`
-	Kind    string    `json:"kind"`
-}
-
 // IngestState records the progress of ingestion for one source.
 type IngestState struct {
 	Source    string    `json:"source"`

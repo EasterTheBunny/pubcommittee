@@ -22,13 +22,16 @@ const (
 type Server struct {
 	ports   data.PublicReadPorts
 	started time.Time
+	// noticeHref is where discovery points for the machine-access notice;
+	// Handler sets it from Options.UIURL.
+	noticeHref string
 }
 
 var _ apiv1.ServerInterface = (*Server)(nil)
 
 // New returns a Server reading from ports.
 func New(ports data.PublicReadPorts) *Server {
-	return &Server{ports: ports, started: time.Now().UTC().Truncate(time.Second)}
+	return &Server{ports: ports, started: time.Now().UTC().Truncate(time.Second), noticeHref: NoticePath}
 }
 
 // resolved is a bill version named by a request.

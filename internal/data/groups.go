@@ -11,6 +11,9 @@ type PublicReadPorts struct {
 	// Citations and Law may be nil likewise.
 	Citations CitationReader
 	Law       LawReader
+	// Feed and Exports may be nil likewise.
+	Feed    FeedReader
+	Exports ExportReader
 }
 
 // PlatformPorts are held by ingest, generation, exports, and admin-api;
@@ -24,4 +27,6 @@ type PlatformPorts struct {
 	ComparisonStore ComparisonWriter
 	CitationStore   CitationWriter
 	LawStore        LawWriter
+	FeedStore       FeedWriter
+	ExportStore     ExportWriter
 }
