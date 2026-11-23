@@ -108,8 +108,9 @@ $RECYCLE.BIN/
 # Agent git worktrees (one per task-orchestrator run)
 .claude/worktrees/
 
-# Local data directory for the `local` build target
+# Local data directory for the `local` build target, and the copies scripts/local.sh data keeps
 .local-data/
+.local-data.*/
 
 # Agent task scratch (progress, compose limit overrides, logs)
 .task/

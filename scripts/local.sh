@@ -9,9 +9,11 @@
 #   scripts/local.sh seed         (re)fill .local-data from fixtures/ (also run by `up` when empty)
 #   scripts/local.sh job <job> [flags]   run one job (job-ingest, job-exports, job-summarize) as you
 #   scripts/local.sh test [--with-admin] acceptance checks against the running app (`up` or `up -d`)
+#   scripts/local.sh data [fake|live]    show or switch the data set (restarts a running stack)
 #
-# Everything runs in Docker with the limits set in compose.yaml. No model calls: summaries come from
-# the fake generator. Data stays in .local-data/ (git-ignored); delete it to start over.
+# Everything runs in Docker with the limits set in compose.yaml. No model calls: by default summaries
+# come from the fake generator; `data live` switches to the stored outputs of the M1-09 live-model run.
+# Data stays in .local-data/ (git-ignored); delete it to start over.
 # Environment: COMPOSE_PROJECT (default pubcommittee), RATE_LIMITS (default effectively unlimited: one local user).
 set -eu
 cd "$(dirname "$0")/.."
@@ -30,7 +32,7 @@ dc() { docker compose -p "$project" --profile app --profile jobs "$@"; }
 job() { dc run --rm --no-deps "$@"; }
 
 usage() {
-	sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -124,6 +126,76 @@ up() {
 	dc up --remove-orphans $serve
 }
 
+# Data sets. "fake": seeded from fixtures/ with the fake generator. "live": a copy of the stored
+# outputs of the M1-09 live-model run (no model call; the source is only read). The set in use is
+# .local-data/, named in .local-data/.dataset; the other is parked in .local-data.<name>/.
+live_src=.claude/worktrees/m1-09-validators/.local-data
+
+dataset() {
+	if [ -f .local-data/.dataset ]; then
+		cat .local-data/.dataset
+	elif [ ! -d .local-data ]; then
+		echo none
+	elif grep -rqsE 'claude-(opus|sonnet)' .local-data/generated 2>/dev/null; then
+		echo live # copied by hand before this command existed
+	else
+		echo fake
+	fi
+}
+
+data_cmd() {
+	cur=$(dataset)
+	case "${1:-}" in
+	"")
+		echo "data: $cur"
+		return
+		;;
+	fake | live) want=$1 ;;
+	*) usage 2 ;;
+	esac
+	if [ "$cur" = "$want" ]; then
+		echo "data: already using $want"
+		return
+	fi
+	if [ "$want" = live ] && [ ! -d ".local-data.live" ] && [ ! -d "$live_src/bills" ]; then
+		echo "data: no live data: $live_src is missing" >&2
+		exit 1
+	fi
+	if [ "$cur" != none ] && [ -e ".local-data.$cur" ]; then
+		echo "data: .local-data.$cur/ already exists; move it aside before switching" >&2
+		exit 1
+	fi
+	running=""
+	[ -n "$(dc ps -q --status running read-api)" ] && running=1
+	[ -z "$running" ] || dc down --remove-orphans >/dev/null 2>&1
+	if [ "$cur" != none ]; then
+		ensure_data_dir
+		printf '%s\n' "$cur" >.local-data/.dataset
+		mv .local-data ".local-data.$cur"
+	fi
+	if [ -d ".local-data.$want" ]; then
+		mv ".local-data.$want" .local-data
+	elif [ "$want" = live ]; then
+		echo "data: copying the live-model outputs from $live_src"
+		cp -a "$live_src" .local-data
+		ensure_data_dir
+		printf 'live\n' >.local-data/.dataset
+		echo "data: rebuilding exports and the change feed"
+		(run_job job-exports >/dev/null)
+	else
+		mkdir -p .local-data
+		printf 'fake\n' >.local-data/.dataset
+		seed
+		dc down --remove-orphans >/dev/null 2>&1
+	fi
+	printf '%s\n' "$want" >.local-data/.dataset
+	echo "data: now using $want (the other set is kept in .local-data.$cur/)"
+	if [ -n "$running" ]; then
+		dc up -d --wait --remove-orphans $serve >/dev/null
+		echo "serving again: app http://localhost:3000"
+	fi
+}
+
 playwright_image=mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
 
 # Acceptance checks against the running app, read-only unless --with-admin:
@@ -188,6 +260,10 @@ build) build ;;
 test)
 	shift
 	test_stack "$@"
+	;;
+data)
+	shift
+	data_cmd "$@"
 	;;
 up)
 	shift
