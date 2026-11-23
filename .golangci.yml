@@ -70,6 +70,15 @@ linters:
               desc: read-api never touches SQL
             - pkg: cloud.google.com/go/kms
               desc: read-api never touches keys
+            - pkg: github.com/easterthebunny/pubcommittee/internal/adminapi
+              desc: read-api never links the privileged admin handler
+        admin-api-no-readapi:
+          files:
+            - "**/cmd/admin-api/**"
+            - "**/internal/adminapi/**"
+          deny:
+            - pkg: github.com/easterthebunny/pubcommittee/internal/readapi
+              desc: admin-api stays out of read-api's code
         gcp-no-local-adapters:
           files:
             - "**/wiring_gcp.go"

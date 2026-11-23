@@ -20,4 +20,17 @@ for pkg in $(go list ./cmd/...); do
 		exit 1
 	fi
 done
-echo "ok: read-api has no SQL or key adapter; gcp builds have no local-only adapter"
+# 3. read-api never links admin-api; admin-api never links read-api or any
+#    package that reads individual signals or request reasons (none exist in M1).
+admin_forbidden='/internal/readapi|/internal/signals|/adapters/(signals|requestreasons)'
+for tag in memory local gcp emulator; do
+	if ! go list -deps -tags "$tag" ./cmd/read-api | forbid_in_list '/internal/adminapi'; then
+		echo "FAIL: read-api ($tag) links adminapi" >&2
+		exit 1
+	fi
+	if ! go list -deps -tags "$tag" ./cmd/admin-api | forbid_in_list "$admin_forbidden"; then
+		echo "FAIL: admin-api ($tag) links read-api or a signal reader" >&2
+		exit 1
+	fi
+done
+echo "ok: read-api has no SQL or key adapter, no admin-api; admin-api has no read-api or signal reader; gcp builds have no local-only adapter"

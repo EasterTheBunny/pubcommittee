@@ -26,6 +26,14 @@ type PolicyStore interface {
 // no-op and different content for a stored version is data.ErrConflict, both
 // by the store. Tracked bills are not touched: policy changes apply going forward.
 func Publish(ctx context.Context, s PolicyStore, p data.SelectionPolicy, reason string, at time.Time) error {
+	return PublishAs(ctx, s, p, reason, at, nil)
+}
+
+// PublishAs is Publish for an administrator action: the public log entry
+// names actor (operator id and public name). A nil actor logs none.
+func PublishAs(
+	ctx context.Context, s PolicyStore, p data.SelectionPolicy, reason string, at time.Time, actor *data.LogOperator,
+) error {
 	if reason == "" {
 		return fmt.Errorf("selection policy %d: a reason is required: %w", p.Version, data.ErrInvalid)
 	}
@@ -50,7 +58,8 @@ func Publish(ctx context.Context, s PolicyStore, p data.SelectionPolicy, reason 
 	p.Meta = meta
 	entry := data.LogEntry{
 		ID: fmt.Sprintf("selection-policy-%d", p.Version), At: at.UTC().Truncate(hoursPerDay * time.Hour),
-		Kind: "selection-policy", Subject: fmt.Sprintf("selection-policy/%d", p.Version), Reason: reason, Meta: meta,
+		Kind: "selection-policy", Subject: fmt.Sprintf("selection-policy/%d", p.Version), Reason: reason,
+		Actor: actor, Meta: meta,
 	}
 	if err := s.ApplyLogged(ctx, data.Change{Policy: &p}, entry); err != nil {
 		return fmt.Errorf("publish selection policy %d: %w", p.Version, err)
