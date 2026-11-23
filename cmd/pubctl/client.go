@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	envToken     = "PUBCTL_TOKEN"
+	envToken     = "PUBCTL_TOKEN" //nolint:gosec // the name of an environment variable, not a credential
 	requestLimit = 2 * time.Minute
 	maxResponse  = 4 << 20
 )
@@ -92,27 +92,36 @@ func gcloudToken(ctx context.Context, audience string) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-// do sends one JSON request. in and out may be nil. A non-2xx answer is an *apiError.
-func (c *client) do(ctx context.Context, method, path string, in, out any) error {
+// newRequest builds one JSON request with the bearer token, if any.
+func (c *client) newRequest(ctx context.Context, method, path string, in any) (*http.Request, error) {
 	var body io.Reader = http.NoBody
 	if in != nil {
 		raw, err := json.Marshal(in)
 		if err != nil {
-			return fmt.Errorf("encode request: %w", err)
+			return nil, fmt.Errorf("encode request: %w", err)
 		}
 		body = bytes.NewReader(raw)
 	}
 	req, err := http.NewRequestWithContext(ctx, method, c.base.String()+path, body)
 	if err != nil {
-		return fmt.Errorf("request: %w", err)
+		return nil, fmt.Errorf("request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	tok, err := c.token(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if tok != "" {
 		req.Header.Set("Authorization", "Bearer "+tok)
+	}
+	return req, nil
+}
+
+// do sends one JSON request. in and out may be nil. A non-2xx answer is an *apiError.
+func (c *client) do(ctx context.Context, method, path string, in, out any) error {
+	req, err := c.newRequest(ctx, method, path, in)
+	if err != nil {
+		return err
 	}
 	resp, err := c.hc.Do(req)
 	if err != nil {
@@ -124,15 +133,7 @@ func (c *client) do(ctx context.Context, method, path string, in, out any) error
 		return fmt.Errorf("read response: %w", err)
 	}
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		var p struct {
-			Title  string `json:"title"`
-			Detail string `json:"detail"`
-		}
-		_ = json.Unmarshal(raw, &p)
-		if p.Title == "" {
-			p.Title = http.StatusText(resp.StatusCode)
-		}
-		return &apiError{Status: resp.StatusCode, Title: p.Title, Detail: p.Detail}
+		return problemOf(resp.StatusCode, raw)
 	}
 	if out == nil {
 		return nil
@@ -144,4 +145,17 @@ func (c *client) do(ctx context.Context, method, path string, in, out any) error
 		return fmt.Errorf("decode response: %w", err)
 	}
 	return nil
+}
+
+// problemOf decodes an application/problem+json body into an *apiError.
+func problemOf(status int, raw []byte) error {
+	var p struct {
+		Title  string `json:"title"`
+		Detail string `json:"detail"`
+	}
+	_ = json.Unmarshal(raw, &p)
+	if p.Title == "" {
+		p.Title = http.StatusText(status)
+	}
+	return &apiError{Status: status, Title: p.Title, Detail: p.Detail}
 }

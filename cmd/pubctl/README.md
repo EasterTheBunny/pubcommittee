@@ -2,8 +2,6 @@
 
 `pubctl` is the command-line tool operators use to run the privileged actions of M1: select bills for review, correct ingestion errors, re-run fetch and parse, publish selection policy versions, and inspect failures. It calls `admin-api` ([cmd/admin-api/README.md](../admin-api/README.md)). It is not a product screen and has no UI.
 
-> **Status:** `cmd/pubctl` has only `client.go` (the HTTP client, auth, and error decoding) so far. The command parser and `main` are not in the repository yet, so the `go run` line below does not build until they are added. The routes and body fields in the tables are fixed by `internal/adminapi`; flag spellings beyond `--url`, `--reason` and `--version` are not defined yet.
-
 ## Install and run locally
 
 Start a local `admin-api` first (see its README), then:
@@ -12,7 +10,7 @@ Start a local `admin-api` first (see its README), then:
 go run ./cmd/pubctl --url http://127.0.0.1:8081 bills track us-119-hr-3062 --reason "pilot seed: example"
 ```
 
-- `--url` is the base URL of `admin-api`, an `http` or `https` URL. Required.
+- `--url` (or env `PUBCTL_URL`) is the base URL of `admin-api`, an `http` or `https` URL. Required. It comes before the command.
 - Bill ids are `<jurisdiction>-<session>-<type>-<number>`, for example `us-119-hr-3062`.
 
 ## Authentication
@@ -32,12 +30,12 @@ Every mutating command needs `--reason`.
 | --- | --- | --- |
 | `bills track <bill> --reason` | `POST /admin/v1/bills/{bill}/track` | Marks the bill tracked with the reason `administrator`, logs it, then pulls its text. Needs a stored selection policy. |
 | `bills untrack <bill> --reason` | `POST /admin/v1/bills/{bill}/untrack` | Reverses a selection made in error. Stored text is kept. |
-| `bills catalog patch <bill> --reason` | `PATCH /admin/v1/bills/{bill}/catalog` | Corrects ingestion errors. Body fields: `title`, `status`, `chamber`, `introduced`, `policy_area`, `subjects`. Send at least one. |
+| `bills catalog patch <bill> --reason [--title --status --chamber --introduced YYYY-MM-DD --policy-area --subjects a,b]` | `PATCH /admin/v1/bills/{bill}/catalog` | Corrects ingestion errors. Body fields: `title`, `status`, `chamber`, `introduced`, `policy_area`, `subjects`. Send at least one. |
 | `bills reingest <bill> --reason` | `POST /admin/v1/bills/{bill}/reingest` | Fetches the bill again. Each stored original is compared by SHA-256; a mismatch is reported and nothing is overwritten. Missing versions are stored. |
 | `bills reparse <bill> --version <n> --reason` | `POST /admin/v1/bills/{bill}/v/{n}/reparse` | Parses stored version `n` again with the current parser. Reports only (see below). |
-| `generations create --reason` | `POST /admin/v1/generations` | Requests a regeneration. Body fields: `task`, `bill`, `version`. Returns 501 until M1-09. |
-| `selection-policy publish --reason` | `POST /admin/v1/selection-policy` | Stores the next immutable policy version. Body: `policy` (the policy document, as in `internal/selection/policies/v1.json`) and `reason`. The version must be the latest plus one; the latest again is a no-op. |
-| `ingest failures` | `GET /admin/v1/ingest/failures` | Lists failed items per source. Optional query `source=<source>/<session>` (repeatable). |
+| `generations create --task T --bill <bill> --version N --reason` | `POST /admin/v1/generations` | Requests a regeneration. Body fields: `task`, `bill`, `version`. Returns 501 until M1-09. |
+| `selection-policy publish (--builtin v1 \| --file policy.json) --reason` | `POST /admin/v1/selection-policy` | Stores the next immutable policy version. Body: `policy` (the policy document, as in `internal/selection/policies/v1.json`) and `reason`. The version must be the latest plus one; the latest again is a no-op. |
+| `ingest failures [--source <source>/<session>]` | `GET /admin/v1/ingest/failures` | Lists failed items per source. Optional query `source=<source>/<session>` (repeatable). |
 | `jobs` | `GET /admin/v1/jobs` | Lists the last state of each source, without failed items. |
 
 Reason rules: 1 to 500 characters after trimming. The reason is published in the public log. Never put personal data or a principal in it.
