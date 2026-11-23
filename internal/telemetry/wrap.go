@@ -30,6 +30,7 @@ func (t *Telemetry) WrapPlatform(adapter string, g data.PlatformPorts) data.Plat
 		PlatformDocs:    timedPlatformDocs{tm, g.PlatformDocs},
 		Moderation:      timedModeration{tm, g.Moderation},
 		Publisher:       timedPublisher{tm, g.Publisher},
+		ComparisonStore: wrapComparisonWriter(tm, g.ComparisonStore),
 	}
 }
 
@@ -37,8 +38,9 @@ func (t *Telemetry) WrapPlatform(adapter string, g data.PlatformPorts) data.Plat
 func (t *Telemetry) WrapPublicRead(adapter string, g data.PublicReadPorts) data.PublicReadPorts {
 	tm := timer{ins: t.Instruments, adapter: adapter}
 	return data.PublicReadPorts{
-		BillText:   timedBillText{tm, g.BillText},
-		PublicDocs: timedPublicDocs{tm, g.PublicDocs},
+		BillText:    timedBillText{tm, g.BillText},
+		PublicDocs:  timedPublicDocs{tm, g.PublicDocs},
+		Comparisons: wrapComparisonReader(tm, g.Comparisons),
 	}
 }
 
@@ -256,4 +258,42 @@ func (w timedGenerator) Collect(ctx context.Context, id string) (r []data.GenRes
 func (w timedGenerator) Generate(ctx context.Context, req data.GenRequest) (r data.GenResult, err error) {
 	defer w.t.start(ctx, "Generator", "Generate", &err)()
 	return w.n.Generate(ctx, req)
+}
+
+// wrapComparisonReader keeps a nil reader nil: an adapter that stores no
+// comparisons leaves the port unset and readers answer not found.
+func wrapComparisonReader(t timer, n data.ComparisonReader) data.ComparisonReader {
+	if n == nil {
+		return nil
+	}
+	return timedComparisonReader{t, n}
+}
+
+func wrapComparisonWriter(t timer, n data.ComparisonWriter) data.ComparisonWriter {
+	if n == nil {
+		return nil
+	}
+	return timedComparisonWriter{t, n}
+}
+
+type timedComparisonReader struct {
+	t timer
+	n data.ComparisonReader
+}
+
+func (w timedComparisonReader) GetComparison(
+	ctx context.Context, ref data.ComparisonRef,
+) (c data.Comparison, err error) {
+	defer w.t.start(ctx, "ComparisonReader", "GetComparison", &err)()
+	return w.n.GetComparison(ctx, ref)
+}
+
+type timedComparisonWriter struct {
+	t timer
+	n data.ComparisonWriter
+}
+
+func (w timedComparisonWriter) PutComparison(ctx context.Context, c data.Comparison) (err error) {
+	defer w.t.start(ctx, "ComparisonWriter", "PutComparison", &err)()
+	return w.n.PutComparison(ctx, c)
 }

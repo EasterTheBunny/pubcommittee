@@ -57,8 +57,10 @@ type Store struct {
 }
 
 var (
-	_ data.BillText  = (*Store)(nil)
-	_ data.Publisher = (*Store)(nil)
+	_ data.BillText         = (*Store)(nil)
+	_ data.Publisher        = (*Store)(nil)
+	_ data.ComparisonReader = (*Store)(nil)
+	_ data.ComparisonWriter = (*Store)(nil)
 )
 
 // New validates cfg and returns a Store. It touches only the data root.
