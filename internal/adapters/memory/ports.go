@@ -10,6 +10,7 @@ var (
 	_ data.PlatformDocs     = (*Store)(nil)
 	_ data.Moderation       = (*Store)(nil)
 	_ data.BillSource       = (*Store)(nil)
+	_ data.SourceInfoReader = (*Store)(nil)
 	_ data.LawSource        = (*Store)(nil)
 	_ data.Generator        = (*Store)(nil)
 	_ data.ComparisonReader = (*Store)(nil)

@@ -97,10 +97,14 @@ type Section struct {
 
 // OfficialVersion is an immutable snapshot of a bill's text.
 type OfficialVersion struct {
-	Ref            VersionRef `json:"ref"`
-	Type           string     `json:"type"` // introduced, reported, engrossed, ...
-	PublishedAt    time.Time  `json:"published_at"`
-	SourceSHA256   string     `json:"source_sha256"` // hash of the original XML
+	Ref           VersionRef `json:"ref"`
+	Type          string     `json:"type"` // introduced, reported, engrossed, ...
+	PublishedAt   time.Time  `json:"published_at"`
+	SourceSHA256  string     `json:"source_sha256"`            // hash of the original XML
+	ParserVersion string     `json:"parser_version,omitempty"` // parser that produced Sections, for example "billxml/1"
+	// Source is where the original came from. A Publisher keeps it with
+	// source.xml; it is never part of the stored parsed text.
+	Source         SourceInfo `json:"-"`
 	Sections       []Section  `json:"sections"`
 	Meta           Meta       `json:"meta"`
 	StewardEntered bool       `json:"steward_entered,omitempty"`
@@ -194,6 +198,7 @@ type Bill struct {
 	Ref            BillRef          `json:"ref"`
 	Title          string           `json:"title"`
 	Sponsor        string           `json:"sponsor"`
+	SponsorID      string           `json:"sponsor_id,omitempty"` // bioguide id
 	Status         string           `json:"status"`
 	Chamber        string           `json:"chamber,omitempty"`
 	ReviewState    string           `json:"review_state,omitempty"`
@@ -207,18 +212,26 @@ type Bill struct {
 // CatalogEntry is one row of the public catalog. Untracked entries carry no
 // bill text, only metadata and official links.
 type CatalogEntry struct {
-	Bill              BillRef  `json:"bill"`
-	Title             string   `json:"title"`
-	Status            string   `json:"status,omitempty"`
-	Chamber           string   `json:"chamber,omitempty"`
-	Subjects          []string `json:"subjects,omitempty"`
-	CommitteeActivity bool     `json:"committee_activity,omitempty"`
-	Tracked           bool     `json:"tracked"`
-	Reasons           []string `json:"reasons"`
-	MarkupStatus      string   `json:"markup_status,omitempty"`
-	ExclusionReason   string   `json:"exclusion_reason,omitempty"`
-	OfficialLinks     []Link   `json:"official_links,omitempty"`
-	Meta              Meta     `json:"meta"`
+	Bill              BillRef             `json:"bill"`
+	Title             string              `json:"title"`
+	Status            string              `json:"status,omitempty"`
+	Chamber           string              `json:"chamber,omitempty"`
+	Subjects          []string            `json:"subjects,omitempty"`
+	CommitteeActivity bool                `json:"committee_activity,omitempty"`
+	Tracked           bool                `json:"tracked"`
+	Reasons           []string            `json:"reasons"`
+	MarkupStatus      string              `json:"markup_status,omitempty"`
+	ExclusionReason   string              `json:"exclusion_reason,omitempty"`
+	OfficialLinks     []Link              `json:"official_links,omitempty"`
+	SearchTerms       []string            `json:"search_terms,omitempty"` // bill number, title words, subjects
+	SponsorID         string              `json:"sponsor_id,omitempty"`   // bioguide id
+	Sponsor           string              `json:"sponsor,omitempty"`
+	Introduced        string              `json:"introduced,omitempty"` // YYYY-MM-DD
+	LatestAction      *Action             `json:"latest_action,omitempty"`
+	PolicyArea        string              `json:"policy_area,omitempty"`
+	Committees        []CommitteeActivity `json:"committees,omitempty"`
+	Related           []RelatedBill       `json:"related,omitempty"`
+	Meta              Meta                `json:"meta"`
 }
 
 // Provision is an addressable unit of existing law.
@@ -307,7 +320,10 @@ type FeedEntry struct {
 type IngestState struct {
 	Source    string    `json:"source"`
 	Watermark time.Time `json:"watermark"`
-	Meta      Meta      `json:"meta"`
+	// Failed lists items a pull could not store, for the next pull to retry
+	// and for operators to inspect.
+	Failed []IngestFailure `json:"failed,omitempty"`
+	Meta   Meta            `json:"meta"`
 }
 
 // Page requests one page of a list. Cursor is opaque and owned by the

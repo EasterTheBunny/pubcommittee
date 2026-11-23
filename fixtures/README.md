@@ -54,3 +54,7 @@ Still missing from the exit set: a table and a formula. None of the 8,042 docume
 | `bills/us-119-hr-4313/v/rfs/source.xml` | 10730 | https://www.govinfo.gov/content/pkg/BILLS-119hr4313rfs/xml/BILLS-119hr4313rfs.xml | `9699451c4f3ec6fc60b23e3f3b8fa8b7629ebe4d47ca1176130f3346d59c14f0` |
 | `bills/us-119-hr-4313/v/rh/source.xml` | 11186 | https://www.govinfo.gov/content/pkg/BILLS-119hr4313rh/xml/BILLS-119hr4313rh.xml | `061e37a7e096552618da4c873e234dff1f83ad520e46f3dbaf4c7f2458abd8f4` |
 | `bills/us-119-hr-86/v/ih/source.xml` | 2286 | https://www.govinfo.gov/bulkdata/BILLS/119/1/hr/BILLS-119-1-hr.zip (member BILLS-119hr86ih.xml) | `ec4ee4d12f23cfde6f5196972552e60ea04b4a9e19561d5e9375b45164a2bbbe` |
+
+## Catalog sample (M1-05)
+
+`catalog/us-<congress>-<type>-<number>.xml`: 200 BILLSTATUS records (110 `hr`, 55 `s`, 12 `hjres`, 8 `sjres`, 15 `hres` of the 119th Congress), at most 45 KB each, committed byte for byte. Status records only, no text: they stand in for untracked catalog entries and are read by `internal/adapters/fixturesrc` as catalog-only bills. Chosen as every Nth bill of each type's govinfo listing, so the sample is spread across the Congress and has no editorial selection. `scripts/fetch-catalog.sh <urls-file>` fetches them one at a time, 2 s apart, with a descriptive user agent. `catalog/MANIFEST.txt` lists path, bytes, SHA-256, source URL and retrieval date of each file (retrieved 2026-11-23 UTC).

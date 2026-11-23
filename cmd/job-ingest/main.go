@@ -1,0 +1,152 @@
+// Command job-ingest pulls bills from the official source on demand (M1:
+// manual, never scheduled). Each run pulls the bills named with --bill: the
+// catalog entry always, and for a tracked bill every official text version
+// not yet stored, parsed in the run. It prints one JSON report per bill and
+// exits non-zero when any pull failed. See cmd/job-ingest/README.md.
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"log/slog"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/easterthebunny/pubcommittee/internal/data"
+	"github.com/easterthebunny/pubcommittee/internal/ingest"
+	"github.com/easterthebunny/pubcommittee/internal/telemetry"
+)
+
+const serviceName = "job-ingest"
+
+// Source names of --source.
+const (
+	sourceFixtures = "fixtures"
+	sourceGovinfo  = "govinfo"
+)
+
+var (
+	errNoBill = errors.New("at least one --bill <id> is required, for example --bill us-119-hr-4313")
+	errSource = errors.New("--source must be fixtures or govinfo")
+	errFailed = errors.New("one or more pulls failed")
+)
+
+// version is set at build time with -ldflags "-X main.version=<commit>".
+var version = "dev"
+
+// config is what the wiring needs to build the bill source.
+type config struct {
+	Source      string // sourceFixtures or sourceGovinfo
+	FixturesDir string
+}
+
+func main() {
+	if err := run(os.Args[1:], os.Getenv, os.Stdout); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", serviceName, err)
+		os.Exit(1)
+	}
+}
+
+type billList []string
+
+func (l *billList) String() string { return strings.Join(*l, ",") }
+
+func (l *billList) Set(v string) error {
+	for p := range strings.SplitSeq(v, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			*l = append(*l, p)
+		}
+	}
+	return nil
+}
+
+func run(args []string, getenv func(string) string, out io.Writer) error {
+	started := time.Now()
+	fs := flag.NewFlagSet(serviceName, flag.ContinueOnError)
+	var bills billList
+	var opts ingest.Options
+	cfg := config{}
+	fs.Var(&bills, "bill", "bill id, for example us-119-hr-4313 (repeatable, or comma separated)")
+	fs.StringVar(&cfg.Source, "source", envOr(getenv, "INGEST_SOURCE", sourceFixtures), "fixtures or govinfo")
+	fs.StringVar(&cfg.FixturesDir, "fixtures-dir", envOr(getenv, "FIXTURES_DIR", "fixtures"),
+		"directory of the example data")
+	fs.BoolVar(&opts.Track, "track", false, "track the bill: fetch, parse and store every text version")
+	fs.BoolVar(&opts.DryRun, "dry-run", false, "report what would change; write nothing, fetch no text")
+	fs.BoolVar(&opts.Verify, "verify", false, "re-fetch stored originals and compare SHA-256; never overwrites")
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("flags: %w", err)
+	}
+	if len(bills) == 0 {
+		return errNoBill
+	}
+	if cfg.Source != sourceFixtures && cfg.Source != sourceGovinfo {
+		return errSource
+	}
+	refs := make([]data.BillRef, 0, len(bills))
+	for _, id := range bills {
+		ref, err := data.ParseBillID(id)
+		if err != nil {
+			return fmt.Errorf("--bill: %w", err)
+		}
+		refs = append(refs, ref)
+	}
+
+	tel, err := telemetry.Setup(telemetry.Options{
+		Kind: telemetry.KindJob, ServiceName: serviceName, Version: version,
+		Environment: envOr(getenv, "DEPLOYMENT_ENVIRONMENT", "dev"),
+	})
+	if err != nil {
+		return fmt.Errorf("telemetry: %w", err)
+	}
+	ports, fetcher, err := wire(tel, cfg)
+	if err != nil {
+		return fmt.Errorf("wiring: %w", err)
+	}
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	items, runErr := pullAll(context.Background(), refs, ingest.Deps{
+		Ports: ports, Fetcher: fetcher, Log: logger, Now: time.Now,
+	}, cfg, opts, out)
+	tel.Instruments.RecordJob(context.Background(), serviceName, started, items, runErr)
+	if err := tel.Shutdown(context.Background()); err != nil {
+		logger.Warn("telemetry shutdown", "error", err.Error())
+	}
+	return runErr
+}
+
+func pullAll(
+	ctx context.Context, refs []data.BillRef, d ingest.Deps, cfg config, opts ingest.Options, out io.Writer,
+) (int, error) {
+	enc := json.NewEncoder(out)
+	enc.SetIndent("", "  ")
+	failed, items := false, 0
+	for _, ref := range refs {
+		d.Source = cfg.Source + "/" + ref.Session
+		rep, err := ingest.Pull(ctx, d, opts, ingest.DefaultSteps(), ref)
+		if encErr := enc.Encode(rep); encErr != nil {
+			return items, fmt.Errorf("report: %w", encErr)
+		}
+		if err != nil {
+			d.Log.Error("pull failed", "bill", ref.ID(), "error", err.Error())
+		}
+		if err != nil || rep.Failed() {
+			failed = true
+		}
+		items += len(rep.Stored)
+	}
+	if failed {
+		return items, errFailed
+	}
+	return items, nil
+}
+
+func envOr(getenv func(string) string, key, def string) string {
+	if v := getenv(key); v != "" {
+		return v
+	}
+	return def
+}
