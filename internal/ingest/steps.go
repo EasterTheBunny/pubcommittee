@@ -86,7 +86,9 @@ func buildCatalog(_ context.Context, r *Run) error {
 	return nil
 }
 
-// OfficialLinks lists the bill page and each text version's official URL.
+// OfficialLinks lists the bill page and each text version's official URL. A
+// record without its own bill page gets one derived from the bill id
+// (DerivedBillPageURL), labelled as derived.
 func OfficialLinks(rec data.BillRecord) []data.Link {
 	var out []data.Link
 	if rec.BillPageURL != "" {
@@ -95,7 +97,7 @@ func OfficialLinks(rec data.BillRecord) []data.Link {
 	for _, v := range rec.Versions {
 		out = append(out, data.Link{Label: v.Type, URL: v.URL, Kind: data.LinkTextVersion})
 	}
-	return out
+	return withBillPage(rec.Bill, out)
 }
 
 // HasCommitteeAction is true when a committee did more than receive the

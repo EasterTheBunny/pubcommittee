@@ -198,6 +198,8 @@ func evaluateEntry(p data.SelectionPolicy, e data.CatalogEntry, cat Catalog, now
 	next.PolicyVersion = res.PolicyVersion
 	next.MarkupStatus = res.MarkupStatus
 	next.ExclusionReason = res.ExclusionReason
+	// Entries stored before bill pages were derived get their link now.
+	next.OfficialLinks = withBillPage(next.Bill, next.OfficialLinks)
 	if res.Tracked && next.TrackedSince == "" {
 		next.TrackedSince = now.Format(dateLayout)
 	}
@@ -210,7 +212,8 @@ func evaluateEntry(p data.SelectionPolicy, e data.CatalogEntry, cat Catalog, now
 
 func sameDecision(a, b data.CatalogEntry) bool {
 	return a.Tracked == b.Tracked && a.PolicyVersion == b.PolicyVersion && a.MarkupStatus == b.MarkupStatus &&
-		a.ExclusionReason == b.ExclusionReason && slices.Equal(a.Reasons, b.Reasons)
+		a.ExclusionReason == b.ExclusionReason && slices.Equal(a.Reasons, b.Reasons) &&
+		len(a.OfficialLinks) == len(b.OfficialLinks)
 }
 
 // refreshBillDoc brings the reasons on a stored bill document in line with its
