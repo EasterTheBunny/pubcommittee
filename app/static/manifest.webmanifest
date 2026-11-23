@@ -1,7 +1,8 @@
 {
 	"name": "PubCommittee",
 	"short_name": "PubCommittee",
-	"description": "Review bills line by line and send a short brief to legislative offices. Proof of concept on mock data.",
+	"description": "Read official bill text line by line, with explanations and links to the law it changes.",
+	"lang": "en",
 	"id": "/",
 	"start_url": "/",
 	"scope": "/",

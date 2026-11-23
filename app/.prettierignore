@@ -10,3 +10,4 @@ bun.lockb
 
 # Generated from api/openapi.yaml (sh api/generate.sh)
 /src/lib/api/schema.d.ts
+test-results

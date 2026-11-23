@@ -2,6 +2,7 @@
 	import './layout.css';
 	import favicon from '#lib/assets/favicon.svg';
 	import Header from '#lib/components/Header.svelte';
+	import OfflineLabel from '#lib/components/OfflineLabel.svelte';
 	import { repoHref } from '#lib/links.ts';
 	import type { LayoutProps } from './$types';
 
@@ -17,6 +18,7 @@
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-paper">
+	<OfflineLabel />
 	<Header />
 	<main class="flex-1">
 		{@render children()}
