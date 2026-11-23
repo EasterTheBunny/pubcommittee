@@ -21,6 +21,7 @@ const accessNotice = "Content marked official or platform is published by this s
 func toPolicy(p data.SelectionPolicy) apiv1.SelectionPolicy {
 	out := apiv1.SelectionPolicy{PolicyVersion: p.Version, Rules: append([]string{}, p.Rules...)}
 	out.Version, out.AsOf, out.Provenance, out.ContentClass = meta(p.Meta)
+	addPolicyFields(&out, p)
 	return out
 }
 

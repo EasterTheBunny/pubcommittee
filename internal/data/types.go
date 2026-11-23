@@ -220,13 +220,16 @@ type CatalogEntry struct {
 	CommitteeActivity bool                `json:"committee_activity,omitempty"`
 	Tracked           bool                `json:"tracked"`
 	Reasons           []string            `json:"reasons"`
+	PolicyVersion     int                 `json:"policy_version,omitempty"` // policy version that tracked the bill
+	TrackedSince      string              `json:"tracked_since,omitempty"`  // YYYY-MM-DD the bill was first tracked
 	MarkupStatus      string              `json:"markup_status,omitempty"`
 	ExclusionReason   string              `json:"exclusion_reason,omitempty"`
 	OfficialLinks     []Link              `json:"official_links,omitempty"`
 	SearchTerms       []string            `json:"search_terms,omitempty"` // bill number, title words, subjects
 	SponsorID         string              `json:"sponsor_id,omitempty"`   // bioguide id
 	Sponsor           string              `json:"sponsor,omitempty"`
-	Introduced        string              `json:"introduced,omitempty"` // YYYY-MM-DD
+	SponsorParty      string              `json:"sponsor_party,omitempty"` // disclosure counts only; never a policy input
+	Introduced        string              `json:"introduced,omitempty"`    // YYYY-MM-DD
 	LatestAction      *Action             `json:"latest_action,omitempty"`
 	PolicyArea        string              `json:"policy_area,omitempty"`
 	Committees        []CommitteeActivity `json:"committees,omitempty"`
@@ -290,12 +293,39 @@ type GenerationRecord struct {
 	Meta       Meta      `json:"meta"`
 }
 
-// SelectionPolicy is one version of the rules that choose tracked bills.
+// SelectionPolicy is one version of the rules that choose tracked bills
+// ([architecture § Bill selection]). Rules is the plain-language statement of
+// the structured fields below, generated from them; versions stored before the
+// structured fields existed carry Rules only. A version is immutable.
 type SelectionPolicy struct {
-	Version int      `json:"version"`
-	Rules   []string `json:"rules"`
-	Meta    Meta     `json:"meta"`
+	Version           int                    `json:"version"`
+	Rules             []string               `json:"rules"`
+	Mode              string                 `json:"mode,omitempty"`  // PolicyModePilot or PolicyModeGeneral
+	Phase             string                 `json:"phase,omitempty"` // PolicyPhaseEarlyPilot or PolicyPhaseStewardSignoff
+	MeasureKinds      []string               `json:"measure_kinds,omitempty"`
+	ExcludeKinds      []string               `json:"exclude_kinds,omitempty"`
+	CommitteeActivity []string               `json:"committee_activity,omitempty"`
+	FollowCompanions  bool                   `json:"follow_companions,omitempty"`
+	Topics            map[string]PolicyTopic `json:"topics,omitempty"`
+	Meta              Meta                   `json:"meta"`
 }
+
+// PolicyTopic is one focus topic: the legislature's own policy areas and
+// legislative subjects, and title terms that let a bill match before subject
+// indexing arrives.
+type PolicyTopic struct {
+	PolicyAreas []string `json:"policy_areas,omitempty"`
+	Subjects    []string `json:"subjects,omitempty"`
+	TitleTerms  []string `json:"title_terms,omitempty"`
+}
+
+// Selection policy modes and phases.
+const (
+	PolicyModePilot           = "pilot"
+	PolicyModeGeneral         = "general"
+	PolicyPhaseEarlyPilot     = "early_pilot"
+	PolicyPhaseStewardSignoff = "steward_signoff"
+)
 
 // LogEntry is a public log entry (moderation or platform action).
 type LogEntry struct {

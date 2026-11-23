@@ -53,6 +53,7 @@ func TestParseFixtureHR4313(t *testing.T) {
 		{"title", rec.Title, "Hospital Inpatient Services Modernization Act"},
 		{"chamber", rec.Chamber, data.ChamberHouse},
 		{"sponsor id", rec.SponsorID, "B001260"},
+		{"sponsor party", rec.SponsorParty, "R"},
 		{"policy area", rec.PolicyArea, "Health"},
 		{"subject Medicare", slices.Contains(rec.Subjects, "Medicare"), true},
 		{"versions in order with URLs", versionSummaries(rec.Versions), wantVersions},

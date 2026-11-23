@@ -43,6 +43,11 @@ var version = "dev"
 type config struct {
 	Source      string // sourceFixtures or sourceGovinfo
 	FixturesDir string
+	// Evaluate runs the selection policy over the stored catalog.
+	Evaluate bool
+	// PublishPolicy is "v1" or a policy file to store as a policy version.
+	PublishPolicy string
+	PolicyReason  string
 }
 
 func main() {
@@ -65,8 +70,8 @@ func (l *billList) Set(v string) error {
 	return nil
 }
 
-func run(args []string, getenv func(string) string, out io.Writer) error {
-	started := time.Now()
+// parseArgs reads the flags into the config, the pull options and the bill list.
+func parseArgs(args []string, getenv func(string) string) (config, ingest.Options, []data.BillRef, error) {
 	fs := flag.NewFlagSet(serviceName, flag.ContinueOnError)
 	var bills billList
 	var opts ingest.Options
@@ -77,23 +82,38 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 		"directory of the example data")
 	fs.BoolVar(&opts.Track, "track", false, "track the bill: fetch, parse and store every text version")
 	fs.BoolVar(&opts.DryRun, "dry-run", false, "report what would change; write nothing, fetch no text")
+	fs.BoolVar(&cfg.Evaluate, "evaluate", false,
+		"evaluate the stored catalog against the latest selection policy; writes changed entries and the breakdown")
+	fs.StringVar(&cfg.PublishPolicy, "publish-policy", "",
+		"store a selection policy version: 'v1' (built in) or a JSON file; local target only")
+	fs.StringVar(&cfg.PolicyReason, "reason", "initial selection policy", "public reason logged with --publish-policy")
 	fs.BoolVar(&opts.Verify, "verify", false, "re-fetch stored originals and compare SHA-256; never overwrites")
 	if err := fs.Parse(args); err != nil {
-		return fmt.Errorf("flags: %w", err)
+		return cfg, opts, nil, fmt.Errorf("flags: %w", err)
 	}
-	if len(bills) == 0 {
-		return errNoBill
+	if len(bills) == 0 && !cfg.Evaluate && cfg.PublishPolicy == "" {
+		return cfg, opts, nil, errNoBill
 	}
 	if cfg.Source != sourceFixtures && cfg.Source != sourceGovinfo {
-		return errSource
+		return cfg, opts, nil, errSource
 	}
 	refs := make([]data.BillRef, 0, len(bills))
 	for _, id := range bills {
 		ref, err := data.ParseBillID(id)
 		if err != nil {
-			return fmt.Errorf("--bill: %w", err)
+			return cfg, opts, nil, fmt.Errorf("--bill: %w", err)
 		}
 		refs = append(refs, ref)
+	}
+	return cfg, opts, refs, nil
+}
+
+// run parses the flags, wires the ports and runs one pull, evaluation or policy publication.
+func run(args []string, getenv func(string) string, out io.Writer) error {
+	started := time.Now()
+	cfg, opts, refs, err := parseArgs(args, getenv)
+	if err != nil {
+		return err
 	}
 
 	tel, err := telemetry.Setup(telemetry.Options{
@@ -108,9 +128,17 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 		return fmt.Errorf("wiring: %w", err)
 	}
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	items, runErr := pullAll(context.Background(), refs, ingest.Deps{
-		Ports: ports, Fetcher: fetcher, Log: logger, Now: time.Now,
-	}, cfg, opts, out)
+	deps := ingest.Deps{Ports: ports, Fetcher: fetcher, Log: logger, Now: time.Now}
+	var items int
+	var runErr error
+	switch {
+	case cfg.PublishPolicy != "":
+		runErr = publishPolicy(context.Background(), deps, cfg, out)
+	case cfg.Evaluate:
+		items, runErr = evaluateCatalog(context.Background(), deps, opts, out)
+	default:
+		items, runErr = pullAll(context.Background(), refs, deps, cfg, opts, out)
+	}
 	tel.Instruments.RecordJob(context.Background(), serviceName, started, items, runErr)
 	if err := tel.Shutdown(context.Background()); err != nil {
 		logger.Warn("telemetry shutdown", "error", err.Error())
@@ -124,9 +152,13 @@ func pullAll(
 	enc := json.NewEncoder(out)
 	enc.SetIndent("", "  ")
 	failed, items := false, 0
+	steps, policy, err := pullSteps(ctx, d)
+	if err != nil {
+		return 0, err
+	}
 	for _, ref := range refs {
 		d.Source = cfg.Source + "/" + ref.Session
-		rep, err := ingest.Pull(ctx, d, opts, ingest.DefaultSteps(), ref)
+		rep, err := ingest.Pull(ctx, d, opts, steps, ref)
 		if encErr := enc.Encode(rep); encErr != nil {
 			return items, fmt.Errorf("report: %w", encErr)
 		}
@@ -137,6 +169,9 @@ func pullAll(
 			failed = true
 		}
 		items += len(rep.Stored)
+	}
+	if err := publishBreakdown(ctx, d, policy, opts); err != nil {
+		return items, err
 	}
 	if failed {
 		return items, errFailed

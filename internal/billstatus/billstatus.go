@@ -57,6 +57,7 @@ type bill struct {
 type person struct {
 	BioguideID string `xml:"bioguideId"`
 	FullName   string `xml:"fullName"`
+	Party      string `xml:"party"`
 }
 
 // action is a date and text pair, as in <latestAction>.
@@ -144,6 +145,7 @@ func Parse(xmlBytes []byte, src data.SourceInfo) (data.BillRecord, error) {
 	if len(b.Sponsors) > 0 {
 		rec.SponsorID = trim(b.Sponsors[0].BioguideID)
 		rec.Sponsor = trim(b.Sponsors[0].FullName)
+		rec.SponsorParty = trim(b.Sponsors[0].Party)
 	}
 	return rec, nil
 }
