@@ -1073,7 +1073,7 @@ Rules:
 - **Review-item freshness on the UI:** CDN TTL for pages showing comments and suggestions.
 - **Email notifications:** deferred. Revisit only if device notifications and the inbox leave too many people unreachable; it would need verified, encrypted addresses and a mail provider under a data processing agreement.
 - **CI workflows** (GitHub Actions, [Tooling](#tooling)) for the Go module and `app/`, including the dependency checks, binary size budgets, and contract checks.
-- **Image registry:** one shared Artifact Registry, pushed only by the deployment repository's CI, promoted by digest ([Continuous delivery](#continuous-delivery)). Which project holds it is open.
+- **Image registry:** one shared Artifact Registry, pushed only by the deployment repository's CI, promoted by digest ([Continuous delivery](#continuous-delivery)). It lives in the shared admin project beside the state bucket and the workload identity pool, never in an environment project (operator, 2026-11-23); each environment's Cloud Run service agent has read access.
 - **Self-hosted adapters** for document and object storage, if running entirely off Google Cloud becomes a goal.
 - **Metrics backend and cost:** Managed Prometheus bills per sample ingested; set scrape intervals and histogram buckets with that in mind.
 - **Traces:** the same OpenTelemetry setup can add tracing later; decide whether traces are wanted, given they carry request detail.

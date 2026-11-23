@@ -124,7 +124,7 @@ Product, policy, legal and spending questions are not answered here; each is lis
 | Whether a pull is an `admin-api` action in the cloud phase, how automatic chaining starts steps, schedules and cadence | M1-05, M1-06, M1-09, M1-11, M1-12, M1-15 | Operator (cloud phase) |
 | Second parser version storage path for re-parse | M1-12 | M1-03/M1-04 owners |
 | A reset-from-fixture snapshot for `.local-data` (for example `make local-reset`) | M1-03a | Operator |
-| Hosting questions: web host for `dev` and `staging`, `<domain>`, shared registry project, budget alerts, secret scanner, CD approvals, release tags, Firestore index order, post-deploy contract check | M1-13, M1-15, M1-17, architecture § Open decisions | Operator (cloud phase) |
+| Hosting questions: web host for `dev` and `staging`, `<domain>`, budget alerts, secret scanner, CD approvals, release tags, Firestore index order, post-deploy contract check | M1-13, M1-15, M1-17, architecture § Open decisions | Operator (cloud phase) |
 | Storage stand-in questions (real bucket, one or two stand-ins; JSON API client decided by the operator on 2026-11-23) | M1-00 | Operator and M1-00 (cloud phase) |
 | Catalog search: keyword matching enough for M1 | M1-03b, architecture | Closed for the local gate by the search check above; confirm on the full catalog |
 | Which open questions must be answered to close M1 and which carry to M2 | 16 | Operator |

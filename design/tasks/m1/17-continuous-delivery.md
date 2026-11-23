@@ -94,6 +94,6 @@ Deliver every merged change on the public repository's `main` to `dev` with no m
 - Does the UI deploy through CD, or through Netlify's own build from `app/` with per-environment API base URLs ([M1-13](13-web-ui-real-data.md))? The archived demo stays on Netlify's own build from `demo/` either way.
 - Does a release tag start promotion automatically (still gated by approvals), or is every promotion started by hand?
 - Who approves `staging` and `prod` while there is one operator? GitHub can prevent self-review only once a second reviewer exists.
-- Which project holds the shared Artifact Registry, and how do each environment's Cloud Run service agents get read access ([M1-15](15-infrastructure-and-deploy.md))?
+- Which project holds the shared Artifact Registry, and how do each environment's Cloud Run service agents get read access ([M1-15](15-infrastructure-and-deploy.md))? **Decided (operator, 2026-11-23):** the shared admin project, which also holds the state bucket and the workload identity pool and outlives the environments. The registry is created by the deployment repository's bootstrap root; only `deploy-dev` pushes, and each environment project's Cloud Run service agent gets `roles/artifactregistry.reader`.
 - In what order are Firestore indexes and images applied when a change needs both ([M1-03b](03b-cloud-storage-adapters.md))?
 - Is a post-deploy check of the public `read-api` contract ([M1-02](02-api-contract.md)) part of the smoke tests in `dev`?
