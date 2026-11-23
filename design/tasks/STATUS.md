@@ -27,7 +27,7 @@ Integration branch: `m1-integration`.
 | [M1-11](m1/11-exports-feed-machine-notice.md) | local, cloud | in-progress | `task/M1-11` | sonnet | | Run r20261122-1412, batch 6, worktree `.claude/worktrees/m1-11` |
 | [M1-12](m1/12-administration.md) | local, cloud | in-progress | `task/M1-12` | sonnet | | Run r20261122-1412, batch 6, worktree `.claude/worktrees/m1-12` |
 | [M1-13](m1/13-web-ui-real-data.md) | local, cloud | done-local | `task/M1-13` | sonnet | none (3 sub-tasks, 0 redone, 3 commits; numstat rewrite 1.95 is the `app` to `demo` move, not redo) | Run r20261122-1412, batch 4; merged. Long-page check on a 10,000-line stub only; recheck on a real large bill. `placeholders.ts` keeps M0 wording ("mock bills"), fix in M1-14. CI `web.yml` app job not yet run. Operator: repoint Netlify at `demo/`. Cloud-phase criteria open |
-| [M1-14](m1/14-installable-app.md) | local, cloud | in-progress | `task/M1-14` | sonnet | | Run r20261122-1412, batch 5, worktree `.claude/worktrees/m1-14` |
+| [M1-14](m1/14-installable-app.md) | local, cloud | done-local | `task/M1-14` | sonnet | none (1 sub-task, 0 redone, 1 commit) | Run r20261122-1412, batch 5; merged. Desktop installability on localhost via the browser's install check (the install click itself is not automatable); offline version and catalog pages pass. CI `pwa` and `app` jobs not yet run on GitHub. Cloud phase: mobile and desktop install in `staging` (operator) |
 | [M1-15](m1/15-infrastructure-and-deploy.md) | cloud | todo | | | | |
 | [M1-16](m1/16-acceptance.md) | local, cloud | todo | | | | Local gate, then hosted gate |
 | [M1-17](m1/17-continuous-delivery.md) | cloud | todo | | | | |

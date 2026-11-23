@@ -106,6 +106,7 @@ The UI is a **progressive web app** and must be installable ([08](../design/08-o
   - **Receives device notifications** ([Notifications](#notifications)) and opens the inbox on tap.
 - **Build:** the SvelteKit service-worker support in `app/`, versioned with each deploy so a new release replaces old caches.
 - **Requirement checks in CI:** installability (manifest and service worker present and valid) and an offline load of a cached version page.
+- **As built (M1-14):** caches are named per release (`pubcommittee-{shell,text,fallback}-<version>`); fallback copies are bounded to 40; cross-origin `read-api` responses are stored only if `immutable`; responses with `private`, `no-store`, `Vary: *`, or `Set-Cookie` are never stored. The service worker injects `<meta name="pc-offline-copy">` into saved HTML, and `OfflineLabel.svelte` shows the out-of-date label from it and `navigator.onLine`. A never-opened page shows an offline page. Rules live in `app/src/service-worker/policy.ts` (pure, tested in Node); Playwright checks installability through the browser's own installability report. Fonts are cross-origin and not cached; offline pages fall back to system fonts.
 
 ## Data placement
 
