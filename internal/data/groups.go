@@ -5,6 +5,9 @@ package data
 type PublicReadPorts struct {
 	BillText   BillText
 	PublicDocs PublicDocs
+	// Comparisons may be nil where an adapter stores none; readers then
+	// answer not found.
+	Comparisons ComparisonReader
 }
 
 // PlatformPorts are held by ingest, generation, exports, and admin-api;
@@ -12,7 +15,8 @@ type PublicReadPorts struct {
 type PlatformPorts struct {
 	PublicReadPorts
 
-	PlatformDocs PlatformDocs
-	Moderation   Moderation
-	Publisher    Publisher
+	PlatformDocs    PlatformDocs
+	Moderation      Moderation
+	Publisher       Publisher
+	ComparisonStore ComparisonWriter
 }

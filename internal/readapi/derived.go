@@ -110,23 +110,6 @@ func (s *Server) GetVersionChangeSummary(
 	notFound(w, detailNoChanges)
 }
 
-// CompareVersions answers not found until M1-08 stores comparisons. Both
-// versions must exist.
-func (s *Server) CompareVersions(
-	w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath, m int,
-) {
-	res, err := s.resolve(r.Context(), bill, n, false)
-	if err != nil {
-		fail(w, r, err)
-		return
-	}
-	if m < 1 || m > res.latest {
-		fail(w, r, fmt.Errorf("version %d of %s: %w", m, res.id, data.ErrNotFound))
-		return
-	}
-	notFound(w, detailNoCompare)
-}
-
 // ListCitations serves the stored citations of one version. No port holds
 // citations until M1-07, so the page is empty for a version that exists.
 func (s *Server) ListCitations(
