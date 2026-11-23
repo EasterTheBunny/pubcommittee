@@ -10,7 +10,7 @@ Result of the last run: 71 PASS lines from `check.mjs` and `admin.sh`, 12 of 12 
 
 | # | Criterion | Evidence | Result |
 | --- | --- | --- | --- |
-| E1 | Three real bills, one with multiple versions, display correctly with explanations | `check.mjs`: all 3 exit bills have 4 official versions (12 version pages), every version page equals its `read-api` resource in anchors, order and text (363 lines), official content class and public-domain licence on each; 12 of 12 summaries served; 75 served explanations all labelled `auto`, content class `platform`, and the page shows the "Auto-generated" label. Browser: `e2e/real-bills.spec.ts` reads each bill from the catalog without scripts. Review of text against the official source: `test/acceptance/M1-05/run.sh` (live pull byte-identical to `fixtures/`) and `test/acceptance/M1-04/run.sh` (DTD validation, 0 parser warnings). Explanation spot-check: `test/accuracy/report.md` (graded statements, planted errors) and `test/accuracy/operator-sample.md` (operator grading pending) | pass, with the operator sample still to be graded |
+| E1 | Three real bills, one with multiple versions, display correctly with explanations | `check.mjs`: all 3 exit bills have 4 official versions (12 version pages), every version page equals its `read-api` resource in anchors, order and text (363 lines), official content class and public-domain licence on each; 12 of 12 summaries served; 75 served explanations all labelled `auto`, content class `platform`, and the page shows the "Auto-generated" label. Browser: `e2e/real-bills.spec.ts` reads each bill from the catalog without scripts. Review of text against the official source: `test/acceptance/M1-05/run.sh` (live pull byte-identical to `fixtures/`) and `test/acceptance/M1-04/run.sh` (DTD validation, 0 parser warnings). Explanation spot-check: `test/accuracy/report.md` (graded statements, planted errors) and `test/accuracy/operator-sample.md` (operator graded 2026-11-22: 30/30 agree with the grader) | pass |
 | E2 | Measured citation resolution rate and explanation accuracy on a sample, with a target set for M3 | Citation resolution: `test/acceptance/M1-07/report.md`. Accuracy: `test/accuracy/report.md`. Measured values and proposed targets: see "Measured targets for M3" below. The targets are proposals for the operator | pass (measured); targets await the operator |
 | E3 | Answers recorded for the M1 open questions in 01 (line unit, non-prose content) | `design/01-bill-ingestion-and-display.md` § Open questions: "Decided (M1-04)" for the line unit, non-prose content and continuation lines; `test/acceptance/M1-04/run.sh` passes (parser corpus incl. tables) | pass. Formulas: no real example exists in the 119-1 House archive; deferred by the operator on 2026-11-22 |
 | E4 | An automated client can fetch any line range by canonical address, without running page scripts, and the structured form matches the page | `check.mjs`: for every version of the 3 exit bills, every line, every block range and every section range (485 ranges): `read-api` resource vs page HTML (fetched without scripts) compare anchors, text and canonical address; page carries `rel="alternate"` to the resource; older-version ranges carry `changed_since` (359 ranges); `Accept: application/json` on a page answers 303 to the resource; no cookies. Also `app/tests/*.spec.ts` (CI app job, 42 tests) | pass |
@@ -69,7 +69,7 @@ No Go or app code was changed by this task, so golangci-lint was not rerun.
 | Statements contradicted | change-explanation 4.4% (10/225), all served | same | same |
 | Outputs ready / unverified / invalid | 75 / 11 / 0 of 86; 11 withheld (not served) | same | as the report |
 | Planted-error catch (deterministic) | changed-number 96.8%, invented-number 100%, evaluative wording 100%, nonexistent anchor 100%, reversed effect 66.7% (2/3) | same | nonexistent-anchor 100% by the deterministic check |
-| Grader-to-operator agreement | not measured: needs the operator's labels | same | set after grading |
+| Grader-to-operator agreement | 30/30 (100%) on 30 grader-supported statements; no contradicted statements in the sample | same | operator sets; next sample should include contradicted and unverified statements |
 | Spend of the live run | at most 7.5 + 0.9 USD of the 20 USD approval | same | |
 
 Sizes (`test/ci/size.sh`, bytes against budget): read-api 19,157,152 / 20,000,000; admin-api 17,723,552; job-ingest 17,432,736; job-exports 16,740,512; accuracy-report 13,050,016; pubctl 7,114,912; job-summarize 27,668,640 / 30,000,000 (all within budget, read-api at 96%).
@@ -97,7 +97,7 @@ Page timings (headless Chromium, local, no throttling; `.task/m1-16-timings.json
 
 ## Pending operator steps (not attempted)
 
-- Grade `test/accuracy/operator-sample.json` (30 statements) and record agreement; decide on withholding contradicted statements (10 of 225 served) and on further paid retries.
+- Done 2026-11-22: operator sample graded, 30/30 agreement. Still open: decide on withholding contradicted statements (10 of 225 served) and on further paid retries.
 - Repoint Netlify at `demo/` (M1-13).
 - Publish selection policy v1 publicly with `pubctl` (M1-06, M1-12); confirm the draft topic terms.
 - Confirm the v1 overlap period (12 months) in `api/MACHINE-API.md`; the older-pinned-version caching decision (M1-08).
