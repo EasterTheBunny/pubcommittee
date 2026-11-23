@@ -14,6 +14,11 @@ receivers:
           scrape_interval: 15s
           static_configs:
             - targets: ["read-api:9464"]
+        # Present only when the app profile runs (scripts/local.sh up).
+        - job_name: admin-api
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["admin-api:9464"]
 processors:
   batch: {}
 exporters:
