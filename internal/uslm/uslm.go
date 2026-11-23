@@ -22,6 +22,11 @@ var rootPattern = regexp.MustCompile(`^/us/usc/t([1-9][0-9]*)$`)
 // idPattern is the shape of a normalised section id.
 var idPattern = regexp.MustCompile(`^[0-9A-Za-z]+(-[0-9A-Za-z]+)*$`)
 
+// DuplicateMarker joins a section number and the ordinal of a repeated
+// number in a stored section id: the second section numbered "130g" is
+// stored as "130g-dup2".
+const DuplicateMarker = "-dup"
+
 // ParseTitle streams a US Code title file and calls fn once per top-level section, in document order.
 // release supplies the release date. An error from fn stops the parse and is returned unchanged.
 func ParseTitle(src []byte, release data.Release, fn func(data.LawSection) error) error {
@@ -33,6 +38,7 @@ func ParseTitle(src []byte, release data.Release, fn func(data.LawSection) error
 	}
 	sum := sha256.Sum256(src)
 	doc := document{title: title, release: release, sha: hex.EncodeToString(sum[:])}
+	seen := map[string]int{}
 	for {
 		tok, err := dec.Token()
 		if errors.Is(err, io.EOF) {
@@ -53,7 +59,15 @@ func ParseTitle(src []byte, release data.Release, fn func(data.LawSection) error
 		if err != nil {
 			return err
 		}
-		if err := fn(doc.lawSection(root, id)); err != nil {
+		// A few titles number two sections alike (for example 10 U.S.C. 130g).
+		// The first keeps the number; later ones are stored as "<id>-dup<N>",
+		// so no section is lost and a resolver can tell the number is shared.
+		seen[id]++
+		stored := id
+		if seen[id] > 1 {
+			stored = fmt.Sprintf("%s%s%d", id, DuplicateMarker, seen[id])
+		}
+		if err := fn(doc.lawSection(root, id, stored)); err != nil {
 			return err
 		}
 	}
@@ -78,23 +92,23 @@ func (d document) sectionID(identifier string) (string, bool) {
 }
 
 // lawSection builds the record for one section tree.
-func (d document) lawSection(root *node, id string) data.LawSection {
+func (d document) lawSection(root *node, id, stored string) data.LawSection {
 	meta := data.Meta{
 		Version:      1,
 		AsOf:         d.release.Date,
 		Provenance:   data.ProvenanceSource,
 		ContentClass: data.ContentOfficial,
 	}
-	b := sectionBuilder{title: d.title, id: id, prefix: root.identifier + "/", release: d.release, meta: meta}
+	b := sectionBuilder{title: d.title, id: stored, cite: id, prefix: root.identifier + "/", release: d.release, meta: meta}
 	provisions := []data.Provision{{
-		ID:          data.ProvisionID(d.title, id),
+		ID:          data.ProvisionID(d.title, stored),
 		Citation:    b.citation(nil),
 		Text:        root.text(),
 		CurrentAsOf: d.release.Date,
 		Meta:        meta,
 	}}
 	return data.LawSection{
-		Ref:          data.ProvisionRef{Release: d.release.ID, Title: d.title, Section: id},
+		Ref:          data.ProvisionRef{Release: d.release.ID, Title: d.title, Section: stored},
 		Heading:      root.heading(),
 		Status:       root.status,
 		SourceSHA256: d.sha,
@@ -106,7 +120,8 @@ func (d document) lawSection(root *node, id string) data.LawSection {
 // sectionBuilder collects the subdivisions of one section.
 type sectionBuilder struct {
 	title   int
-	id      string
+	id      string // stored section id, which differs from cite for a repeated number
+	cite    string // section number as printed
 	prefix  string // raw identifier of the section plus "/"
 	release data.Release
 	meta    data.Meta
@@ -155,7 +170,7 @@ func (b sectionBuilder) path(identifier string) ([]string, bool) {
 // citation returns "42 U.S.C. 1395cc-7(a)(2)(A)" for path ["a", "2", "A"].
 func (b sectionBuilder) citation(path []string) string {
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "%d U.S.C. %s", b.title, b.id)
+	fmt.Fprintf(&sb, "%d U.S.C. %s", b.title, b.cite)
 	for _, seg := range path {
 		sb.WriteString("(" + seg + ")")
 	}

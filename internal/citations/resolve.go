@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/easterthebunny/pubcommittee/internal/data"
+	"github.com/easterthebunny/pubcommittee/internal/uslm"
 )
 
 // Reasons recorded on entries that are not resolved. They are stable text:
@@ -24,6 +25,7 @@ const (
 	reasonActMulti   = "the Act section is classified to more than one US Code section"
 	reasonActLearned = "mapped from the bill's own citation of the same Act section"
 	reasonActDirect  = "named code whose section numbers equal the US Code title's"
+	reasonDuplicate  = "more than one section of the title has this number"
 	reasonBadCite    = "the citation could not be read"
 )
 
@@ -224,6 +226,14 @@ func (r *Resolver) resolveUSC(
 	}
 	if !ok {
 		e.Reason = reasonNoSection
+		return e, nil
+	}
+	// A number shared by two sections is ambiguous: link both.
+	if dup, ok, err := r.section(ctx, title, sec+uslm.DuplicateMarker+"2"); err != nil {
+		return e, err
+	} else if ok {
+		e.State, e.Reason = data.CitationAmbiguous, reasonDuplicate
+		e.ProvisionIDs = []string{s.Provisions[0].ID, dup.Provisions[0].ID}
 		return e, nil
 	}
 	// Deepest stored provision along the path.

@@ -218,3 +218,27 @@ func TestExtractTextPatterns(t *testing.T) {
 		t.Errorf("got:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
 }
+
+func TestUnresolvedListedForExitBills(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	s := memory.New()
+	rel := loadLaw(t, s)
+	v, src := loadBill(t, s, "hr-3062", "ih")
+	set, err := citations.Build(ctx, s, rel, v, src, billxml.ParserVersion, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var open []string
+	for _, e := range set.Unresolved() {
+		if e.Reason == "" {
+			t.Errorf("%q is listed without a reason", e.Text)
+		}
+		open = append(open, e.Text+" "+string(e.State))
+	}
+	// "et seq." names a range, so it is listed as ambiguous, never resolved.
+	want := "42 U.S.C. 4321 et seq. ambiguous"
+	if len(open) != 1 || open[0] != want {
+		t.Errorf("unresolved list = %q, want [%q]", open, want)
+	}
+}

@@ -57,7 +57,7 @@ Still missing from the exit set: a table and a formula. None of the 8,042 docume
 
 ## US Code provisions (M1-07)
 
-The sections the three M1 exit bills cite, cut byte for byte (the `<section>` element, nothing around it) from the Office of the Law Revision Counsel's XML title files at release point `119-142` (current through Public Law 119-142, November 10, 2026). US government works. Retrieval date: 2026-11-22; the zips came one request at a time (3 s apart, descriptive user agent) from `https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc<TT>@119-142.zip` into the git-ignored `.local-data/uscode/119-142/`; `go run ./scripts/extract-uscode-fixtures` cut the sections. Layout: `fixtures/uscode/119-142/t<title>-s<section>.xml`, with the section's en dash written as a hyphen in the file name. The release date is not in the files; it is the release point's (2026-11-10). Tests wrap a fragment in a `<uscDoc identifier="/us/usc/t<title>">` root before parsing.
+The sections the three M1 exit bills cite (by markup or by text such as "section 60502 of title 49, United States Code"), cut byte for byte (the `<section>` element, nothing around it) from the Office of the Law Revision Counsel's XML title files at release point `119-142` (current through Public Law 119-142, November 10, 2026). US government works. Retrieval date: 2026-11-22; the zips came one request at a time (3 s apart, descriptive user agent) from `https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc<TT>@119-142.zip` into the git-ignored `.local-data/uscode/119-142/`; `go run ./scripts/extract-uscode-fixtures` cut the sections. Layout: `fixtures/uscode/119-142/t<title>-s<section>.xml`, with the section's en dash written as a hyphen in the file name. The release date is not in the files; it is the release point's (2026-11-10). Tests wrap a fragment in a `<uscDoc identifier="/us/usc/t<title>">` root before parsing.
 
 | Title | Zip SHA-256 (`xml_usc<TT>@119-142.zip`) | SHA-256 of `usc<TT>.xml` inside it |
 | --- | --- | --- |
@@ -65,6 +65,7 @@ The sections the three M1 exit bills cite, cut byte for byte (the `<section>` el
 | 15 | `0de372cac2ecdfd08230e4017968227f62358f2c9a3a20a2b3de77614118b7f5` | `36294c32ef49661c4f115d1608490983d33d3403aa0dc2bdb1c7855ed21ffabc` |
 | 16 | `6b824d53508fa103706c1a6cd231ac023dbee150d51875492c93cf95a70ae1bc` | `c0732c3b6cb2abb23722deb1cd8441ccb3c6f3e7368ae3290e27cb87eb1f0136` |
 | 42 | `25738c82e501e6844f7744c492f091500da1497dd3e2074a7882c889c2b14de6` | `d514b50fcfb7a60cb12d0ce5e55263f91d52a6a30840cf62000c67d4cb17c9f5` |
+| 49 | `faa1231506979567488857ebc203007da9e428450e4ed83213b84813ee7db893` | `9f75bba7441a9fa2e5f26fcefbfb3a6df4ec142b7f6a8a5a3f9bc12a8bb9c50c` |
 
 | File | Bytes | Source (title file at release point 119-142) | SHA-256 of the file |
 | --- | --- | --- | --- |
@@ -79,3 +80,4 @@ The sections the three M1 exit bills cite, cut byte for byte (the `<section>` el
 | `uscode/119-142/t42-s1395iii.xml` | 24124 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc42@119-142.zip | `4d192031e9ff981c43a00f73360e02f2c28c722bcbe3aad8edbb5ce9913be7af` |
 | `uscode/119-142/t42-s4321.xml` | 245359 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc42@119-142.zip | `a0da1766c9bfe46e94ff4b9fb973058ca034249876690e231d233a23d43072c1` |
 | `uscode/119-142/t42-s7151.xml` | 18668 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc42@119-142.zip | `076e7ab41746de3befa6ea75f8544140784c9ae6d40f254c2adff85e2def2e97` |
+| `uscode/119-142/t49-s60502.xml` | 5958 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc49@119-142.zip | `2e985628b3be170e2b25795d31e37a4e1f3b7d9b0a4b3447dcef2e4d578eb6c3` |

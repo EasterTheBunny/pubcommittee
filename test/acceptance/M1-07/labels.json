@@ -1,0 +1,1302 @@
+[
+ {
+  "bill": "us-119-hr-3062",
+  "text": "42 U.S.C. 4321 et seq.",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "ambiguous",
+  "provisions": [
+   "usc/42/4321"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "15 U.S.C. 717b(c)",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/15/717b/c"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "16 U.S.C. 824a(e)",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/16/824a/e"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "16 U.S.C. 824a(f)",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/16/824a/f"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "16 U.S.C. 824a–4(b)",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/16/824a-4/b"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "3 U.S.C. 301",
+  "kind": "usc",
+  "versions": {
+   "eh": 2,
+   "ih": 2,
+   "rfs": 2,
+   "rh": 2
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/3/301"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "42 U.S.C. 7151",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/42/7151"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "15 U.S.C. 717b",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/15/717b"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "15 U.S.C. 717a",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/15/717a"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "16 U.S.C. 824o",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/16/824o"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "16 U.S.C. 796",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/16/796"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "20 U.S.C. 1070 et seq.",
+  "kind": "usc",
+  "versions": {
+   "ih": 2
+  },
+  "state": "ambiguous",
+  "provisions": [
+   "usc/20/1070"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "34 U.S.C. 10152(a)(1)",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/34/10152/a/1"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "chapter 1803",
+  "kind": "usc-chapter",
+  "versions": {
+   "rh": 5
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "10 U.S.C. 2687",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/10/2687"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "chapter 169",
+  "kind": "usc-chapter",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "42 U.S.C. 3374",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/42/3374"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "42 U.S.C. 3374(a)(1)(A)",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/42/3374/a/1/A"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "chapter 37",
+  "kind": "usc-chapter",
+  "versions": {
+   "rh": 2
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "chapter 31",
+  "kind": "usc-chapter",
+  "versions": {
+   "rh": 3
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 111–163",
+  "kind": "public-law",
+  "versions": {
+   "rh": 2
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "38 U.S.C. 7681",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/7681"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "chapter 17",
+  "kind": "usc-chapter",
+  "versions": {
+   "rh": 3
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "42 U.S.C. 2651 et seq.",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "ambiguous",
+  "provisions": [
+   "usc/42/2651"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "chapter 73",
+  "kind": "usc-chapter",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "chapter 81",
+  "kind": "usc-chapter",
+  "versions": {
+   "rh": 2
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "42 U.S.C. 5121 et seq.",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "ambiguous",
+  "provisions": [
+   "usc/42/5121"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 114–223",
+  "kind": "public-law",
+  "versions": {
+   "rh": 5
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 111–84",
+  "kind": "public-law",
+  "versions": {
+   "rh": 4
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 110–417",
+  "kind": "public-law",
+  "versions": {
+   "rh": 4
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 118–42",
+  "kind": "public-law",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 119–4",
+  "kind": "public-law",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 115–141",
+  "kind": "public-law",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 109–115",
+  "kind": "public-law",
+  "versions": {
+   "rh": 2
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 117–328",
+  "kind": "public-law",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "10 U.S.C. 1413(e)",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "ambiguous",
+  "provisions": [
+   "usc/10/1413"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "38 U.S.C. 1701",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1701"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 111–82",
+  "kind": "public-law",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 117–2",
+  "kind": "public-law",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 114–294",
+  "kind": "public-law",
+  "versions": {
+   "rh": 2
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "38 U.S.C. 8103",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/8103"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "Public Law 102–229",
+  "kind": "public-law",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "18 U.S.C. 1913",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/1913"
+  ]
+ },
+ {
+  "bill": "us-119-hr-4313",
+  "text": "42 U.S.C. 1395cc–7(a)(1)",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/42/1395cc-7/a/1"
+  ]
+ },
+ {
+  "bill": "us-119-hr-4313",
+  "text": "42 U.S.C. 1395cc–7",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/42/1395cc-7"
+  ]
+ },
+ {
+  "bill": "us-119-hr-4313",
+  "text": "42 U.S.C. 1395iii(b)(1)",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "rfs": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/42/1395iii/b/1"
+  ]
+ },
+ {
+  "bill": "us-119-hr-1727",
+  "text": "section 133(a) of title 28, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-1727",
+  "text": "Section 85 of title 28, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "section 60502 of title 49, United States Code",
+  "kind": "usc",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/49/60502"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3062",
+  "text": "section 202(e) of the Federal Power Act",
+  "kind": "act-section",
+  "versions": {
+   "eh": 1,
+   "ih": 1,
+   "rfs": 1,
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/16/824a/e"
+  ],
+  "note": "mapped from the bill's own paired citation"
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "Section 921(a) of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 2
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/921/a"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "Section 922 of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 3
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/922"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "Section 923(i) of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 2
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/923/i"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "section 924 of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/924"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "Section 924(a)(1)(B) of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/924/a/1/B"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "Section 922(y)(2) of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/922/y/2"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "Section 925A of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/925A"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "Section 925B of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/925B"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3115",
+  "text": "section 921 of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/921"
+  ]
+ },
+ {
+  "bill": "us-119-hr-319",
+  "text": "section 133(a) of title 28, United States Code",
+  "kind": "usc",
+  "versions": {
+   "ih": 1
+  },
+  "state": "unresolved",
+  "provisions": []
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 2806 of title 10, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/10/2806"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 2883 of title 10, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 2
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/10/2883"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 210 of title 23, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/23/210"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 2814 of title 10, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/10/2814"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 3104 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/3104"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 3104(a) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/3104/a"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1705(a) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1705/a"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1720G of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1720G"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 322(d) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/322/d"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 521A of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/521A"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1787 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1787"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 2044(e)(1) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/2044/e/1"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 3109 of title 5, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 3
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/5/3109"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 8104(a)(3)(A) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 2
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/8104/a/3/A"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 2408 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/2408"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 324 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/324"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1920 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1920"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1923 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1923"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1955 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1955"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1729A of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 2
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1729A"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 8118 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/8118"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 8111(d) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/8111/d"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 8111 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/8111"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1720F(h) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1720F/h"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 2101(1) of title 5, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/5/2101/1"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 101 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 2
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/101"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1074(c)(4)(A) of title 10, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/10/1074/c/4/A"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 8110(a)(5) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/8110/a/5"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 5304(e) of title 25, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/25/5304/e"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 637(a)(15) of title 15, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/15/637/a/15"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 552a of title 5, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/5/552a"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1741 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/1741"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 7364(b) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/7364/b"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1535 of title 31, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/31/1535"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 7364(b)(1) of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/7364/b/1"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 5502 of title 38, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/38/5502"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 922 of title 18, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/18/922"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 2109 of title 36, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/36/2109"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 101(e)(8) of title 10, United States Code",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "ambiguous",
+  "provisions": [
+   "usc/10/101/e"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "10 U.S.C. 7727",
+  "kind": "usc",
+  "versions": {
+   "rh": 1
+  },
+  "state": "resolved",
+  "provisions": [
+   "usc/10/7727"
+  ]
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 502(5) of the Congressional Budget Act of 1974",
+  "kind": "act-section",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": [],
+  "note": "no mapping source for this Act"
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 502 of the Congressional Budget Act of 1974",
+  "kind": "act-section",
+  "versions": {
+   "rh": 3
+  },
+  "state": "unresolved",
+  "provisions": [],
+  "note": "no mapping source for this Act"
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1704 of the National Defense Authorization Act",
+  "kind": "act-section",
+  "versions": {
+   "rh": 3
+  },
+  "state": "unresolved",
+  "provisions": [],
+  "note": "no mapping source for this Act"
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 706 of the Duncan Hunter National Defense Authorization Act",
+  "kind": "act-section",
+  "versions": {
+   "rh": 4
+  },
+  "state": "unresolved",
+  "provisions": [],
+  "note": "no mapping source for this Act"
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 1704(b)(3) of the National Defense Authorization Act",
+  "kind": "act-section",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": [],
+  "note": "no mapping source for this Act"
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 842 of the Transportation, Treasury, Housing and Urban Development, the Judiciary, the District of Columbia, and Independent Agencies Appropriations Act",
+  "kind": "act-section",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": [],
+  "note": "no mapping source for this Act"
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 802 of the Veterans Access, Choice, and Accountability Act",
+  "kind": "act-section",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": [],
+  "note": "no mapping source for this Act"
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 604 of the Caregivers and Veterans Omnibus Health Services Act of 2010",
+  "kind": "act-section",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": [],
+  "note": "no mapping source for this Act"
+ },
+ {
+  "bill": "us-119-hr-3944",
+  "text": "section 8002 of the American Rescue Plan Act of 2021",
+  "kind": "act-section",
+  "versions": {
+   "rh": 1
+  },
+  "state": "unresolved",
+  "provisions": [],
+  "note": "no mapping source for this Act"
+ }
+]
