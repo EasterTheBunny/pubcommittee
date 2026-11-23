@@ -6,7 +6,11 @@
 
 	const path = $derived(page.url.pathname);
 	const nav = $derived([
-		{ href: homeHref(), label: 'Bills in review', active: path === homeHref() || path.startsWith('/bills/') },
+		{
+			href: homeHref(),
+			label: 'Bills in review',
+			active: path === homeHref() || path.startsWith('/bills/')
+		},
 		{ href: catalogHref(), label: 'Catalog', active: path.startsWith('/catalog') },
 		{ href: policyHref(), label: 'Selection policy', active: path.startsWith('/policy') },
 		{ href: logHref(), label: 'Public log', active: path.startsWith('/log') }

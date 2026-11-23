@@ -13,12 +13,15 @@
 	<section aria-labelledby="scope-heading" class="card p-5">
 		<h1 id="scope-heading" class="font-display text-2xl font-bold">Bills in review</h1>
 		<p class="mt-2 text-[15px] text-ink-2">
-			PubCommittee shows the literal text of active bills, line by line, beside plain explanations of
-			what each change does. The two are kept apart and every explanation says how it was made.
+			PubCommittee shows the literal text of active bills, line by line, beside plain explanations
+			of what each change does. The two are kept apart and every explanation says how it was made.
 		</p>
 		<h2 class="mt-4 text-base font-semibold">Which bills are in review</h2>
 		{#if data.policy}
-			<ul class="mt-1 list-disc pl-5 text-[15px] text-ink-2" data-content-class={data.policy.content_class}>
+			<ul
+				class="mt-1 list-disc pl-5 text-[15px] text-ink-2"
+				data-content-class={data.policy.content_class}
+			>
 				{#each data.policy.rules as rule (rule)}
 					<li>{rule}</li>
 				{/each}
@@ -29,12 +32,14 @@
 			</p>
 		{:else}
 			<p class="mt-1 text-sm text-muted">
-				The selection policy is not available right now. <a href={policyHref()}>Try the policy page</a>.
+				The selection policy is not available right now. <a href={policyHref()}>
+					Try the policy page
+				</a>.
 			</p>
 		{/if}
 		<p class="mt-3 text-sm">
-			Looking for another bill? <a href={catalogHref()}>Browse the full catalog</a>, which links to the
-			legislature's own page for bills that are not in review.
+			Looking for another bill? <a href={catalogHref()}>Browse the full catalog</a>, which links to
+			the legislature's own page for bills that are not in review.
 		</p>
 	</section>
 
@@ -59,7 +64,9 @@
 				{/each}
 			</ul>
 			{#if data.next}
-				<p class="mt-4 text-sm text-muted">More bills are in the <a href={catalogHref()}>catalog</a>.</p>
+				<p class="mt-4 text-sm text-muted">
+					More bills are in the <a href={catalogHref()}>catalog</a>.
+				</p>
 			{/if}
 		{/if}
 	</section>

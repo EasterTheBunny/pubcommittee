@@ -96,3 +96,51 @@
 @utility field {
 	@apply rounded-lg border-line-strong text-[15px] focus:border-support focus:ring-support;
 }
+
+/* Bills are long: let the browser skip layout and paint for sections that are off screen. */
+.section-block {
+	content-visibility: auto;
+	contain-intrinsic-size: auto 400px;
+}
+/* A fragment like #s4-l12-13 lands on its first line; the selection bar must not cover it. */
+[data-line] {
+	scroll-margin-block: 5rem;
+}
+
+/* One numbered line of bill text. Plain classes keep the markup of very long bills small. */
+.ln {
+	display: flex;
+	gap: 0.75rem;
+	border-left: 4px solid transparent;
+	padding: 0.25rem 0.5rem 0.25rem calc(var(--d, 0) * 1.5rem + 0.5rem);
+}
+.ln-on {
+	border-left-color: var(--color-hl-strong);
+	background: var(--color-hl);
+}
+.ln-no {
+	width: 2rem;
+	flex-shrink: 0;
+	padding-top: 0.125rem;
+	text-align: right;
+	font-size: 0.75rem;
+	font-variant-numeric: tabular-nums;
+	color: var(--color-faint);
+	text-decoration: none;
+}
+.ln-no:hover {
+	color: var(--color-support);
+}
+.ln-text {
+	font-family: var(--font-serif);
+	font-size: 17px;
+	line-height: 1.625;
+}
+.ln-block {
+	margin-left: auto;
+	flex-shrink: 0;
+	align-self: flex-start;
+	padding-top: 0.25rem;
+	font-size: 0.75rem;
+	color: var(--color-faint);
+}

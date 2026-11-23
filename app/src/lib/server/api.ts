@@ -3,7 +3,8 @@
 import type { components, operations } from '../api/schema';
 
 /** Where this server reads from (the `local` target in development). */
-export const readApiUrl = () => (process.env.READ_API_URL ?? 'http://localhost:8080').replace(/\/$/, '');
+export const readApiUrl = () =>
+	(process.env.READ_API_URL ?? 'http://localhost:8080').replace(/\/$/, '');
 
 /** Where browsers and machines find the same resources (rel="alternate", 303); defaults to the read URL. */
 export const publicApiUrl = () => (process.env.PUBLIC_API_URL ?? readApiUrl()).replace(/\/$/, '');
@@ -17,11 +18,30 @@ export type ApiResult<T> =
 type Query = Record<string, string | number | boolean | undefined>;
 type Fetch = typeof fetch;
 
+// The web host reads from one address, so every reader shares one rate-limit allowance. Answers
+// are cached in memory for the time the API allows (Cache-Control max-age, capped), which keeps
+// the web host well inside the limits in api/MACHINE-API.md. Only successful GETs are kept.
+const CACHE_MAX_ENTRIES = 500;
+const CACHE_CAP_SECONDS = 300;
+const cache = new Map<string, { until: number; data: unknown; cacheControl: string | null }>();
+
+function ttlSeconds(cacheControl: string | null): number {
+	if (!cacheControl) return 0;
+	if (/\bimmutable\b/.test(cacheControl)) return CACHE_CAP_SECONDS;
+	const m = /max-age=(\d+)/.exec(cacheControl);
+	return m ? Math.min(Number(m[1]), CACHE_CAP_SECONDS) : 0;
+}
+
 /** GET one resource. Never throws on an HTTP error; a network failure is status 503. */
 export async function apiGet<T>(f: Fetch, path: string, query: Query = {}): Promise<ApiResult<T>> {
 	const url = new URL(readApiUrl() + path);
 	for (const [k, v] of Object.entries(query)) {
 		if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
+	}
+	const key = url.toString();
+	const hit = cache.get(key);
+	if (hit && hit.until > Date.now()) {
+		return { ok: true, data: hit.data as T, cacheControl: hit.cacheControl };
 	}
 	let res: Response;
 	try {
@@ -41,7 +61,11 @@ export async function apiGet<T>(f: Fetch, path: string, query: Query = {}): Prom
 		}
 		return { ok: false, status: res.status, problem };
 	}
-	return { ok: true, data: (await res.json()) as T, cacheControl: res.headers.get('cache-control') };
+	return {
+		ok: true,
+		data: (await res.json()) as T,
+		cacheControl: res.headers.get('cache-control')
+	};
 }
 
 type Body<Op extends keyof operations> = operations[Op]['responses'] extends { 200: infer R }
