@@ -160,6 +160,11 @@ type GenResult struct {
 	Stop string `json:"stop,omitempty"`
 	// CachedIn counts input tokens read from the prompt cache.
 	CachedIn int `json:"cached_in,omitempty"`
+	// FallbackFrom names the requested (generating) model when a fallback
+	// model took part in the answer (the server-side fallbacks beta); Model is
+	// then the model that produced the message. Empty when the generator
+	// answered, and always empty on batches, where fallbacks are not offered.
+	FallbackFrom string `json:"fallback_from,omitempty"`
 }
 
 // Generator submits generation tasks.

@@ -290,3 +290,24 @@ func TestRegenerate(t *testing.T) {
 		t.Fatalf("no generator: err = %v, want ErrUnavailable", err)
 	}
 }
+
+func TestFallbackAnswerIsRecordedOnTheOutput(t *testing.T) {
+	t.Parallel()
+	col, store := collectWith(t, func(r data.GenRequest, base data.GenResult) data.GenResult {
+		if r.Task == data.TaskBillSummary {
+			base.Model, base.FallbackFrom = "fallback-model", "generator-model"
+		}
+		return base
+	})
+	if col.ByStatus[data.GenReady] == 0 {
+		t.Fatalf("by status = %v, want ready outputs", col.ByStatus)
+	}
+	vs, _ := store.ListVersions(t.Context(), hr(4313))
+	out, err := store.PublicReadPorts().Generated.GetCurrent(t.Context(), data.TaskBillSummary, vs[0].Ref, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.FallbackModel != "fallback-model" {
+		t.Errorf("FallbackModel = %q, want fallback-model", out.FallbackModel)
+	}
+}

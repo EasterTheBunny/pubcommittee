@@ -42,6 +42,9 @@ func collectTask(ctx context.Context, d generate.Deps, key data.GenKey, stats ma
 	}
 	s := statsFor(stats, key.Task)
 	s.Outputs++
+	if out.FallbackModel != "" {
+		s.Fallback++
+	}
 	s.ByStatus[out.Status]++
 	s.Statements += len(out.Statements)
 	seen := map[string]bool{}

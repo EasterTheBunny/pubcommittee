@@ -18,6 +18,8 @@ check() { # name, command...
 check "store conformance (memory, fsobject)" go test -count=1 -tags memory -run Generated ./internal/adapters/memory/ ./internal/adapters/fsobject/
 check "Generator conformance on fakegen" go test -count=1 -tags memory ./internal/adapters/fakegen/
 check "claude adapter against a fake HTTP server (request shape, stop reasons, batches)" go test -count=1 -tags memory ./internal/adapters/claude/
+check "server-side fallbacks beta on Generate (header and field), fallback answer recorded, unresolved refusal not published" \
+	sh -c 'go test -count=1 -tags memory -run "Fallback" ./internal/adapters/claude/ ./internal/generate/'
 check "submit and collect end to end; re-run submits nothing; invalid anchor and invented number not published" \
 	go test -count=1 -tags memory -run 'SubmitCollect|InvalidAnchor|Refusal' ./internal/generate/
 check "validators and planted errors" go test -count=1 -tags memory -run 'FactFidelity|Amendment|Neutrality|Plant|Good' ./internal/generate/
