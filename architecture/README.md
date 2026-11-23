@@ -86,7 +86,8 @@ Every backend unit is a standalone container image ([Service packaging](#service
 
 - **Hosting:** any web host that runs Node and SvelteKit, deployed from `app/`. The host is not part of the architecture; swapping it means changing the SvelteKit adapter and the API base URLs.
 - **The contract is the API.** The UI depends on nothing in the backend except the `read-api` and `write-api` HTTP interfaces ([API contract](#api-contract)). The backend does not know or care which host serves the UI.
-- **Rendering:** SvelteKit server rendering on the host, plus prerendering for pages that never change (official version text by canonical address). Pages are complete HTML without scripts.
+- **Rendering:** SvelteKit server rendering on the host, plus prerendering for pages that never change (official version text by canonical address). Pages are complete HTML without scripts. In M1 nothing is prerendered: `adapter-node` renders every page on request from `read-api`, so the build needs no API.
+- **Configuration (M1-13):** `READ_API_URL` (server-side calls) and `PUBLIC_API_URL` (links and `303` redirects for `Accept: application/json`), read from `process.env`. The server keeps a short in-memory cache of `GET` responses, because every reader's requests reach `read-api` from the web host's one address and share its rate-limit allowance; each environment sets `RATE_LIMITS` for that address.
 - **Data:** server-side `GET` calls to `read-api`. No direct access to any store.
 - **Caching:** immutable version pages cache long at the host's CDN; pages showing review items use a short TTL with stale-while-revalidate, so comments appear within minutes without waking the backend on every view.
 - **Signed-in features:** run in the browser. Server-rendered pages are always the signed-out view; the browser then calls `write-api` with credentials for "my signals", composing, and supporting.
@@ -329,6 +330,7 @@ internal/
   httpx/               server bootstrap: health, readiness, metrics port, shutdown
   ...                  domain packages (auth, review, signals, ingest, briefs), each used by few binaries
 app/                   SvelteKit UI, deployed to any Node web host
+demo/                  archived M0 demo (static, mock data), served from its Netlify site
 docker/
   Dockerfile           one multi-stage file; SERVICE and TARGET build arguments
 compose.yaml           every backend service on a shared local data volume; emulators behind a profile
@@ -393,7 +395,7 @@ Build: multi-stage Dockerfile. A Go builder stage with module and build caches c
 | SBOM | BuildKit SBOM attestation (`--sbom=true`) | Generated at build with no separate tool |
 | CI | GitHub Actions, in this repository and the deployment repository | The repository is on GitHub; secret scanning with push protection and OIDC federation to Google Cloud are built in |
 | Infrastructure as code | OpenTofu | Open-source licence; the HCL also works with Terraform |
-| UI, no-script, and installability tests | Playwright, with manifest and service-worker checks and an offline reload | One browser tool for all UI checks; Lighthouse dropped its PWA audits in version 12 |
+| UI, no-script, and installability tests | Playwright (image `mcr.microsoft.com/playwright:v1.65.1-noble`, which bundles Node 26, so tests drive an app running on Node 24 in another container; 2 workers within 1.5 GiB), with manifest and service-worker checks and an offline reload | One browser tool for all UI checks; Lighthouse dropped its PWA audits in version 12 |
 | Firestore emulator | Container image under the `emulator` profile in `compose.yaml` (cloud phase) | CI and every machine run the same emulator |
 | Firebase CLI | Cloud phase only, in the deployment repository's CI | Local runs never use Firebase Hosting |
 | Postgres | Not in `compose.yaml` until M2 | No SQL in M1 |
@@ -1057,7 +1059,7 @@ Rules:
 - **Catalog search:** keyword matching on `search_terms` at first; a dedicated search index if volume or quality needs it, chosen to keep scale-to-zero.
 - **Markup request threshold** and steward capacity, shared with [01](../design/01-bill-ingestion-and-display.md#markup-requests).
 - **Topic subject terms** for healthcare, deficit reduction, and affordability, confirmed against the legislature's subject vocabulary before the pilot.
-- **Bill backfill depth:** current Congress only at M1, or earlier Congresses for lineage detection ([04](../design/04-bill-lineage-and-competing-bills.md)).
+- **Bill backfill depth:** **Decided (operator, 2026-11-22):** current Congress only in M1. Earlier Congresses for lineage detection ([04](../design/04-bill-lineage-and-competing-bills.md)) are a later decision.
 - **AI display policy:** per task, whether unreviewed output is shown, and the accuracy bar: from the accuracy checks in M1, and the evaluation set once stewards exist.
 - **Effort level per task**, and whether any task moves to a cheaper model, both decided from evaluation results.
 - **Key rotation** for HMAC keys: rotating `k_signal` requires re-keying every signal; plan the procedure before M2.

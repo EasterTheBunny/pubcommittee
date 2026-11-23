@@ -82,3 +82,4 @@ Let an operator pull a bill from Congress's official sources on demand: its stat
   - **Answered in part (M1-05):** the manual pull is `job-ingest --bill <id[,id]> [--source fixtures|govinfo] [--track] [--dry-run] [--verify]` (guide: `cmd/job-ingest/README.md`). Until [M1-06](06-selection-policy.md), `--track` tracks with reason `manual-pull`. The milestone for feed ingestion is an operator decision.
 - How quickly must a new official version be pulled after publication ([01](../../01-bill-ingestion-and-display.md#open-questions)), when pulls are manual?
 - Backfill depth: current Congress only, or earlier Congresses ([architecture § Open decisions](../../../architecture/README.md#open-decisions))?
+  - **Decided (operator, 2026-11-22):** current Congress only.

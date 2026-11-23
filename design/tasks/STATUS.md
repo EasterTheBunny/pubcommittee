@@ -26,7 +26,7 @@ Integration branch: `m1-integration`.
 | [M1-10](m1/10-read-api.md) | local, cloud | done-local | `task/M1-10` | sonnet | none (2 sub-tasks, 0 redone, 1 commit; rewrite 1.80 from regenerating `api.gen.go` without client, below the 3-commit rule) | Run r20261122-1412, batch 3; merged. Summary, changes, compare, citations, feed, exports need read ports from M1-07/08/09/11. Cloud-phase criteria open |
 | [M1-11](m1/11-exports-feed-machine-notice.md) | local, cloud | todo | | | | |
 | [M1-12](m1/12-administration.md) | local, cloud | todo | | | | |
-| [M1-13](m1/13-web-ui-real-data.md) | local, cloud | in-progress | `task/M1-13` | sonnet | | Run r20261122-1412, batch 4, worktree `.claude/worktrees/m1-13` |
+| [M1-13](m1/13-web-ui-real-data.md) | local, cloud | done-local | `task/M1-13` | sonnet | none (3 sub-tasks, 0 redone, 3 commits; numstat rewrite 1.95 is the `app` to `demo` move, not redo) | Run r20261122-1412, batch 4; merged. Long-page check on a 10,000-line stub only; recheck on a real large bill. `placeholders.ts` keeps M0 wording ("mock bills"), fix in M1-14. CI `web.yml` app job not yet run. Operator: repoint Netlify at `demo/`. Cloud-phase criteria open |
 | [M1-14](m1/14-installable-app.md) | local, cloud | todo | | | | |
 | [M1-15](m1/15-infrastructure-and-deploy.md) | cloud | todo | | | | |
 | [M1-16](m1/16-acceptance.md) | local, cloud | todo | | | | Local gate, then hosted gate |

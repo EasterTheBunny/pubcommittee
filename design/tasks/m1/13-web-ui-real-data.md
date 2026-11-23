@@ -16,7 +16,7 @@ Move the SvelteKit app from a static site on mocked data to server-rendered page
 ## Scope
 
 **In**
-- **Archive the M0 demo first.** Move the M0 code out of `app/` to `demo/` before converting `app/`. Keep it buildable and available, and update every reference to it: `README.md`, `app/README.md`, [MILESTONES § M0](../../MILESTONES.md#m0--proof-of-concept), and [architecture](../../../architecture/README.md). The operator repoints the existing Netlify site at `demo/`, so the live demo URL keeps serving the M0 demo.
+- **Archive the M0 demo first.** Move the M0 code out of `app/` to `demo/` before converting `app/`. Keep it buildable and available, and update every reference to it: `README.md`, `app/README.md`, [MILESTONES § M0](../../MILESTONES.md#m0--proof-of-concept), and [architecture](../../../architecture/README.md). The operator repoints the existing Netlify site at `demo/`, so the live demo URL keeps serving the M0 demo. (Done in M1-13: Netlify base `demo/`, build `npm run build`, publish `build`; the repoint itself is an operator step.)
 - Switch from `adapter-static` to a Node-host adapter; keep prerendering for immutable version pages where useful.
 - API client in `app/` using the generated TypeScript types (M1-02); `read-api` base URL from environment; server-side `GET` only.
 - Replace domain types in `app/src/lib/types.ts` with generated types or thin wrappers named in design vocabulary.

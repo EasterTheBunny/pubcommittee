@@ -18,7 +18,7 @@ High-level delivery plan for PubCommittee. Each milestone has a goal, what is in
 
 **Goal.** Show the whole experience end to end, on mocked data, so the concept can be demonstrated, tested with people, and critiqued. Every essential feature appears in its most basic form. Anything not yet real shows a pop-up describing the future behavior rather than doing it.
 
-**Stack (M0 only).** SvelteKit with Tailwind CSS, built as a static site with no backend, in [`app/`](../app/). Revisit at M1.
+**Stack (M0 only).** SvelteKit with Tailwind CSS, built as a static site with no backend, archived at [`demo/`](../demo/) since M1-13 (Netlify builds `demo/` with `npm run build` and publishes `build`). The M1 app in `app/` is server-rendered from `read-api`.
 
 **Principle.** Breadth over depth. A viewer should be able to walk every path in [the review cycle](02-versions-and-review-lifecycle.md#review-cycle-steps) and understand what the finished product will do at each step.
 
@@ -227,7 +227,7 @@ An earlier prototype, [`EasterTheBunny/ourdistrict`](https://github.com/EasterTh
 | Read API shape | `lib/JsonBillHandler.scala` (`/api/v1/bills/{id}/parts/{layer}/nodes/...`, JSON:API style) | Model for resource nesting, pagination, and filtering of the structured forms in [10](10-machine-access.md). Read routes only; its PUT routes are not carried over. |
 | US Code citation resolution, change explanations, stale classification | None | New work. |
 
-Swap points in this repo: `app/src/lib/types.ts` (`Section`/`Line` replace `BillLayer`; `Anchor` should carry the source XML id), `app/src/lib/mock/bills.ts` (replace with ingest output), `app/src/lib/anchors.ts` `isStale` (replace with a computed version diff), `app/src/lib/anchors.ts` and `app/src/lib/links.ts` (add path-based canonical addresses beside the `#s4-l12-13` fragment form), and `app/src/lib/diff.ts`.
+Swap points (done in M1-13: `types.ts` is now thin aliases over the generated API types; `mock/` and `diff.ts` remain only in `demo/`; `anchors.ts` and `links.ts` gained path addresses; the paths below are in `demo/`): `app/src/lib/types.ts` (`Section`/`Line` replace `BillLayer`; `Anchor` should carry the source XML id), `app/src/lib/mock/bills.ts` (replace with ingest output), `app/src/lib/anchors.ts` `isStale` (replace with a computed version diff), `app/src/lib/anchors.ts` and `app/src/lib/links.ts` (add path-based canonical addresses beside the `#s4-l12-13` fragment form), and `app/src/lib/diff.ts`.
 
 ### M2 — Interactive prototype
 
