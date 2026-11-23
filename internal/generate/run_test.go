@@ -1,6 +1,7 @@
 package generate_test
 
 import (
+	"errors"
 	"log/slog"
 	"os"
 	"strings"
@@ -266,5 +267,26 @@ func TestPromptEditChangesKeys(t *testing.T) {
 	b, _ := generate.LoadPrompt(data.TaskVersionChanges)
 	if a.Version == b.Version {
 		t.Fatal("different tasks share a prompt version")
+	}
+}
+
+func TestRegenerate(t *testing.T) {
+	t.Parallel()
+	store := seeded(t)
+	d := deps(store, fakegen.New(fakegen.Config{}))
+	status, err := generate.Regenerate(t.Context(), d, hr(4313), data.TaskBillSummary, "ih", "")
+	if err != nil || status != data.GenReady {
+		t.Fatalf("Regenerate = %q, %v", status, err)
+	}
+	// Outputs are write-once: the same prompt version and model conflict.
+	if _, err := generate.Regenerate(t.Context(), d, hr(4313), data.TaskBillSummary, "ih", ""); !errors.Is(err, data.ErrConflict) {
+		t.Fatalf("second Regenerate: err = %v, want ErrConflict", err)
+	}
+	if _, err := generate.Regenerate(t.Context(), d, hr(4313), data.TaskBillSummary, "zz", ""); !errors.Is(err, data.ErrNotFound) {
+		t.Fatalf("unknown version: err = %v, want ErrNotFound", err)
+	}
+	d.Gen = nil
+	if _, err := generate.Regenerate(t.Context(), d, hr(4313), data.TaskBillSummary, "ih", ""); !errors.Is(err, data.ErrUnavailable) {
+		t.Fatalf("no generator: err = %v, want ErrUnavailable", err)
 	}
 }
