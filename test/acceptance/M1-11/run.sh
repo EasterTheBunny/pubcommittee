@@ -9,6 +9,10 @@
 # whose /.well-known/machine-access.json and /robots.txt are checked as well).
 set -eu
 cd "$(dirname "$0")/../../.."
+[ -f go.mod ] || {
+	echo "skip: Go module not present (go.mod); this script runs in the dev container with the repository mounted"
+	exit 0
+}
 port=${M1_11_PORT:-18111}
 api=http://127.0.0.1:$port
 data=$(mktemp -d)
@@ -32,7 +36,8 @@ go build -tags local -o /tmp/m111-ingest ./cmd/job-ingest
 go build -tags local -o /tmp/m111-exports ./cmd/job-exports
 go build -tags local -o /tmp/m111-api ./cmd/read-api
 /tmp/m111-ingest --publish-policy v1 >/dev/null 2>&1
-/tmp/m111-ingest --bill us-119-hr-4313 --track >/dev/null 2>&1 || fail "pull of the example bill"
+/tmp/m111-ingest --law >/dev/null 2>&1 || fail "existing-law release point (job-ingest --law)"
+/tmp/m111-ingest --bill us-119-hr-4313,us-119-hr-3062,us-119-hr-3427 --track >/dev/null 2>&1 || fail "pull of the exit bills"
 /tmp/m111-exports >/tmp/m111-run1.json 2>/dev/null || fail "job-exports run"
 ok "pull, then job-exports"
 /tmp/m111-exports >/tmp/m111-run2.json 2>/dev/null || fail "job-exports second run"
@@ -56,6 +61,13 @@ for href in $(grep -o '"href":"/v1/exports/[^"]*"' /tmp/m111-body | cut -d'"' -f
 	[ "$(get "$api$href")" = 200 ] || fail "export $href"
 done
 ok "every indexed export is served"
+[ "$(get "$api/v1/exports?limit=200")" = 200 ] || fail "exports index"
+laws=$(grep -o '"id":"existing-law\.[^"]*"' /tmp/m111-body | wc -l)
+[ "$laws" -ge 3 ] || fail "existing-law exports in the index: $laws"
+for id in $(grep -o '"id":"existing-law\.[^"]*"' /tmp/m111-body | cut -d'"' -f4); do
+	[ "$(get "$api/v1/exports/$id")" = 200 ] || fail "existing-law export $id"
+done
+ok "$laws existing-law export(s) indexed and served"
 has /tmp/m111-head 'max-age=900'
 [ "$(get "$api/v1/exports/bill-text.us-119-hr-4313.ih.json")" = 200 ] || fail "bill text export"
 has /tmp/m111-body '"licences"'

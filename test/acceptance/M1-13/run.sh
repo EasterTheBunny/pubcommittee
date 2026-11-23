@@ -9,6 +9,10 @@
 #                 the environment of the tests: see app/playwright.config.ts)
 #   SKIP_DEMO=1   skip building demo/
 set -eu
+[ -f app/package.json ] || {
+	echo "skip: app/ not present (app/package.json); this script runs in a Node container with the repository mounted"
+	exit 0
+}
 api=${READ_API_URL:-http://localhost:8080}
 app=${APP_URL:-http://localhost:3000}
 bill=us-119-hr-4127

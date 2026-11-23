@@ -7,6 +7,10 @@
 # against the committed fixtures/uscode sections.
 set -eu
 cd "$(dirname "$0")/../../.."
+[ -f go.mod ] || {
+	echo "skip: Go module not present (go.mod); this script runs in the dev container with the repository mounted"
+	exit 0
+}
 fail=0
 check() { # name, command...
 	name=$1; shift

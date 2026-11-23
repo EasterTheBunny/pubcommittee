@@ -3,6 +3,7 @@ package adminapi_test
 import (
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/easterthebunny/pubcommittee/internal/adminapi"
@@ -40,7 +41,7 @@ func requireTrackedLog(t *testing.T, e *env) {
 	t.Fatal("no bill-tracked log entry")
 }
 
-func TestTrackWithReasonSelectsPullsAndLogs(t *testing.T) {
+func TestTrackWithReasonSelectsAndLogsWithoutPull(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t)
 	e.publishV1()
@@ -50,11 +51,20 @@ func TestTrackWithReasonSelectsPullsAndLogs(t *testing.T) {
 	}
 	requireTrackedByAdmin(t, e, 3062)
 	ref := data.BillRef{Jurisdiction: "us", Session: "119", Type: "hr", Number: 3062}
+	if !strings.Contains(string(body), "reingest") {
+		t.Fatalf("response does not name the pull command: %s", body)
+	}
 	vs, err := e.store.PublicReadPorts().BillText.ListVersions(t.Context(), ref)
-	if err != nil || len(vs) == 0 {
-		t.Fatalf("text was not ingested: %v %v", vs, err)
+	if err != nil || len(vs) != 0 {
+		t.Fatalf("track pulled text: %v %v", vs, err)
 	}
 	requireTrackedLog(t, e)
+	if code, body = e.call(principalOp1, http.MethodPost, trackPath+"reingest", reason("pull text")); code != http.StatusOK {
+		t.Fatalf("reingest %d: %s", code, body)
+	}
+	if vs, err = e.store.PublicReadPorts().BillText.ListVersions(t.Context(), ref); err != nil || len(vs) == 0 {
+		t.Fatalf("text was not ingested by reingest: %v %v", vs, err)
+	}
 	// Tracking again changes nothing and logs nothing more.
 	before := len(e.log())
 	if code, body = e.call(principalOp1, http.MethodPost, trackPath+"track", reason("again")); code != http.StatusOK {

@@ -9,6 +9,10 @@
 #                 there, the script builds and starts one on port 3000.
 # Cloud phase (deferred): install on a current mobile browser and a desktop browser in staging.
 set -eu
+[ -f app/package.json ] || {
+	echo "skip: app/ not present (app/package.json); this script runs in a Node container with the repository mounted"
+	exit 0
+}
 api=${READ_API_URL:-http://localhost:8080}
 export BASE_URL=${BASE_URL:-http://localhost:3000}
 tmp=${TMPDIR:-/tmp}/m114.$$
