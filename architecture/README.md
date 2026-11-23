@@ -728,6 +728,10 @@ job-ingest ──► new version stored ──► job-summarize (submit)
 
 Model ids, prices, and feature availability on the platform are confirmed at M1 start. The `claude` adapter keeps all of this behind the `Generator` port, so services never import the SDK.
 
+As built (M1-09, `internal/adapters/claude`): `anthropic-sdk-go/v2` v2.13.0. `New` is the first-party client for the local L3 run (key from the caller); `NewGoogleCloud` (build tag `gcp`) uses the SDK's `googlecloud` client with Application Default Credentials. Message Batches for submit and collect, one synchronous `Generate` for regeneration; structured output through `output_config.format`; effort `medium` on every task until tuned; the bill text is the cached first block. The grader is `claude-sonnet-5-5` (a different model from the generator). Model ids and prices come from the claude-api reference dated 2026-11-03 and are not yet confirmed against the live platform. **The `fallbacks` beta is not wired yet:** a refusal is recorded as `refusal` and never published. Live runs need `PUBCOMMITTEE_LIVE_MODEL_RUNS=1`; without it `--generator claude` is refused. `job-summarize` links the SDK and has a 30 MB size budget.
+
+Outputs: `generated/{task}/{bill}/v/{version code}/{key id}.json` (write-once), grades beside them as `.grade.json`, a `current-<target hash>.json` pointer for the published output, and pending batches under `generated/batches/`. The key id is a content hash of task, bill, version, target, prompt version, and model. Statement anchors are `<section path joined by .>-l<n>` or `-l<from>-<to>`; a version change summary may also cite `prev:` anchors of the earlier version. `read-api` withholds a summary or change summary the grader marked contradicted; explanations cannot be withheld yet, because `PlatformDocs` has no delete.
+
 ### Accuracy checks (before stewards)
 Accuracy is measured against each statement's **cited lines**, which needs no reference text. Every statement in an output lists the bill line anchors and provision citations it rests on, so each check compares a statement with exactly those lines.
 
