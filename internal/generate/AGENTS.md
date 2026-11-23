@@ -16,3 +16,4 @@ Owns: prompts and schemas (`prompts/`, `schemas/`, embedded), validators, plante
 
 ## Gotchas
 - Anchors are `<section path joined by .>-l<n>` or `-l<from>-<to>`; a change summary may also cite `prev:`-prefixed anchors of the earlier version.
+- A change to a validator needs `job-summarize --revalidate` on the stored outputs and the planted-error rates compared before and after (`accuracy-report`); a catch rate must not drop. Provision ids are compared in stored form (`usc/42/1395cc-7`); a printed citation (`42 U.S.C. 1395cc–7(a)(1)`) resolves to it.

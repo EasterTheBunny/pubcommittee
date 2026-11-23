@@ -92,6 +92,12 @@ func genDir(task string, v VersionRef) string {
 // ObjectPath returns the write-once path of the output.
 func (k GenKey) ObjectPath() string { return genDir(k.Task, k.Version) + "/" + k.ID() + ".json" }
 
+// RevisedPath returns the path of the revised record of the output: the replaceable record that stands in for the
+// write-once one (see PutRevised).
+func (k GenKey) RevisedPath() string {
+	return genDir(k.Task, k.Version) + "/" + k.ID() + ".revised.json"
+}
+
 // GradePath returns the path of the grade of the output.
 func (k GenKey) GradePath() string { return genDir(k.Task, k.Version) + "/" + k.ID() + ".grade.json" }
 
@@ -185,7 +191,7 @@ type GenBatch struct {
 
 // GeneratedReader reads stored generations. Not found: ErrNotFound.
 type GeneratedReader interface {
-	// GetGenerated returns the output stored under exactly this key.
+	// GetGenerated returns the output stored under exactly this key: its revised record when one exists.
 	GetGenerated(ctx context.Context, key GenKey) (GeneratedOutput, error)
 	// GetCurrent returns the published output for a target of a version.
 	GetCurrent(ctx context.Context, task string, v VersionRef, target string) (GeneratedOutput, error)
@@ -198,6 +204,11 @@ type GeneratedWriter interface {
 	// PutGenerated stores an output at its write-once path. Identical
 	// content is a no-op; different content is ErrConflict.
 	PutGenerated(ctx context.Context, o GeneratedOutput) error
+	// PutRevised stores a revised record of an output whose write-once record exists, under the same key: a new
+	// status, findings and statements, from validation repeated with newer rules or from a retry of a rejected
+	// output. Readers of the key (GetGenerated) see the revised record; the write-once record stays as written. A
+	// later revision replaces an earlier one. No write-once record is ErrNotFound.
+	PutRevised(ctx context.Context, o GeneratedOutput) error
 	// SetCurrent makes a GenReady output the one readers show for its
 	// target, replacing the earlier pointer. Another status is ErrInvalid.
 	SetCurrent(ctx context.Context, o GeneratedOutput) error

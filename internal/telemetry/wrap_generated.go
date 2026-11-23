@@ -76,6 +76,11 @@ func (w timedGeneratedWriter) PutGenerated(ctx context.Context, o data.Generated
 	return w.n.PutGenerated(ctx, o)
 }
 
+func (w timedGeneratedWriter) PutRevised(ctx context.Context, o data.GeneratedOutput) (err error) {
+	defer w.t.start(ctx, "GeneratedWriter", "PutRevised", &err)()
+	return w.n.PutRevised(ctx, o)
+}
+
 func (w timedGeneratedWriter) SetCurrent(ctx context.Context, o data.GeneratedOutput) (err error) {
 	defer w.t.start(ctx, "GeneratedWriter", "SetCurrent", &err)()
 	return w.n.SetCurrent(ctx, o)

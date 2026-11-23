@@ -72,7 +72,7 @@ func PlanVersion(
 	ctx context.Context, p data.PlatformPorts, ver data.OfficialVersion, prev *data.OfficialVersion, cfg Config,
 ) (tasks []Task, notes []string, err error) {
 	b := builder{cfg: cfg, ver: ver}
-	t, err := b.summary()
+	t, err := b.summary(ctx, p)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -120,9 +120,18 @@ func (b builder) task(name, target, source string, req request, gc data.GenConte
 	}, nil
 }
 
-func (b builder) summary() (Task, error) {
+// summary plans the bill summary. The model is not given the existing-law texts, but it names the provisions the
+// bill amends, so the context lists the provisions of the stored citation set (ids only, no text) for the check
+// that a cited provision exists; their texts never count as support for a fact.
+func (b builder) summary(ctx context.Context, p data.PlatformPorts) (Task, error) {
 	gc := data.GenContext{Lines: map[string]string{}}
 	lineMap(b.ver, "", gc.Lines)
+	if set, note, err := citationSet(ctx, p, b.ver.Ref); err == nil && note == "" {
+		gc.Provisions = make(map[string]string, len(set.Provisions))
+		for _, cp := range set.Provisions {
+			gc.Provisions[cp.ID] = ""
+		}
+	}
 	src := renderSource("bill_source", b.ver, "")
 	return b.task(data.TaskBillSummary, "", src, request{Task: data.TaskBillSummary}, gc)
 }

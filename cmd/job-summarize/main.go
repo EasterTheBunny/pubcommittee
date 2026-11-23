@@ -36,8 +36,8 @@ const (
 const liveSwitch = "PUBCOMMITTEE_LIVE_MODEL_RUNS"
 
 var (
-	errMode      = errors.New("exactly one of --submit or --collect is required")
-	errNoBill    = errors.New("--submit needs at least one --bill <id>, for example --bill us-119-hr-4313")
+	errMode      = errors.New("exactly one of --submit, --collect or --revalidate is required")
+	errNoBill    = errors.New("--submit and --revalidate need at least one --bill <id>, for example --bill us-119-hr-4313")
 	errGenerator = errors.New("--generator must be fake or claude")
 	errLive      = errors.New("--generator claude is a live model run: set " + liveSwitch + "=1 (operator approved)")
 	errFailed    = errors.New("one or more bills failed")
@@ -48,8 +48,12 @@ var version = "dev"
 
 // config is what the wiring needs to build the generator.
 type config struct {
-	Submit    bool
-	Collect   bool
+	Submit  bool
+	Collect bool
+	// Revalidate repeats the deterministic checks on stored outputs with the current validators (no model call).
+	Revalidate bool
+	// Retry makes --submit plan again the stored outputs that are not ready.
+	Retry     bool
 	DryRun    bool
 	Generator string
 	Model     string
@@ -76,16 +80,27 @@ func (l *billList) Set(v string) error {
 	return nil
 }
 
+// modes counts the phases named by the flags.
+func (c config) modes() int {
+	n := 0
+	for _, on := range []bool{c.Submit, c.Collect, c.Revalidate} {
+		if on {
+			n++
+		}
+	}
+	return n
+}
+
 // validate checks the flag combination; bills is the number of --bill values.
 func (c config) validate(bills int) error {
 	switch {
-	case c.Submit == c.Collect:
+	case c.modes() != 1:
 		return errMode
 	case c.Generator != generatorFake && c.Generator != generatorClaude:
 		return errGenerator
 	case c.Generator == generatorClaude && !c.Live:
 		return errLive
-	case c.Submit && bills == 0:
+	case (c.Submit || c.Revalidate) && bills == 0:
 		return errNoBill
 	}
 	return nil
@@ -98,6 +113,9 @@ func parseArgs(args []string, getenv func(string) string) (config, []data.BillRe
 	fs.Var(&bills, "bill", "bill id, for example us-119-hr-4313 (repeatable, or comma separated)")
 	fs.BoolVar(&cfg.Submit, "submit", false, "plan the tasks of the bills and submit the ones with no stored result")
 	fs.BoolVar(&cfg.Collect, "collect", false, "collect finished batches: validate, store, publish")
+	fs.BoolVar(&cfg.Revalidate, "revalidate", false,
+		"repeat the checks on stored outputs with the current validators; no model call, no regeneration")
+	fs.BoolVar(&cfg.Retry, "retry", false, "with --submit: also plan the stored outputs that are not ready again")
 	fs.BoolVar(&cfg.DryRun, "dry-run", false, "with --submit: plan and count; submit and write nothing")
 	fs.StringVar(&cfg.Generator, "generator", generatorFake, "fake (default) or claude (live run)")
 	fs.StringVar(&cfg.Model, "model", generate.DefaultModel, "generating model id")
@@ -141,16 +159,19 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 	gc := generate.DefaultConfig()
 	gc.Model = cfg.Model
 	deps := generate.Deps{
-		Ports: ports, Gen: gen, Cfg: gc, Now: time.Now, Log: logger,
+		Ports: ports, Gen: gen, Cfg: gc, Now: time.Now, Log: logger, Retry: cfg.Retry,
 		Record: func(ctx context.Context, task, model, status string, in, outTok int) {
 			tel.Instruments.RecordGeneration(ctx, task, model, status, in, outTok)
 		},
 	}
 	var items int
 	var runErr error
-	if cfg.Submit {
+	switch {
+	case cfg.Submit:
 		items, runErr = submitAll(context.Background(), deps, refs, cfg.DryRun, out)
-	} else {
+	case cfg.Revalidate:
+		items, runErr = revalidateAll(context.Background(), deps, refs, out)
+	default:
 		items, runErr = collect(context.Background(), deps, out)
 	}
 	tel.Instruments.RecordJob(context.Background(), serviceName, started, items, runErr)
@@ -174,6 +195,27 @@ func submitAll(ctx context.Context, d generate.Deps, refs []data.BillRef, dry bo
 			failed = true
 		}
 		items += rep.Submitted
+	}
+	if failed {
+		return items, errFailed
+	}
+	return items, nil
+}
+
+func revalidateAll(ctx context.Context, d generate.Deps, refs []data.BillRef, out io.Writer) (int, error) {
+	enc := json.NewEncoder(out)
+	enc.SetIndent("", "  ")
+	items, failed := 0, false
+	for _, ref := range refs {
+		rep, err := generate.Revalidate(ctx, d, ref)
+		if encErr := enc.Encode(rep); encErr != nil {
+			return items, fmt.Errorf("report: %w", encErr)
+		}
+		if err != nil {
+			d.Log.Error("revalidate failed", "bill", ref.ID(), "error", err.Error())
+			failed = true
+		}
+		items += rep.Checked
 	}
 	if failed {
 		return items, errFailed

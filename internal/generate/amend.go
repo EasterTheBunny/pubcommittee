@@ -85,24 +85,92 @@ func checkStrikes(expl string, strikes []strikeInstruction) []string {
 }
 
 // checkStrike checks that the explanation names the removed text, and the inserted text when there is one, and
-// names the removed text first.
+// names the removed text first. A text is named when the explanation quotes it or, failing that, describes it in
+// other words (see paraphrases); the order is checked only for quoted texts.
 func checkStrike(expl string, s strikeInstruction) []string {
 	removedAt := strings.Index(expl, norm(s.removed))
+	removedNamed := removedAt >= 0 || paraphrases(expl, s.removed)
 	var findings []string
-	if removedAt < 0 {
+	if !removedNamed {
 		findings = append(findings, `removed text "`+s.removed+`" not named`)
 	}
 	if s.inserted == "" {
 		return findings
 	}
 	insertedAt := strings.Index(expl, norm(s.inserted))
-	if insertedAt < 0 {
+	if insertedAt < 0 && !paraphrases(expl, s.inserted) {
 		return append(findings, `inserted text "`+s.inserted+`" not named`)
 	}
-	if removedAt >= 0 && removedAt > insertedAt {
+	if removedAt >= 0 && insertedAt >= 0 && removedAt > insertedAt {
 		findings = append(findings, "inserted text named before removed text")
 	}
 	return findings
+}
+
+// Thresholds of paraphrases: the share of the quoted text's words one sentence of the explanation must use, and the
+// least number of them. Chosen on the stored live outputs: a sentence that renames the amended wording keeps half of
+// its words or more, while one that only repeats the section number and the name of the act keeps fewer. The words
+// must come from one sentence: words spread over a long explanation match by chance.
+const (
+	paraphraseShare = 0.5
+	paraphraseWords = 2
+)
+
+// wordRE matches the words and the lettered subsection marks ("(b)") of a text.
+var wordRE = regexp.MustCompile(`[a-z0-9]+`)
+
+// sentenceRE splits an explanation into sentences and list items.
+var sentenceRE = regexp.MustCompile(`[.!?;]\s|\n`)
+
+// isFiller reports whether w carries no meaning of its own in a quoted amendment text: articles, linking words and
+// the names of the parts of a statute.
+func isFiller(w string) bool {
+	return slices.Contains([]string{
+		"the", "of", "and", "in", "to", "a", "an", "as", "is", "are", "be", "by", "for", "has", "have", "had", "that",
+		"such", "this", "with", "or", "not", "does", "do", "on", "at", "from", "under", "made", "s", "insofar", "it",
+		"its", "which", "section", "subsection", "paragraph", "subparagraph", "clause", "act", "title", "chapter",
+	}, w)
+}
+
+// paraphrases reports whether a sentence of the explanation (normalized) describes the quoted text in other words:
+// it uses at least paraphraseWords of the quoted text's meaningful words and at least paraphraseShare of them.
+// Plurals and possessives count as the same word.
+func paraphrases(expl, quoted string) bool {
+	var words []string
+	seen := map[string]bool{}
+	for _, w := range wordRE.FindAllString(norm(quoted), -1) {
+		if st := stem(w); !isFiller(w) && !seen[st] {
+			seen[st] = true
+			words = append(words, st)
+		}
+	}
+	for _, sentence := range sentenceRE.Split(expl, -1) {
+		have := map[string]bool{}
+		for _, w := range wordRE.FindAllString(sentence, -1) {
+			have[stem(w)] = true
+		}
+		matched := 0
+		for _, w := range words {
+			if have[w] {
+				matched++
+			}
+		}
+		if matched >= paraphraseWords && float64(matched) >= paraphraseShare*float64(len(words)) {
+			return true
+		}
+	}
+	return false
+}
+
+// stem folds a plural to its singular: "studies" and "study", "hearings" and "hearing".
+func stem(w string) string {
+	switch {
+	case strings.HasSuffix(w, "ies") && len(w) > 4:
+		return w[:len(w)-3] + "y"
+	case strings.HasSuffix(w, "s") && !strings.HasSuffix(w, "ss") && len(w) > 3:
+		return w[:len(w)-1]
+	}
+	return w
 }
 
 // checkAdd reports an explanation that describes a removal for an instruction that only adds text.

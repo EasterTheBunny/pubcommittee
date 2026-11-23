@@ -77,7 +77,7 @@ func Validate(task string, out ModelOutput, gc data.GenContext) []string {
 			findings = append(findings, fmt.Sprintf("statement %d: %s", i+1, f))
 		}
 		all = append(all, cited)
-		for _, f := range FactFidelity(s.Text, cited) {
+		for _, f := range FactFidelity(withoutCitations(s.Text, gc), cited) {
 			findings = append(findings, fmt.Sprintf("statement %d: fact not in cited lines: %s", i+1, f))
 		}
 		for _, w := range Neutrality(s.Text) {
@@ -85,7 +85,7 @@ func Validate(task string, out ModelOutput, gc data.GenContext) []string {
 		}
 	}
 	if out.Headline != "" {
-		for _, f := range FactFidelity(out.Headline, strings.Join(all, "\n")) {
+		for _, f := range FactFidelity(withoutCitations(out.Headline, gc), strings.Join(all, "\n")) {
 			findings = append(findings, "headline: fact not in cited lines: "+f)
 		}
 		for _, w := range Neutrality(out.Headline) {
@@ -124,7 +124,7 @@ func citedText(s data.Statement, gc data.GenContext) (string, []string) {
 	}
 	for _, id := range s.ProvisionIDs {
 		b.WriteString(id + "\n")
-		text, found := gc.Provisions[id]
+		text, found := lookupProvision(gc, id)
 		if !found {
 			findings = append(findings, fmt.Sprintf("provision %q is not in the input", id))
 		}

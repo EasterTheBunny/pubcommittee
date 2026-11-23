@@ -32,14 +32,29 @@ func TestLiveGeneratorNeedsSwitch(t *testing.T) {
 func TestModeAndBillRules(t *testing.T) {
 	t.Parallel()
 	for name, args := range map[string][]string{
-		"no mode":     {},
-		"both modes":  {"--submit", "--collect"},
-		"no bill":     {"--submit"},
-		"bad bill":    {"--submit", "--bill", "nope"},
-		"bad backend": {"--collect", "--generator", "x"},
+		"no mode":                 {},
+		"both modes":              {"--submit", "--collect"},
+		"no bill":                 {"--submit"},
+		"bad bill":                {"--submit", "--bill", "nope"},
+		"bad backend":             {"--collect", "--generator", "x"},
+		"revalidate with submit":  {"--revalidate", "--submit", "--bill", "us-119-hr-1"},
+		"revalidate with no bill": {"--revalidate"},
 	} {
 		if _, _, err := parseArgs(args, env(nil)); err == nil {
 			t.Errorf("%s: no error", name)
+		}
+	}
+}
+
+// Revalidation and retry are modes of the same job; neither needs the live switch.
+func TestRevalidateAndRetryFlags(t *testing.T) {
+	t.Parallel()
+	for name, args := range map[string][]string{
+		"revalidate": {"--revalidate", "--bill", "us-119-hr-4313"},
+		"retry":      {"--submit", "--retry", "--dry-run", "--bill", "us-119-hr-4313"},
+	} {
+		if _, _, err := parseArgs(args, env(nil)); err != nil {
+			t.Errorf("%s: %v", name, err)
 		}
 	}
 }

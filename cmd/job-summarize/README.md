@@ -11,6 +11,12 @@ DATA_DIR=.local-data go run -tags local ./cmd/job-summarize --submit --bill us-1
 DATA_DIR=.local-data go run -tags local ./cmd/job-summarize --collect
 ```
 
+- `--revalidate --bill <id>` repeats the deterministic checks on the stored outputs with the current validators.
+  It calls no model and regenerates nothing. An output whose status or findings change is stored as a revised
+  record beside the write-once one (readers see the revised record); a newly ready output is published.
+- `--submit --retry` also plans again the stored outputs that are not ready (rejected, refused, truncated or
+  invalid). A later `--collect` stores a ready answer as the revised record of the same key, so the write-once
+  key does not block a retry and no prompt edit is needed. It costs money with `--generator claude`.
 - Default generator is `fakegen`: deterministic, no model, no network. This is what CI and the
   acceptance script use.
 - `--generator claude` is a live model run (stage L3). It refuses to start unless
