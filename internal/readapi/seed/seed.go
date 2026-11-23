@@ -112,7 +112,7 @@ func versions() []stored {
 	}
 	reported := append([]string{}, hours...)
 	reported[2] = "(b) weekend and holiday hours;"
-	short := section([]string{"s1"}, labelSection1, headingTitle, "This Act is the Example Clinic Act.")
+	short := section([]string{"s1"}, labelSection1, headingTitle, "This Act may be cited as the Example Clinic Act.")
 	return []stored{
 		version(clinic, "ih", typeIntroduced, dayFirst,
 			short, section([]string{"s4"}, "Sec. 4.", "Clinic hours", hours...)),
@@ -181,9 +181,16 @@ func Apply(ctx context.Context, p data.PlatformPorts) error {
 	vs := versions()
 	expl := data.ChangeExplanation{
 		Version: vs[1].v.Ref, Section: []string{"s4"}, ProvisionID: "usc/42/1395", CurrentText: "Clinics may post hours.",
+		Anchors:     []string{"s4-l4-6"},
 		WhatChanges: "Clinics must post hours.", WhyMatters: "Patients can plan visits.",
 		Flags: []data.Provenance{data.ProvenanceAuto}, AsAmended: "Clinics must post hours at the entrance.",
 		Meta: platform(data.ProvenanceAuto, dayExplain),
+	}
+	// Stored before planning skipped short-title sections; read-api does not serve it.
+	shortExpl := data.ChangeExplanation{
+		Version: vs[1].v.Ref, Section: []string{"s1"}, WhatChanges: "This section names the Act.",
+		Flags: []data.Provenance{data.ProvenanceAuto, data.ProvenanceBillOnly},
+		Meta:  platform(data.ProvenanceAuto, dayExplain),
 	}
 	entry := data.LogEntry{
 		ID: "log-0001", At: at(dayLog), Kind: "hide", Subject: "/v1/bills/" + TrackedBill, Reason: "duplicate entry",
@@ -207,6 +214,7 @@ func Apply(ctx context.Context, p data.PlatformPorts) error {
 			})
 		},
 		func() error { return p.PlatformDocs.PutExplanation(ctx, expl) },
+		func() error { return p.PlatformDocs.PutExplanation(ctx, shortExpl) },
 		func() error { return p.Moderation.Record(ctx, entry) },
 	}
 	for _, step := range steps {
