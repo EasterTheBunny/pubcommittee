@@ -644,6 +644,12 @@ export interface components {
             section_id: components["schemas"]["SectionId"];
             /** @description Existing-law provision this explains, for example `usc/42/1395`. */
             provision_id?: string;
+            /** @description The provision as people cite it, for example `42 U.S.C. 1395`. */
+            provision_citation?: string;
+            /** @description First line of the section the explanation is pinned to (line numbers as in the version text). */
+            line_from?: number;
+            /** @description Last line it is pinned to; equals `line_from` for one line. */
+            line_to?: number;
             /** @description Existing law as it reads now (official). */
             current_text?: components["schemas"]["ClassedText"];
             what_changes: string;

@@ -144,3 +144,95 @@
 	font-size: 0.75rem;
 	color: var(--color-faint);
 }
+
+/* An explanation pinned above the line it describes. The controls look like the line's "block" control;
+   the open part is one block below the row of controls and pushes the bill text down. The parts are
+   <details> elements of one `name`, so the browser keeps one open and no script is needed. */
+.ex {
+	margin: 0.5rem 0 0.25rem;
+	border-left: 4px solid var(--color-support-line);
+	padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+	font-family: var(--font-sans);
+}
+.ex-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.25rem 0.5rem;
+	font-size: 0.75rem;
+	color: var(--color-muted);
+}
+.ex-date {
+	color: var(--color-faint);
+}
+.ex-parts {
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 1rem;
+}
+.ex-part {
+	display: contents;
+}
+.ex-ctl {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	min-height: 1.75rem;
+	cursor: pointer;
+	list-style: none;
+	font-size: 0.75rem;
+	color: var(--color-faint);
+	text-decoration: none;
+}
+.ex-ctl::-webkit-details-marker {
+	display: none;
+}
+.ex-ctl:hover {
+	color: var(--color-support);
+	text-decoration: underline;
+}
+.ex-part[open] > .ex-ctl {
+	color: var(--color-support-strong);
+	font-weight: 600;
+}
+/* The open block sits below the whole row of controls. */
+.ex-part::details-content {
+	order: 1;
+	flex-basis: 100%;
+}
+.ex-body {
+	order: 1;
+	flex-basis: 100%;
+	margin: 0.25rem 0;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.5rem;
+	font-size: 15px;
+	line-height: 1.55;
+}
+/* Platform text (what changes, why it matters): the blue explanation style. */
+.ex-part[data-part='what'] > .ex-body,
+.ex-part[data-part='why'] > .ex-body {
+	max-width: 42rem;
+	border: 1px solid var(--color-support-line);
+	background: var(--color-support-soft);
+	color: var(--color-ink);
+}
+/* Existing law is official text: a quote, serif, with its own scroll when long. */
+.ex-part[data-part='law'] > .ex-body {
+	max-height: 18rem;
+	overflow: auto;
+	border-left: 4px solid var(--color-line-strong);
+	border-radius: 0;
+	background: var(--color-subtle);
+	font-family: var(--font-serif);
+	font-size: 16px;
+	color: var(--color-ink-2);
+}
+.ex-part[data-part='amended'] > .ex-body {
+	max-width: 42rem;
+	border: 1px dashed var(--color-oppose-line);
+	background: var(--color-oppose-tint);
+}
+.ex-body > * {
+	margin: 0;
+}

@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	apiv1 "github.com/easterthebunny/pubcommittee/api/v1"
+	"github.com/easterthebunny/pubcommittee/internal/billxml"
+	"github.com/easterthebunny/pubcommittee/internal/citations"
 	"github.com/easterthebunny/pubcommittee/internal/data"
 )
 
@@ -26,7 +28,12 @@ func isExplanationFlag(p data.Provenance) bool {
 	return p == data.ProvenanceAuto || p == data.ProvenanceStewardChecked || p == data.ProvenanceBillOnly
 }
 
-func toExplanation(res resolved, e data.ChangeExplanation) apiv1.Explanation {
+// toExplanation builds the resource. The lines it is pinned to come from the stored anchors, else from the
+// citations of its provision, else the whole section (data.Section.ExplanationSpan), so explanations stored
+// before anchors were kept are pinned too.
+func toExplanation(
+	res resolved, e data.ChangeExplanation, sec data.Section, links []data.CitationLink,
+) apiv1.Explanation {
 	out := apiv1.Explanation{
 		Bill: res.id, N: res.n, SectionId: sectionID(e.Section),
 		WhatChanges: e.WhatChanges, WhyItMatters: e.WhyMatters, Flags: []apiv1.ExplanationFlags{},
@@ -34,6 +41,10 @@ func toExplanation(res resolved, e data.ChangeExplanation) apiv1.Explanation {
 	out.Version, out.AsOf, out.Provenance, out.ContentClass = meta(e.Meta)
 	if e.ProvisionID != "" {
 		out.ProvisionId = new(e.ProvisionID)
+		out.ProvisionCitation = new(data.ProvisionCitation(e.ProvisionID))
+	}
+	if from, to := sec.ExplanationSpan(e.Anchors, e.ProvisionID, links); from > 0 {
+		out.LineFrom, out.LineTo = &from, &to
 	}
 	if e.CurrentText != "" {
 		out.CurrentText = &apiv1.ClassedText{
@@ -57,21 +68,19 @@ func toExplanation(res resolved, e data.ChangeExplanation) apiv1.Explanation {
 func (s *Server) ListExplanations(
 	w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath, p apiv1.ListExplanationsParams,
 ) {
-	res, err := s.resolve(r.Context(), bill, n, false)
+	res, err := s.resolve(r.Context(), bill, n, true)
 	if err != nil {
 		fail(w, r, err)
 		return
 	}
-	vs, err := s.listVersions(r.Context(), res.ref)
-	if err != nil {
-		fail(w, r, err)
-		return
-	}
-	all, err := s.ports.PublicDocs.GetExplanations(r.Context(), vs[res.n-1].Ref)
+	all, err := s.ports.PublicDocs.GetExplanations(r.Context(), res.version.Ref)
 	if err != nil {
 		fail(w, r, fmt.Errorf("get explanations: %w", err))
 		return
 	}
+	// A section that only names the Act needs no explanation; one stored before planning skipped it is hidden.
+	all = data.ExplanationsToShow(res.version, all)
+	links := s.citationLinks(r.Context(), res.version.Ref)
 	slices.SortFunc(all, func(a, b data.ChangeExplanation) int {
 		if c := strings.Compare(sectionID(a.Section), sectionID(b.Section)); c != 0 {
 			return c
@@ -85,7 +94,7 @@ func (s *Server) ListExplanations(
 	}
 	items := make([]apiv1.Explanation, len(page))
 	for i, e := range page {
-		items[i] = toExplanation(res, e)
+		items[i] = toExplanation(res, e, sectionOf(res.version, e.Section), links)
 	}
 	class := cacheShort
 	sendJSON(w, r, class, apiv1.ExplanationPage{Items: items, Next: next})
@@ -204,4 +213,37 @@ func toStatements(in []data.Statement) []apiv1.Statement {
 		out[i] = st
 	}
 	return out
+}
+
+// sectionOf returns the section of v with this path; the zero Section when there is none.
+func sectionOf(v data.OfficialVersion, path []string) data.Section {
+	for _, sec := range v.Sections {
+		if slices.Equal(sec.Path, path) {
+			return sec
+		}
+	}
+	return data.Section{}
+}
+
+// citationLinks returns the citation links stored for a version under the current release; none when the
+// citations are not stored (they only refine where an explanation is pinned).
+func (s *Server) citationLinks(ctx context.Context, ref data.VersionRef) []data.CitationLink {
+	if s.ports.Citations == nil || s.ports.Law == nil {
+		return nil
+	}
+	rel, err := s.ports.Law.CurrentRelease(ctx)
+	if err != nil {
+		return nil
+	}
+	set, err := s.ports.Citations.GetCitations(ctx, data.CitationRef{
+		Version: ref, Method: citations.Method(billxml.ParserVersion, rel.ID),
+	})
+	if err != nil {
+		return nil
+	}
+	links := make([]data.CitationLink, len(set.Links))
+	for i, l := range set.Links {
+		links[i] = l.CitationLink
+	}
+	return links
 }

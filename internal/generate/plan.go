@@ -251,7 +251,7 @@ func (b builder) linked(set data.CitationSet) (tasks []Task, cited map[string]bo
 func (b builder) freestanding(cited map[string]bool) ([]Task, error) {
 	var tasks []Task
 	for _, s := range b.ver.Sections {
-		if len(s.Lines) == 0 || cited[strings.Join(s.Path, ".")] || shortTitleOnly(s) {
+		if len(s.Lines) == 0 || cited[strings.Join(s.Path, ".")] || !s.NeedsExplanation() {
 			continue
 		}
 		t, err := b.explanation(data.TaskBillExplanation, strings.Join(s.Path, "."), s, nil)
@@ -311,20 +311,4 @@ func sectionNamed(v data.OfficialVersion, path []string) *data.Section {
 		}
 	}
 	return nil
-}
-
-// shortTitleOnly reports whether every line of s only names the Act ("This Act
-// may be cited as ..."), as a short-title section does. A section that also
-// carries a table of contents or other provisions is not.
-func shortTitleOnly(s data.Section) bool {
-	if len(s.Lines) == 0 {
-		return false
-	}
-	for _, l := range s.Lines {
-		t := strings.ToLower(strings.TrimSpace(l.Text))
-		if !strings.Contains(t, " may be cited as ") {
-			return false
-		}
-	}
-	return true
 }

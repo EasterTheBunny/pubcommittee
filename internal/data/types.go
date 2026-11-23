@@ -269,10 +269,13 @@ type CitationLink struct {
 
 // ChangeExplanation is attached to a (bill section, provision) pair.
 type ChangeExplanation struct {
-	Version     VersionRef   `json:"version"`
-	Section     []string     `json:"section"`
-	ProvisionID string       `json:"provision_id,omitempty"`
-	CurrentText string       `json:"current_text,omitempty"`
+	Version     VersionRef `json:"version"`
+	Section     []string   `json:"section"`
+	ProvisionID string     `json:"provision_id,omitempty"`
+	CurrentText string     `json:"current_text,omitempty"`
+	// Anchors are the line anchors ("s2-l22") the explanation rests on; empty on explanations stored
+	// before they were kept (the read side derives the lines then, Section.ExplanationSpan).
+	Anchors     []string     `json:"anchors,omitempty"`
 	WhatChanges string       `json:"what_changes"`
 	WhyMatters  string       `json:"why_it_matters"`
 	Flags       []Provenance `json:"flags"`

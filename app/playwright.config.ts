@@ -15,7 +15,7 @@ export default defineConfig({
 		{
 			name: 'phone',
 			use: { ...devices['Pixel 7'] },
-			testMatch: /(phone|catalog|bill)\.spec\.ts/
+			testMatch: /(phone|catalog|bill|explanation)\.spec\.ts/
 		}
 	]
 });

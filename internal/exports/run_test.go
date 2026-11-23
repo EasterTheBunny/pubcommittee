@@ -167,7 +167,13 @@ func seedExplanation(t *testing.T, s *memory.Store) data.ChangeExplanation {
 	if err != nil || len(vs) < 2 {
 		t.Fatalf("seed versions = %v, %v", vs, err)
 	}
+	v, err := s.GetVersion(context.Background(), vs[1].Ref)
+	if err != nil {
+		t.Fatal(err)
+	}
 	xs, err := s.GetExplanations(context.Background(), vs[1].Ref)
+	// The seed also stores a short-title explanation, which is never exported; correct a shown one.
+	xs = data.ExplanationsToShow(v, xs)
 	if err != nil || len(xs) == 0 {
 		t.Fatalf("seed explanations = %v, %v", xs, err)
 	}

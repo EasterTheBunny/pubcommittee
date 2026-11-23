@@ -221,7 +221,7 @@ func (r *run) version(ctx context.Context, n int, ref data.VersionRef) error {
 	if err := r.lawExport(ctx, ref, title, v.Meta.AsOf); err != nil {
 		return err
 	}
-	if err := r.explanationExport(ctx, n, ref, title, v.Meta.AsOf); err != nil {
+	if err := r.explanationExport(ctx, n, v, title, v.Meta.AsOf); err != nil {
 		return err
 	}
 	r.versionEvent(n, ref)
@@ -257,12 +257,15 @@ func (r *run) lawExport(ctx context.Context, ref data.VersionRef, title string, 
 }
 
 func (r *run) explanationExport(
-	ctx context.Context, n int, ref data.VersionRef, title string, fallback time.Time,
+	ctx context.Context, n int, v data.OfficialVersion, title string, fallback time.Time,
 ) error {
+	ref := v.Ref
 	xs, err := r.Ports.PublicDocs.GetExplanations(ctx, ref)
 	if err != nil && !errors.Is(err, data.ErrNotFound) {
 		return fmt.Errorf("get explanations %s: %w", ref, err)
 	}
+	// The same set read-api serves: none for sections that only name the Act.
+	xs = data.ExplanationsToShow(v, xs)
 	id := explanationsID(ref)
 	f := explanationsFile(id, ref, fallback, xs)
 	if err := r.put(ctx, entryOf(id, data.ExportChangeExplanations, "Change explanations of "+title, jsonType,

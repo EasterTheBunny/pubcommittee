@@ -946,6 +946,9 @@ components:
             n: { type: integer, minimum: 1 }
             section_id: { $ref: '#/components/schemas/SectionId' }
             provision_id: { type: string, description: 'Existing-law provision this explains, for example `usc/42/1395`.' }
+            provision_citation: { type: string, description: 'The provision as people cite it, for example `42 U.S.C. 1395`.' }
+            line_from: { type: integer, minimum: 1, description: 'First line of the section the explanation is pinned to (line numbers as in the version text).' }
+            line_to: { type: integer, minimum: 1, description: 'Last line it is pinned to; equals `line_from` for one line.' }
             current_text:
               description: Existing law as it reads now (official).
               $ref: '#/components/schemas/ClassedText'

@@ -76,6 +76,7 @@ seed() {
 	job job-summarize --collect >/dev/null
 	echo "seed: exports and change feed"
 	job job-exports >/dev/null
+	[ -f .local-data/.dataset ] || printf 'fake\n' >.local-data/.dataset
 }
 
 down() {
@@ -129,15 +130,19 @@ up() {
 # Data sets. "fake": seeded from fixtures/ with the fake generator. "live": a copy of the stored
 # outputs of the M1-09 live-model run (no model call; the source is only read). The set in use is
 # .local-data/, named in .local-data/.dataset; the other is parked in .local-data.<name>/.
-live_src=.claude/worktrees/m1-09-validators/.local-data
+# Resolved from the main checkout, so it also works from a git worktree; PUBCOMMITTEE_LIVE_DATA overrides it.
+main_root=$(git worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')
+live_src=${PUBCOMMITTEE_LIVE_DATA:-${main_root:-.}/.claude/worktrees/m1-09-validators/.local-data}
 
 dataset() {
 	if [ -f .local-data/.dataset ]; then
 		cat .local-data/.dataset
 	elif [ ! -d .local-data ]; then
 		echo none
-	elif grep -rqsE 'claude-(opus|sonnet)' .local-data/generated 2>/dev/null; then
-		echo live # copied by hand before this command existed
+	elif ls .local-data/generated/batches 2>/dev/null | grep -q '^msgbatch_'; then
+		# Copied by hand before this command existed: only the live run's batches carry API batch ids
+		# (the fake generator's are named fake-...). File names only; no contents are read.
+		echo live
 	else
 		echo fake
 	fi

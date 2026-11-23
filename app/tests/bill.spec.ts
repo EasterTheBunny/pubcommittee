@@ -10,8 +10,9 @@ test('bill page shows the latest version with numbered lines and two distinct la
 	await expect(page.locator('#s4-l1')).toContainText('The Secretary shall publish clinic hours');
 	await expect(page.locator('#s4-l2')).toHaveAttribute('data-depth', '1');
 	// explanation layer: separate element, with provenance label and the unofficial preview label
-	const aside = page.getByRole('complementary', { name: 'Explanation of this section' });
+	const aside = page.getByRole('complementary', { name: /^Explanation of lines 4-6/ });
 	await expect(aside.getByText('Auto-generated').first()).toBeVisible();
+	await aside.getByText('Preview as amended').click();
 	await expect(aside.getByText('Unofficial')).toBeVisible();
 	await expect(page.locator('[data-bill-text] [data-content-class="platform"]')).not.toHaveCount(0);
 	// summaries not published yet: designed empty state, no invented text
