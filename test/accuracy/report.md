@@ -34,7 +34,7 @@ Known errors injected into good outputs. The deterministic checks run in CI on a
 
 ## Operator sample and grader agreement
 
-Sample unchanged from the earlier run: no statement in it changed status (`test/accuracy/operator-sample.md` and `.json`; 30 statements, labels blank). Grader-to-operator agreement: pending the operator's labels (operator step).
+Sample unchanged from the earlier run: no statement in it changed status (`test/accuracy/operator-sample.md` and `.json`; 30 statements, labels blank). Grader-to-operator agreement (operator graded 2026-11-22; hand-written section): **30/30 (100%)**. By task: bill-explanation 9/9, bill-summary 9/9, change-explanation 9/9, version-changes 3/3. The grader also labelled all 30 `supported`, because the sample was drawn from served (ready) outputs only, so it holds none of the 10 grader-contradicted statements. It therefore shows that the grader's `supported` label held for every sampled statement (no false approvals found), but it does not measure whether the grader catches errors; the planted-error grader columns above are the evidence for that. A later sample should include grader-contradicted and unverified statements.
 
 ## CRS summary coverage (bill summaries)
 
