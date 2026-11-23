@@ -69,3 +69,4 @@ Build the public, read-only JSON service that serves everything M1 publishes: ca
 - Rate-limit mechanism: **Decided:** an in-memory limiter per instance, keyed on `HMAC(k_rate, ip ‖ day)` held only in memory; no storage port, no raw IPs. Limits are approximate across instances, which fits "slows, never bans".
 - Published limits: **Decided:** per route class, as ranges only ([architecture § What stays private](../../../architecture/README.md#what-stays-private)).
 - Do cache lifetimes differ from [architecture § Resources](../../../architecture/README.md#resources)? Record any difference there.
+  - **Answered (M1-10):** cache classes recorded in architecture § Resources.

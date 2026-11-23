@@ -79,9 +79,16 @@ Turn an official Congress bill XML document into the parsed version every other 
 ## Open questions
 
 - What is the smallest line unit: the source's own line numbering, sentence, or clause ([01 § Open questions](../../01-bill-ingestion-and-display.md#open-questions))? Answer from the corpus, move it to decided behavior in 01, and summarise it in [architecture § Bill source](../../../architecture/README.md#bill-source).
+  - **Answered (M1-04):** one line per text-bearing element; recorded in 01 and architecture § Parser.
 - How are tables, formulas, and other non-prose content made addressable? Prior work suggests one unit stored raw; confirm on the corpus.
+  - **Answered (M1-04):** one unit with raw markup. Tables confirmed on hr319 and hr1727. **Deferred (operator, 2026-11-22):** no `<formula>` exists in any of the 8,042 documents of the 119-1 House bulk archive; formulas are covered on constructed XML only. The real-bill formula criterion is accepted as deferred and is rechecked if a real example appears.
 - How are wrapped continuation lines told apart from separate items?
+  - **Answered (M1-04):** continuation text is its own line flagged `continuation`; recorded in 01.
 - What anchor scheme is used, and how does it map to the UI fragment form `#s4-l12-13`? Record it in [06](../../06-sharing.md) and [10 § Canonical addresses](../../10-machine-access.md#canonical-addresses).
+  - **Answered (M1-04):** `s<ordinal>-l<n>`, `n` version-wide; recorded in 10, linked from 06.
 - Which package holds the parser? The architecture names domain packages (`ingest` among them) but no parser package.
+  - **Answered (M1-04):** `internal/billxml`.
 - Does any chosen exit bill need amendment XML (`amend.dtd`)? Prefer exit bills that do not.
+  - **Answered (M1-04):** no; all 12 exit-bill files parse with 0 warnings. `amend.dtd` content is not parsed and logs a warning.
 - DTD validation method: **Decided:** this task chooses Go tests or `xmllint` in a CI container, and proposes it for [architecture § Tooling](../../../architecture/README.md#tooling).
+  - **Answered (M1-04):** `xmllint` in a CI container; recorded in Tooling.

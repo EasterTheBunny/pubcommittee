@@ -53,7 +53,7 @@ Anyone, signed in or not, can share.
 
 ## Domain concepts
 
-- **Share target** — `(kind, anchor or item id, version)`.
+- **Share target** — `(kind, anchor or item id, version)`. Anchor form: [10 § Canonical addresses](10-machine-access.md#canonical-addresses).
 - **Preview card** — rendered text and image derived from the target at request time, with counts as of that moment.
 - **Referral** — an aggregate record that a visit or signal arrived via a shared link (used only for spike disclosure).
 

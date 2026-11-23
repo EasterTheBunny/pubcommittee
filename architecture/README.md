@@ -195,6 +195,7 @@ Ports are grouped by the boundary they sit behind. A service receives only the g
 
 M1 notes (from M1-01):
 - The public read group holds only `BillText` and `PublicDocs` in M1; `Snapshots` arrives in M2.
+- `PublicDocs` also has `GetSelectionPolicyVersion` (M1-10).
 - `PlatformDocs` also has `PutBill`, `GetIngestState`, and `PutIngestState`. `ApplyLogged` takes a `Change`, which carries exactly one of a bill, catalog entry, policy, or explanation, plus a `LogEntry`.
 - `BillSource` declares `ListChanged(ctx, since, page)` in M1. Manual pulls ([M1-05](../design/tasks/m1/05-manual-bill-pull-and-storage.md)) pass an empty watermark.
 
@@ -393,9 +394,10 @@ Build: multi-stage Dockerfile. A Go builder stage with module and build caches c
 | Firestore emulator | Container image under the `emulator` profile in `compose.yaml` (cloud phase) | CI and every machine run the same emulator |
 | Firebase CLI | Cloud phase only, in the deployment repository's CI | Local runs never use Firebase Hosting |
 | Postgres | Not in `compose.yaml` until M2 | No SQL in M1 |
+| Bill DTD validation | `xmllint --dtdvalid` (`libxml2-utils`) in a CI container, against the official `bill.dtd` and `res.dtd` committed under `internal/billxml/testdata/dtd/` | Uses the official DTDs unchanged; Go has no DTD validator |
 | Secret scanning | GitHub secret scanning with push protection, plus the format-based pattern check in CI | See [What stays private](#what-stays-private) |
 
-Open: whether DTD validation of bill XML runs in Go tests or with `xmllint` in a CI container, and whether a local pre-commit secret scanner is wanted beside CI scanning.
+Open: whether a local pre-commit secret scanner is wanted beside CI scanning.
 
 ### Keeping each service small
 - **One responsibility per binary.** A service that grows a second job is split.
@@ -416,6 +418,7 @@ Open: whether DTD validation of bill XML runs in Go tests or with `xmllint` in a
 - `GET /healthz` reports the process is alive. `GET /readyz` reports its adapters are configured and reachable.
 - `GET /metrics` on a separate port (`$METRICS_PORT`, default `9464`) serves metrics for scraping ([Observability](#observability)). The metrics port is never routed publicly.
 - On `SIGTERM`, stop accepting requests, finish in-flight ones, and exit within 10 seconds.
+- `read-api` reads `RATE_LIMITS` (form `text=600,live=300,bulk=120,discovery=600`, per minute per route class), `CLIENT_IP_HEADER`, and, on the `memory` target only, `SEED_FIXTURES=1` to load invented test fixtures.
 - Shared bootstrap lives in `internal/httpx`, so every service gets the same health, readiness, metrics, and shutdown behavior.
 
 ### Jobs
@@ -586,6 +589,9 @@ Exact paths, listing formats, and update cadences are confirmed against GPO's pu
 - **Politeness.** One request at a time per host with backoff, a descriptive user agent naming the project (no personal contact details), and conditional requests where the source supports them.
 
 The `usccollector` adapter keeps the collector as an option, for example to backfill older Congresses quickly from its output, without making it a dependency. The `fixturesrc` adapter lets every environment run ingestion with no network.
+
+### Parser
+`internal/billxml` parses official bill XML into sections and lines. It is a pure function (`Parse(src, logger)`), called by ingest ([M1-05](../design/tasks/m1/05-manual-bill-pull-and-storage.md)), never on a request. Its version, `ParserVersion` (now `billxml/1`), is stored with the parsed text; a change to parsing rules needs a new version and regenerated golden files. Line unit, non-prose units, continuation lines, and anchors are as [01 § Open questions](../design/01-bill-ingestion-and-display.md#open-questions) records them (M1-04 answers). Parsed `text.json` lines carry `n`, `anchor`, `depth`, `text`, `source_id`, `kind` (`text`, `group`, `table`, `toc`, `formula`, `graphic`), `quoted`, `continuation`, and `raw` for non-prose markup.
 
 ### Bill selection
 
@@ -809,6 +815,8 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 `PUT` and `DELETE` on signals make set and withdraw idempotent, matching `SignalLedger`. The paths above are a starting outline; `api/openapi.yaml` is authoritative once written.
 
 Path parameters (M1-02): `{n}` is the 1-based position in the bill's version list, or `latest`; the version code (for example `ih`) is the `code` field. `{range}` is `12` or `12-13`, inclusive, the same form as the UI fragment `#s4-l12-13`. A block has no syntax of its own: each line carries `block_to`, and the block is the range `n-block_to`. `markup-decisions` routes are not yet in the spec.
+
+Cache classes (M1-10): immutable `public, max-age=31536000, immutable`; short `public, max-age=60, stale-while-revalidate=300`; batch `public, max-age=900`. Answers resolved from `latest` use the short class. `GET /v1/bills` answers with `anyOf` bill summary or catalog entry, because a tracked catalog entry satisfies both.
 
 ### Conventions
 - **Versioning.** Major version in the path (`/v1`). Additive changes do not bump it. A new major version runs beside the old one for a published period ([10](../design/10-machine-access.md)).

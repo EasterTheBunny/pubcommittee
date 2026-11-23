@@ -17,13 +17,13 @@ Integration branch: `m1-integration`.
 | [M1-02](m1/02-api-contract.md) | local | done-local | `task/M1-02` | sonnet | none (1 sub-task, 0 redone, rewrite 0, 1 commit) | Run r20261122-1412, batch 2; merged. Live contract test (`CONTRACT_BASE_URL`) carried to M1-10, which adds the routes. Its `run.sh` needs `api/` and `app/`, so it runs in the dev container, not the compose acceptance service. v1 overlap period (12 months) in `api/MACHINE-API.md` is proposed, awaiting operator |
 | [M1-03a](m1/03a-local-storage-adapters.md) | local | done-local | `task/M1-03a` | sonnet | none (1 sub-task, 0 redone, rewrite 0, 1 commit) | Run r20261122-1412, batch 2 (relaunched after worktree base fix); merged. Cross-container job visibility over HTTP carried to M1-05/M1-10 (no job or data route yet). Catalog filters and search are not on the port: M1-05 or M1-10. Agent ran one `go test` on the host (process deviation) |
 | [M1-03b](m1/03b-cloud-storage-adapters.md) | cloud | todo | | | | |
-| [M1-04](m1/04-bill-xml-parser.md) | local | in-progress | `task/M1-04` | sonnet | | Run r20261122-1412, batch 2. Relaunched: first worktree was cut from `main`; branch fast-forwarded to `m1-integration` 6395c54 by the orchestrator with user approval, worktree `.claude/worktrees/m1-04` |
+| [M1-04](m1/04-bill-xml-parser.md) | local | done-local | `task/M1-04` | sonnet | none (2 sub-tasks, 0 redone, rewrite 0, 2 commits) | Run r20261122-1412, batch 2 (relaunched after worktree base fix); merged. Real-bill formula criterion deferred by the operator: no `<formula>` in the 119-1 House archive |
 | [M1-05](m1/05-manual-bill-pull-and-storage.md) | local, cloud | todo | | | | |
 | [M1-06](m1/06-selection-policy.md) | local, cloud | todo | | | | |
 | [M1-07](m1/07-us-code-and-citations.md) | local | todo | | | | |
 | [M1-08](m1/08-version-history-and-stale.md) | local | todo | | | | |
 | [M1-09](m1/09-ai-generation.md) | local, cloud | todo | | | | Live run needs the operator's API key and spend approval |
-| [M1-10](m1/10-read-api.md) | local, cloud | in-progress | `task/M1-10` | sonnet | | Run r20261122-1412, batch 3, worktree `.claude/worktrees/m1-10` |
+| [M1-10](m1/10-read-api.md) | local, cloud | done-local | `task/M1-10` | sonnet | none (2 sub-tasks, 0 redone, 1 commit; rewrite 1.80 from regenerating `api.gen.go` without client, below the 3-commit rule) | Run r20261122-1412, batch 3; merged. Summary, changes, compare, citations, feed, exports need read ports from M1-07/08/09/11. Cloud-phase criteria open |
 | [M1-11](m1/11-exports-feed-machine-notice.md) | local, cloud | todo | | | | |
 | [M1-12](m1/12-administration.md) | local, cloud | todo | | | | |
 | [M1-13](m1/13-web-ui-real-data.md) | local, cloud | todo | | | | |
