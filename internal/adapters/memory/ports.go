@@ -14,6 +14,10 @@ var (
 	_ data.Generator        = (*Store)(nil)
 	_ data.ComparisonReader = (*Store)(nil)
 	_ data.ComparisonWriter = (*Store)(nil)
+	_ data.CitationReader   = (*Store)(nil)
+	_ data.CitationWriter   = (*Store)(nil)
+	_ data.LawReader        = (*Store)(nil)
+	_ data.LawWriter        = (*Store)(nil)
 )
 
 // PlatformPorts returns the platform group backed by s.
@@ -24,10 +28,12 @@ func (s *Store) PlatformPorts() data.PlatformPorts {
 		Moderation:      s,
 		Publisher:       s,
 		ComparisonStore: s,
+		CitationStore:   s,
+		LawStore:        s,
 	}
 }
 
 // PublicReadPorts returns the public read group backed by s.
 func (s *Store) PublicReadPorts() data.PublicReadPorts {
-	return data.PublicReadPorts{BillText: s, PublicDocs: s, Comparisons: s}
+	return data.PublicReadPorts{BillText: s, PublicDocs: s, Comparisons: s, Citations: s, Law: s}
 }

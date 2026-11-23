@@ -31,6 +31,8 @@ func (t *Telemetry) WrapPlatform(adapter string, g data.PlatformPorts) data.Plat
 		Moderation:      timedModeration{tm, g.Moderation},
 		Publisher:       timedPublisher{tm, g.Publisher},
 		ComparisonStore: wrapComparisonWriter(tm, g.ComparisonStore),
+		CitationStore:   wrapCitationWriter(tm, g.CitationStore),
+		LawStore:        wrapLawWriter(tm, g.LawStore),
 	}
 }
 
@@ -41,6 +43,8 @@ func (t *Telemetry) WrapPublicRead(adapter string, g data.PublicReadPorts) data.
 		BillText:    timedBillText{tm, g.BillText},
 		PublicDocs:  timedPublicDocs{tm, g.PublicDocs},
 		Comparisons: wrapComparisonReader(tm, g.Comparisons),
+		Citations:   wrapCitationReader(tm, g.Citations),
+		Law:         wrapLawReader(tm, g.Law),
 	}
 }
 
