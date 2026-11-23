@@ -34,6 +34,7 @@
 ## Deliverables
 
 - `infra/modules/gcp/`, `infra/examples/`, and module CI in this repository
+- Agents never edit `deploy/`. Every deliverable in the deployment repository is proposed as a unified diff; the operator applies and commits it ([AGENTS.md](../../../AGENTS.md)).
 - Deployment repository filled in from its skeleton: bootstrap, environment roots, values, operator README (bootstrap, apply, rollback)
 - Secret and pattern scanning in CI
 - Cost check showing idle cost near zero

@@ -52,7 +52,7 @@ How the development environment grows as M1 tasks complete: what runs on a local
 **Cloud phase**
 
 5. **E1.** Agent runs M1-00 to choose the Cloud Storage stand-in, then builds M1-03b: `gcs` and `firestore` pass the same conformance suites as the filesystem adapters.
-6. **C1.** Operator bootstraps the cloud accounts. Agent writes the IaC in M1-15 and runs plans, and the operator approves applies. Operator creates the deploy trigger GitHub App and the private repository's environments; agent writes the M1-17 workflows. From then on every merge to `main` deploys to `dev` through the private repository. Operator runs the `pubctl` actions that need public attribution. The `dev` acceptance criteria of M1-05, 06, 09, 10, 11, and 12 are checked there.
+6. **C1.** Operator bootstraps the cloud accounts. Agent writes the public IaC modules in M1-15, proposes the deployment repository changes as diffs, and runs plans; the operator applies the diffs and runs `tofu apply`. Operator creates the deploy trigger GitHub App and the private repository's environments; agent proposes the M1-17 workflows. From then on every merge to `main` deploys to `dev` through the private repository. Operator runs the `pubctl` actions that need public attribution. The `dev` acceptance criteria of M1-05, 06, 09, 10, 11, and 12 are checked there.
 7. **C2.** Same modules for `staging` and `prod`; M1-17 promotes the `dev` digests behind approvals. M1-14 mobile install and the M1-16 hosted gate run in `staging`.
 
 ## Operator and agent
@@ -63,17 +63,18 @@ How the development environment grows as M1 tasks complete: what runs on a local
 | Install project-pinned tools (Go tools, npm dev dependencies, Docker images) | — | Yes |
 | Code, tests, fixtures, `compose.yaml`, OpenAPI spec, public IaC modules in `infra/` | Reviews | Yes |
 | Run the local stack and reset its data directory | — | Yes |
-| Deployment repository code at `deploy/` (environment roots, workflows) | Reviews; owns the repository | Yes, with placeholders where values are private |
+| Deployment repository code at `deploy/` (environment roots, workflows) | Owns the repository; applies, reviews, and commits every change | Proposes changes as a unified diff, never edits `deploy/` |
 | Fetch public sources (govinfo, US Code, bill DTDs) | — | Yes, within the politeness rules |
 | Provide the Anthropic API key and approve spending runs (L3, local only), including grader runs | Yes | Runs once approved |
 | Grade the operator sample (about 30 statements against their cited lines) once in M1 | Yes | Prepares the sample and reports agreement |
 | Create billing, Google Cloud projects, and IaC state bucket; accept Claude on Google Cloud terms | Yes | Writes the bootstrap steps |
 | Interactive sign-in (`gcloud auth login`, application default credentials, web host, GitHub) | Yes | — |
 | Configure CI federated credentials, branch protection, secret scanning with push protection | Yes | Writes the workflow and IaC |
-| Create the deploy trigger GitHub App, install it on the private repository only, store its id and key in the public `deploy-trigger` environment; create the private `dev`, `staging`, `prod` environments with reviewers | Yes | Writes the steps and the workflows ([M1-17](17-continuous-delivery.md)) |
+| Create the deploy trigger GitHub App, install it on the private repository only, store its id and key in the public `deploy-trigger` environment; create the private `dev`, `staging`, `prod` environments with reviewers | Yes | Writes the steps; proposes the workflows as a diff ([M1-17](17-continuous-delivery.md)) |
 | Approve `staging` and `prod` promotions | Yes | Starts them only when asked |
-| `tofu plan` against an environment | Approves access | Yes |
-| `tofu apply`, and any `prod` change | Yes, or explicitly approves each run | Runs only with approval |
+| `tofu plan` against an environment | Approves access | Top-level agent only: reads `deploy/` and runs `tofu init`, `tofu validate`, `tofu plan`, `tofu show` there (read-only; `init` with `-lockfile=readonly`) |
+| `tofu apply`, any other state-changing `tofu` command, and any `prod` change | Yes | Never runs them; prints the exact command for the operator |
+| `gcloud` commands | Yes | Never runs them; prints the exact command for the operator |
 | Private values: operator roster, project ids, environment values files | Yes, in the private deployment repository only | Never commits them to this repository; uses placeholders |
 | Sign and land work on `main` (`git merge --squash m1-integration`, `git commit -S`) | Yes, with their own key | Commits unsigned on `task/*` and `m1-integration` only |
 | `pubctl` actions (track, untrack, reparse, regenerate, publish policy) | Yes: the public log names the administrator who acted | Drafts the commands and reasons |
