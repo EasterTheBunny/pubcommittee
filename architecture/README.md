@@ -903,7 +903,7 @@ pubctl bills reparse us-119-hr-4127 --version 2 --reason "parser fix for tables"
 
 As built (M1-12, `internal/adminapi`, `cmd/admin-api`, `cmd/pubctl`):
 - Log entries carry `actor` (operator id and public name); roster entries carry `operator`, `actor` (the approver), and `bootstrap`. Roster entry ids are `roster-<8-digit seq>-<kind>-<operator id>`. Roster entries are written one at a time, so a failed call is rerun.
-- Single-document changes use `ApplyLogged`; re-ingest writes its log entry first through `Moderation.Record`. Track also updates the stored bill document's reasons, which a pull reads before the catalog. Policy publishing calls `selection.PublishAs` with the operator as actor.
+- Single-document changes use `ApplyLogged`; re-ingest writes its log entry first through `Moderation.Record`. Track also updates the stored bill document's reasons, which a pull reads before the catalog. Locally, track does not pull; `bills reingest` runs the shared pipeline `ingest.PullSteps`, the same one `job-ingest` uses. Policy publishing calls `selection.PublishAs` with the operator as actor.
 - A re-parse with the current parser re-parses, compares, and reports; a different parser version answers `503` and writes nothing until a storage path for a second parser version is chosen. Regenerate answers `501` until a `Generator` is wired (M1-09). With `phase: steward_signoff`, track answers `409` and changes nothing.
 - Local `admin-api` reads `OPERATORS_FILE` (placeholder operators) and accepts a local-only `X-Local-Principal` header in place of a verified identity.
 
