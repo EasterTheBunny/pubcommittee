@@ -61,6 +61,8 @@ All routes are `GET`. The cache class comes from the `x-cache` extension in the 
 | `/v1/exports` | Index of bulk exports | batch |
 | `/v1/exports/{export}` | One export file | batch |
 
+The log carries the day only (`at`, no time of day), on every entry. Newest first means later days first and, within a day, the entry written last first, across all kinds (administrator actions and stored generated explanations alike); the order is stable across pages. Entries written before day-only times were stored keep their earlier order within their day.
+
 Version-less routes are declared `short` in the spec's `x-cache` extension, but their `200` responses document the immutable header set. Treat them as short-lived; see the caching section.
 
 ## Every text field has a content class

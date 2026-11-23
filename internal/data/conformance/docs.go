@@ -105,6 +105,7 @@ func docsLogCases() []docsCase {
 	return []docsCase{
 		{"Record then ListLog returns the entry", docsLogRecordList},
 		{"ListLog is newest first and pages stably", docsLogNewestFirst},
+		{"ListLog lists interleaved kinds of one day newest written first, stable across pages", docsLogInterleaved},
 		{"Record same ID and content is a no-op", docsLogIdempotent},
 		{"Record same ID and different content conflicts", docsLogConflict},
 		{"Record empty ID is invalid", docsLogEmptyID},
@@ -537,8 +538,76 @@ func docsLogRecordList(t *testing.T, factory docsFactory) {
 	docsNoErr(t, mod.Record(ctx, e))
 	page, err := pub.ListLog(ctx, data.Page{})
 	docsNoErr(t, err)
-	if len(page.Items) != 1 || !reflect.DeepEqual(page.Items[0], e) {
-		t.Fatalf("ListLog = %+v, want %+v", page.Items, e)
+	if len(page.Items) != 1 || !docsSameLog(page.Items[0], e) {
+		t.Fatalf("ListLog = %+v, want %+v (day only, with a sequence)", page.Items, e)
+	}
+}
+
+// docsSameLog reports whether got is want as stored: coarsened to the day,
+// carrying a sequence number the adapter assigned.
+func docsSameLog(got, want data.LogEntry) bool {
+	return got.Seq > 0 && reflect.DeepEqual(data.CoarseLogEntry(got), data.CoarseLogEntry(want)) &&
+		got.At.Equal(data.LogDay(want.At))
+}
+
+// docsLogIDs lists the IDs of every page of the log, newest first, with the
+// page sizes.
+func docsLogIDs(t *testing.T, cursor string, pub data.PublicDocs) ([]string, []int) {
+	t.Helper()
+	pages := docsDrain(t, cursor, docsLogPager(t.Context(), pub))
+	ids := []string{}
+	sizes := make([]int, 0, len(pages))
+	for _, p := range pages {
+		sizes = append(sizes, len(p))
+		for _, e := range p {
+			ids = append(ids, e.ID)
+		}
+	}
+	return ids, sizes
+}
+
+// docsLogInterleaved writes entries of different kinds on one day, some with
+// a full time and some with the day only, plus an older day written last. The
+// log lists the day first, then each day's entries newest written first, and
+// cursor paging stays stable when an entry is written between pages.
+func docsLogInterleaved(t *testing.T, factory docsFactory) {
+	t.Helper()
+	ctx := t.Context()
+	pub, plat, mod := factory(t)
+	day := time.Date(2026, 3, 5, 0, 0, 0, 0, time.UTC)
+	gen := func(id string, h int) data.LogEntry {
+		return data.LogEntry{ID: id, At: day.Add(time.Duration(h) * time.Hour), Kind: "generation", Subject: "s", Reason: "r", Meta: SampleMeta()}
+	}
+	adm := func(id string) data.LogEntry {
+		return data.LogEntry{ID: id, At: day, Kind: "policy_published", Subject: "s", Reason: "r", Meta: SampleMeta()}
+	}
+	entry := docsSampleCatalog(1, "t", false)
+	docsNoErr(t, plat.ApplyLogged(ctx, data.Change{Catalog: &entry}, gen("g1", 20)))
+	docsNoErr(t, mod.Record(ctx, gen("g2", 9)))
+	docsNoErr(t, mod.Record(ctx, adm("a1")))
+	docsNoErr(t, mod.Record(ctx, gen("g3", 1)))
+	docsNoErr(t, mod.Record(ctx, adm("a2")))
+	old := adm("old")
+	old.At = day.Add(-48 * time.Hour)
+	docsNoErr(t, mod.Record(ctx, old))
+	ids, sizes := docsLogIDs(t, "", pub)
+	if want := []string{"a2", "g3", "a1", "g2", "g1", "old"}; !reflect.DeepEqual(ids, want) {
+		t.Fatalf("ListLog order = %v, want %v", ids, want)
+	}
+	if want := []int{2, 2, 2}; !reflect.DeepEqual(sizes, want) {
+		t.Fatalf("page sizes = %v, want %v", sizes, want)
+	}
+	first, err := pub.ListLog(ctx, data.Page{Limit: docsPageSize})
+	docsNoErr(t, err)
+	docsNoErr(t, mod.Record(ctx, adm("a3")))
+	rest, _ := docsLogIDs(t, first.Next, pub)
+	if want := []string{"a1", "g2", "g1", "old"}; !reflect.DeepEqual(rest, want) {
+		t.Fatalf("pages after a write between pages = %v, want %v", rest, want)
+	}
+	all, err := pub.ListLog(ctx, data.Page{})
+	docsNoErr(t, err)
+	if all.Items[0].ID != "a3" || !all.Items[0].At.Equal(day) || !all.Items[len(all.Items)-1].At.Equal(old.At) {
+		t.Fatalf("log = %+v, want a3 first on day %v", all.Items, day)
 	}
 }
 
@@ -620,7 +689,7 @@ func docsApplyWrites(t *testing.T, factory docsFactory) {
 	}
 	logs, err := pub.ListLog(ctx, data.Page{})
 	docsNoErr(t, err)
-	if len(logs.Items) != 1 || !reflect.DeepEqual(logs.Items[0], e) {
+	if len(logs.Items) != 1 || !docsSameLog(logs.Items[0], e) {
 		t.Fatalf("log = %+v, want %+v", logs.Items, e)
 	}
 }
