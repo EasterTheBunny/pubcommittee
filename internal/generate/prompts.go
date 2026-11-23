@@ -12,6 +12,9 @@ import (
 //go:embed prompts/*.md schemas/*.json
 var files embed.FS
 
+// TaskCRS is the CRS coverage comparison, run by the accuracy report only.
+const TaskCRS = "crs"
+
 // Default models. The grader must differ from the generator; both are
 // recorded with every stored output and grade.
 const (
@@ -35,9 +38,9 @@ func taskFiles(task string) (prompt, schema string, ok bool) {
 		return "prompts/" + task + ".md", "schemas/summary.json", true
 	case "change-explanation", "bill-explanation":
 		return "prompts/" + task + ".md", "schemas/explanation.json", true
-	case "grade":
+	case data.TaskGrade:
 		return "prompts/grade.md", "schemas/grade.json", true
-	case "crs":
+	case TaskCRS:
 		return "prompts/crs.md", "schemas/crs.json", true
 	}
 	return "", "", false
@@ -75,8 +78,14 @@ func LoadPrompt(task string) (Prompt, error) {
 		h.Write(b)
 		h.Write([]byte{0})
 	}
-	return Prompt{
+	pr := Prompt{
 		Instructions: string(common), Task: string(text), Schema: schema,
 		Version: "v1-" + hex.EncodeToString(h.Sum(nil))[:8],
-	}, nil
+	}
+	if task == data.TaskGrade || task == TaskCRS {
+		// The grader and the coverage check are not writers: their task text
+		// is their whole instructions.
+		pr.Instructions, pr.Task = string(text), ""
+	}
+	return pr, nil
 }

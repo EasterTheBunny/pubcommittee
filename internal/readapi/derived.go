@@ -91,7 +91,8 @@ func (s *Server) ListExplanations(
 	sendJSON(w, r, class, apiv1.ExplanationPage{Items: items, Next: next})
 }
 
-// GetBillSummary answers not found until M1-09 stores summaries.
+// GetBillSummary serves the published summary of one version; not found
+// until job-summarize has stored one (M1-09).
 func (s *Server) GetBillSummary(w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath) {
 	res, err := s.resolve(r.Context(), bill, n, false)
 	if err != nil {
@@ -125,8 +126,9 @@ func (s *Server) GetBillSummary(w http.ResponseWriter, r *http.Request, bill api
 	sendJSON(w, r, cacheShort, doc)
 }
 
-// GetVersionChangeSummary answers not found until M1-09 stores change
-// summaries; the first version never has one.
+// GetVersionChangeSummary serves the published change summary of one version
+// against the previous one; not found until job-summarize has stored one
+// (M1-09), and never for the first version.
 func (s *Server) GetVersionChangeSummary(
 	w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath,
 ) {
@@ -178,6 +180,10 @@ func (s *Server) published(
 	out, err := s.ports.Generated.GetCurrent(ctx, task, v, target)
 	if err != nil {
 		return data.GeneratedOutput{}, fmt.Errorf("get %s: %w", task, err)
+	}
+	// An output the grounding grader marked contradicted is withheld.
+	if g, gerr := s.ports.Generated.GetGrade(ctx, out.Key); gerr == nil && g.Contradicted() {
+		return data.GeneratedOutput{}, fmt.Errorf("%s withheld after grading: %w", task, data.ErrNotFound)
 	}
 	return out, nil
 }

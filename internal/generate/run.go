@@ -46,43 +46,55 @@ func Submit(ctx context.Context, d Deps, bill data.BillRef, dryRun bool) (Submit
 	return rep, d.submit(ctx, &rep, todo)
 }
 
+// PlanAll returns every task of every stored version of the bill, stored or
+// not, in version order, with the notes of steps that planned nothing.
+func PlanAll(ctx context.Context, d Deps, bill data.BillRef) ([]Task, []string, error) {
+	vs, err := d.Ports.BillText.ListVersions(ctx, bill)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list versions %s: %w", bill, err)
+	}
+	var all []Task
+	var notes []string
+	var prev *data.OfficialVersion
+	for _, s := range vs {
+		ver, err := d.Ports.BillText.GetVersion(ctx, s.Ref)
+		if err != nil {
+			return nil, nil, fmt.Errorf("get version %s: %w", s.Ref, err)
+		}
+		tasks, n, err := PlanVersion(ctx, d.Ports, ver, prev, d.Cfg)
+		if err != nil {
+			return nil, nil, err
+		}
+		all, notes, prev = append(all, tasks...), append(notes, n...), &ver
+	}
+	return all, notes, nil
+}
+
 // plan returns the tasks of the bill that have no stored output and are not
 // in a pending batch, and counts the rest in rep.
 func (d Deps) plan(ctx context.Context, rep *SubmitReport, bill data.BillRef) ([]Task, error) {
-	vs, err := d.Ports.BillText.ListVersions(ctx, bill)
+	all, notes, err := PlanAll(ctx, d, bill)
 	if err != nil {
-		return nil, fmt.Errorf("list versions %s: %w", bill, err)
+		return nil, err
 	}
+	rep.Notes = append(rep.Notes, notes...)
 	busy, err := pendingKeys(ctx, d.Ports.GeneratedStore)
 	if err != nil {
 		return nil, err
 	}
 	var todo []Task
-	var prev *data.OfficialVersion
-	for _, s := range vs {
-		ver, err := d.Ports.BillText.GetVersion(ctx, s.Ref)
-		if err != nil {
-			return nil, fmt.Errorf("get version %s: %w", s.Ref, err)
-		}
-		tasks, notes, err := PlanVersion(ctx, d.Ports, ver, prev, d.Cfg)
+	for _, t := range all {
+		rep.Planned++
+		stored, err := isStored(ctx, d.Ports.Generated, t.Key)
 		if err != nil {
 			return nil, err
 		}
-		rep.Notes = append(rep.Notes, notes...)
-		prev = &ver
-		for _, t := range tasks {
-			rep.Planned++
-			stored, err := isStored(ctx, d.Ports.Generated, t.Key)
-			if err != nil {
-				return nil, err
-			}
-			if stored || busy[t.Key.String()] {
-				rep.Skipped++
-				continue
-			}
-			todo = append(todo, t)
-			rep.InputChar += len(t.Req.Source) + len(t.Req.Input) + len(t.Req.Instructions)
+		if stored || busy[t.Key.String()] {
+			rep.Skipped++
+			continue
 		}
+		todo = append(todo, t)
+		rep.InputChar += len(t.Req.Source) + len(t.Req.Input) + len(t.Req.Instructions)
 	}
 	return todo, nil
 }

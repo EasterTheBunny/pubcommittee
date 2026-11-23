@@ -154,3 +154,24 @@ func TestVersionChangesFromStoredOutput(t *testing.T) {
 	}
 	checkProblem(t, first, do(t, http.MethodGet, first, nil))
 }
+
+// A summary the grader marked contradicted is withheld: the route answers not found.
+func TestBillSummaryWithheldWhenContradicted(t *testing.T) {
+	t.Parallel()
+	store, base := citationsStore(t)
+	vs := trackedVersions(t, store)
+	publishOutput(t, store, data.TaskBillSummary, vs[0].Ref, "", "A short headline.")
+	key := data.GenKey{
+		Task: data.TaskBillSummary, Version: vs[0].Ref, PromptVersion: "p1", Model: "fake",
+	}
+	if err := store.PlatformPorts().GeneratedStore.PutGrade(context.Background(), data.Grade{
+		Key: key, GraderModel: "grader", PromptVersion: "g1", Neutral: true,
+		Statements: []data.StatementGrade{{Index: 0, Label: data.GradeContradicted}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got := do(t, http.MethodGet, base+"/v1/bills/"+seed.TrackedBill+"/v/1/summary", nil)
+	if got.status != http.StatusNotFound {
+		t.Fatalf("status %d: %s", got.status, got.body)
+	}
+}
