@@ -112,7 +112,7 @@ The UI is a **progressive web app** and must be installable ([08](../design/08-o
 ### Object store (immutable or regenerated files)
 - Official versions: original XML and parsed sections/lines with anchors. Written once at ingestion; never changed ([01](../design/01-bill-ingestion-and-display.md)).
 - Version comparisons: `bills/{bill}/compare/{from}..{to}/{method}.json`, write-once, where method is `<parser version>+versiondiff/1` with `/` written as `_` ([02](../design/02-versions-and-review-lifecycle.md)).
-- Existing-law provisions cited, with source effective date.
+- Existing-law provisions cited, with source effective date: `law/usc/<release>/t<title>/<section>.json` and `law/usc/<release>/release.json` (write-once), `law/usc/current.json` (replaceable pointer). Citation sets: `bills/<bill>/v/<ver>/citations/<method>.json` (write-once), method `billxml/1+citations/1+usc@<release>`.
 - Count snapshots per bill and item, per batch.
 - Bulk exports and the change feed ([10](../design/10-machine-access.md)).
 - Rendered brief documents for delivery and export ([07](../design/07-legislator-brief-and-responses.md)).
@@ -199,6 +199,7 @@ M1 notes (from M1-01):
 - The public read group holds only `BillText` and `PublicDocs` in M1; `Snapshots` arrives in M2.
 - `PublicDocs` also has `GetSelectionPolicyVersion` (M1-10).
 - Ingest (M1-05): `BillFetcher` (`FetchRecord`, `FetchOriginal`) sits beside `BillSource`; `ListChanged` and watermark ingestion stay out of M1. `OfficialVersion` gains `ParserVersion` and an unserialised `Source`; `IngestState` gains `Failed`. `CatalogEntry` gains `search_terms`, `sponsor_id`, `sponsor`, `introduced`, `latest_action`, `policy_area`, `committees`, and `related`; `Bill` gains `sponsor_id` (bioguide). The pipeline is `internal/ingest.DefaultSteps()`, an ordered list of named steps (`fetch-record`, `catalog`, `policy`, `versions`, `after-store`, `write-bill`, `write-catalog`, `ingest-state`) that later tasks extend with `After` and `Replace`.
+- Existing law and citations (M1-07): `LawReader`/`LawWriter` and `CitationReader`/`CitationWriter` (`internal/data/citations.go`), in `PublicReadPorts.Law`/`Citations` and `PlatformPorts.LawStore`/`CitationStore`; `fsobject` and `memory` implement all four; `gcp`/`emulator` leave them nil (routes answer 404). A version with no stored citation set answers 404.
 - Comparisons (M1-08): `ComparisonReader` in the public read group (`PublicReadPorts.Comparisons`), `ComparisonWriter` in the platform group (`PlatformPorts.ComparisonStore`); `fsobject` and `memory` implement both, and `gcp`/`emulator` wiring leaves the reader nil (route answers 404) until M1-03b.
 - `PlatformDocs` also has `PutBill`, `GetIngestState`, and `PutIngestState`. `ApplyLogged` takes a `Change`, which carries exactly one of a bill, catalog entry, policy, or explanation, plus a `LogEntry`.
 - `BillSource` declares `ListChanged(ctx, since, page)` in M1. Manual pulls ([M1-05](../design/tasks/m1/05-manual-bill-pull-and-storage.md)) pass an empty watermark.
@@ -577,7 +578,7 @@ What carries over: the collector's directory layout and JSON schema are a well-k
 | govinfo bulk data, `BILLS` collection | Official XML of every bill text version | HTTPS, no key; `/json` or `/xml` listing per Congress, session, and bill type (requires an `Accept` header) | **Primary** for text |
 | govinfo bulk data, `BILLSTATUS` collection | Official bill status XML: titles, sponsors, actions, committees, related bills, list of text versions | HTTPS, no key; current Congress updated about every 4 hours; sitemap index with last-modified dates; RSS feed listing files changed in each batch | **Primary** for metadata and change detection |
 | `unitedstates/congress` collector (public domain, maintained) | The same official data, normalised to JSON | Run the Python tool; output to files | **Optional** backfill or fallback, read by its own adapter |
-| Office of the Law Revision Counsel | US Code as XML release points | HTTPS download | **Primary** for existing law ([01](../design/01-bill-ingestion-and-display.md)) |
+| Office of the Law Revision Counsel | US Code as XML release points | HTTPS download from `https://uscode.house.gov/download.html`; files at `download/releasepoints/us/pl/<congress>/<law>/xml_usc<TT>@<release>.zip`, where release `119-142` means current through Public Law 119-142. `priorreleasepoints.htm` answered 404 on 2026-11-22, so the adapter lists only the current release point | **Primary** for existing law ([01](../design/01-bill-ingestion-and-display.md)) |
 | `usgpo/bill-dtd` | DTDs for bill XML | Git repository | Parser tests and validation |
 
 Exact paths, listing formats, and update cadences are confirmed against GPO's published guides at M1 start. Confirmed by M1-05:
@@ -633,6 +634,13 @@ topics:
 Signals used, all from `BILLSTATUS`: bill type, committee activity names, actions, policy area, legislative subjects, titles, and related bills. Subject indexing can arrive weeks after introduction, so title terms let a bill match early and subjects confirm later. The subject terms for each topic are taken from the legislature's published subject vocabulary and confirmed before the pilot.
 
 The same evaluation sets every catalog entry's `markup_status`: `in_review` (tracked), `eligible` (allowed measure kind, not yet selected), or `not_candidate` (excluded kind, with the reason shown).
+
+As built (M1-06, `internal/selection`):
+- The stored policy document carries the structured fields above plus `rules`, a plain-language statement generated from them. Version 1 is embedded at `internal/selection/policies/v1.json`; its topic terms are drafts until the operator confirms them ([policies/README.md](../internal/selection/policies/README.md)). `selection.Publish` stores a version and its public log entry atomically, requires a reason, refuses a version below the latest, and treats an identical republish as a no-op.
+- Reason vocabulary: `committee-action:<hearing|markup|reported|discharged|floor|calendar>`, `topic:<name>:<subject|policy-area|title-only>`, `companion:<bill id>`, `administrator`, and `manual-pull` (local `--track`). A companion is a related bill marked identical or companion that is already tracked; it needs no committee action or topic but must be an allowed kind. A `title-only` reason is upgraded when indexing later confirms the topic.
+- Catalog entries gain `policy_version`, `tracked_since`, and `sponsor_party`. `sponsor_party` is stored only for the disclosure counts and is not served by `read-api`; the evaluator's input type has no sponsor fields, and a test fails if one is added.
+- The tracked-set breakdown is written to `exports/tracked-set-breakdown.json` by every pull and every `job-ingest --evaluate` run. No `read-api` route serves it yet.
+- At scale (cloud phase) the policy step needs a `PublicDocs.GetCatalogEntry` read; locally it pages through `ListCatalog` once per run, which does not scale to a whole Congress.
 
 ### Public catalog
 - **Every catalog entry is public** through `read-api`, including bills that are not tracked.

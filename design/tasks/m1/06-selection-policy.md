@@ -66,6 +66,6 @@ Implement the published, versioned bill selection policy in pilot mode, evaluate
 
 - When does policy evaluation run? **Decided for the local phase:** each step runs as its own command over stored data; nothing chains steps automatically ([README § Example data and local triggers](../README.md#example-data-and-local-triggers)). Automatic chaining is a cloud-phase question.
 - Re-evaluation after a new policy version: **Decided:** stored entries are re-evaluated on their next evaluation; locally, `job-ingest --evaluate` over the stored catalog. Tracked bills are never untracked by it.
-- Tracked-set breakdown: **Decided:** written by every evaluation run.
+- Tracked-set breakdown: **Decided:** written by every evaluation run. (M1-06: also by every pull, to `exports/tracked-set-breakdown.json`; a `read-api` route is a follow-up.)
 - Which subject terms define each focus topic, and who maintains them ([01](../../01-bill-ingestion-and-display.md#open-questions), [architecture](../../../architecture/README.md#open-decisions))? M1 drafts them; confirmation is before the pilot.
 - Title-only matches: **Decided:** enter the tracked set, recorded as title-only ([architecture § Bill selection](../../../architecture/README.md#bill-selection)).

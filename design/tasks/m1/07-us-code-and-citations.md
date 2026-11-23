@@ -63,8 +63,10 @@ Load the US Code from official release points, extract citations to existing law
 ## Open questions
 
 - What resolution rate and precision does the sample show, and what target is set for M3? Recorded as exit evidence through [M1-16](16-acceptance.md).
+  - **Measured (M1-07):** 200 labelled occurrences in 8 fixture bills: resolution 64.0% (128/200), precision of resolved 100%, linked coverage 100% (138/138); exit bills alone 93.9% (62/66, the rest `et seq.` cites, ambiguous). Unresolved by design: 26 public-law, 17 chapter, 16 Act-section with no mapping source, 3 title-section. Method: `scripts/measure-citations`; an Act-section phrase followed by its own markup cite counts once. Report: `test/acceptance/M1-07/report.md`. Labels were agent-written and need a steward's review. M3 target: operator.
 - Is existing-law ingest a `job-ingest` mode or a separate image ([architecture § Scheduled jobs](../../../architecture/README.md#scheduled-jobs))?
 - Is the existing-law check scheduled weekly in a deployed environment (cloud phase)? **Decided for the local phase:** each step runs as its own command over stored data; nothing chains steps automatically ([README § Example data and local triggers](../README.md#example-data-and-local-triggers)). Automatic chaining is a cloud-phase question.
 - **Example data:** only the cited provisions of the exit bills go in `fixtures/uscode/`, with release point, source URL, and SHA-256 of the title file they came from. Whole release points are downloaded into `.local-data/` and never committed.
 - Which source maps Act-and-section references to US Code sections?
+  - Open (operator). M1-07 maps only direct codes (Internal Revenue Code to title 26) and Act sections that carry their own markup cite in the same version; candidates are the OLC classification tables and popular-names list.
 - As-amended previews: **Decided:** not in M1.
