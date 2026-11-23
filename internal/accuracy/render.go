@@ -95,8 +95,8 @@ func promptList(m map[string]string) string {
 func renderTasks(b *strings.Builder, in Input) {
 	b.WriteString("## Per task\n\n")
 	b.WriteString("| Task | Outputs | Ready | Unverified | Withheld | Refused/truncated/invalid | " +
-		"Supported | Contradicted | Fidelity fail | Amendment fail | Neutral-wording fail |\n")
-	b.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+		"Supported | Contradicted | Fidelity fail | Amendment fail | Neutral-wording fail | Answered by fallback |\n")
+	b.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
 	tasks := make([]string, 0, len(in.Stats))
 	for t := range in.Stats {
 		tasks = append(tasks, t)
@@ -115,12 +115,13 @@ func renderTasks(b *strings.Builder, in Input) {
 			}
 			return pct(s.Failures[check], s.Outputs)
 		}
-		fmt.Fprintf(b, "| %s | %d | %d | %d | %d | %d | %s | %s | %s | %s | %s |\n", t, s.Outputs,
+		fmt.Fprintf(b, "| %s | %d | %d | %d | %d | %d | %s | %s | %s | %s | %s | %d |\n", t, s.Outputs,
 			s.ByStatus[data.GenReady], s.ByStatus[data.GenUnverified], s.ByStatus[data.GenWithheld], bad,
-			sup, con, fail(CheckFidelity), fail(CheckAmendment), fail(CheckNeutral))
+			sup, con, fail(CheckFidelity), fail(CheckAmendment), fail(CheckNeutral), s.Fallback)
 	}
 	b.WriteString("\nValidator failure rates are shares of outputs with at least one finding. " +
-		"Supported and contradicted shares are shares of graded statements, reported separately.\n\n")
+		"Supported and contradicted shares are shares of graded statements, reported separately. " +
+		"Answered by fallback counts outputs a fallback model produced instead of the generator.\n\n")
 }
 
 func renderPlanted(b *strings.Builder, in Input) {

@@ -21,16 +21,29 @@ import (
 type fakeAPI struct {
 	mu         sync.Mutex
 	bodies     []map[string]any
+	betas      []string // anthropic-beta header of each request, in order
+	model      string   // model of the answer; default claude-opus-5-5
+	fallback   bool     // answer as a fallback model: fallback block and iteration
 	stop       string
 	text       string
 	batchState string
 }
 
 func (f *fakeAPI) message() string {
-	return fmt.Sprintf(`{"id":"msg_1","type":"message","role":"assistant","model":"claude-opus-5-5",`+
-		`"content":[{"type":"text","text":%q}],"stop_reason":%q,"stop_sequence":null,`+
-		`"usage":{"input_tokens":10,"output_tokens":5,"cache_read_input_tokens":100,"cache_creation_input_tokens":0}}`,
-		f.text, f.stop)
+	model, lead, iters := f.model, "", ""
+	if model == "" {
+		model = "claude-opus-5-5"
+	}
+	if f.fallback {
+		lead = `{"type":"fallback","from":{"model":"claude-opus-5-5"},"to":{"model":"` + model +
+			`"},"trigger":{"type":"refusal"}},`
+		iters = `,"iterations":[{"type":"fallback_message","model":"` + model +
+			`","input_tokens":10,"output_tokens":5,"cache_read_input_tokens":100,"cache_creation_input_tokens":0}]`
+	}
+	return fmt.Sprintf(`{"id":"msg_1","type":"message","role":"assistant","model":%q,`+
+		`"content":[%s{"type":"text","text":%q}],"stop_reason":%q,"stop_sequence":null,`+
+		`"usage":{"input_tokens":10,"output_tokens":5,"cache_read_input_tokens":100,"cache_creation_input_tokens":0%s}}`,
+		model, lead, f.text, f.stop, iters)
 }
 
 func (f *fakeAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +53,9 @@ func (f *fakeAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var doc map[string]any
 	_ = json.Unmarshal(body, &doc)
 	w.Header().Set("Content-Type", "application/json")
+	if r.Method == http.MethodPost {
+		f.betas = append(f.betas, r.Header.Get("Anthropic-Beta"))
+	}
 	switch {
 	case r.Method == http.MethodPost && r.URL.Path == "/v1/messages":
 		f.bodies = append(f.bodies, doc)
@@ -187,5 +203,63 @@ func checkBatchResults(t *testing.T, res []data.GenResult) {
 	t.Helper()
 	if res[0].ID != "a" || res[0].Outcome != "ok" || res[1].ID != "b" || res[1].Outcome != "error" {
 		t.Fatalf("results = %+v", res)
+	}
+}
+
+func TestGenerateEnablesDefaultFallbacks(t *testing.T) {
+	t.Parallel()
+	f := &fakeAPI{stop: "end_turn", text: "{}", batchState: "in_progress"}
+	g := newGen(t, f)
+	res, err := g.Generate(t.Context(), request())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.FallbackFrom != "" || res.Model != "claude-opus-5-5" {
+		t.Errorf("generator answer = %+v, want no fallback", res)
+	}
+	if !strings.Contains(f.betas[0], "server-side-fallback-2026-07-01") {
+		t.Errorf("beta header = %q", f.betas[0])
+	}
+	if f.bodies[0]["fallbacks"] != "default" {
+		t.Errorf("fallbacks = %v, want the string default", f.bodies[0]["fallbacks"])
+	}
+	checkRequestBody(t, f.bodies[0])
+	// The Batches API rejects fallbacks: a submitted batch must not carry them.
+	if _, err := g.Submit(t.Context(), []data.GenRequest{request()}); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(f.betas[1], "server-side-fallback") {
+		t.Errorf("batch beta header = %q", f.betas[1])
+	}
+	body, err := json.Marshal(f.bodies[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(body), "fallbacks") {
+		t.Errorf("batch body carries fallbacks: %s", body)
+	}
+}
+
+func TestGenerateRecordsFallbackAnswer(t *testing.T) {
+	t.Parallel()
+	f := &fakeAPI{stop: "end_turn", text: `{"headline":"h"}`, model: "claude-opus-4-8", fallback: true}
+	res, err := newGen(t, f).Generate(t.Context(), request())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Outcome != "ok" || res.Text != f.text || res.Model != "claude-opus-4-8" || res.FallbackFrom != "claude-opus-5-5" {
+		t.Fatalf("result = %+v, want ok, answered by the fallback", res)
+	}
+}
+
+func TestGenerateRefusalNotResolvedByFallback(t *testing.T) {
+	t.Parallel()
+	f := &fakeAPI{stop: "refusal", text: `{"headline":"h"}`, model: "claude-opus-4-8", fallback: true}
+	res, err := newGen(t, f).Generate(t.Context(), request())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Outcome != "refusal" || res.Text != "" || res.FallbackFrom == "" {
+		t.Fatalf("result = %+v, want refusal, no text, fallback recorded", res)
 	}
 }

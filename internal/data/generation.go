@@ -127,7 +127,10 @@ type GeneratedOutput struct {
 	ReviewState string `json:"review_state"`
 	TokensIn    int    `json:"tokens_in"`
 	TokensOut   int    `json:"tokens_out"`
-	Meta        Meta   `json:"meta"`
+	// FallbackModel is the model that answered when a fallback model, not
+	// the generator named in Key.Model, produced this output; empty otherwise.
+	FallbackModel string `json:"fallback_model,omitempty"`
+	Meta          Meta   `json:"meta"`
 }
 
 // StatementGrade is the grader's verdict on one statement.

@@ -270,6 +270,9 @@ func (d Deps) finish(ctx context.Context, it data.GenBatchItem, r data.GenResult
 	if rec.Statements == nil {
 		rec.Statements = []data.Statement{}
 	}
+	if r.FallbackFrom != "" {
+		rec.FallbackModel = r.Model
+	}
 	rec, err := d.keep(ctx, rec)
 	if err != nil {
 		return "", err

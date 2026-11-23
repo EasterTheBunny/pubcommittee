@@ -1,8 +1,10 @@
 // Package claude implements data.Generator with the Anthropic Go SDK: Message
 // Batches for the two-phase job, one synchronous call for a steward-requested
-// regeneration. Every request carries a JSON-schema output format (structured
-// outputs), an explicit effort, and a cached prefix of instructions plus the
-// bill's full text. Callers import only this package, never the SDK.
+// regeneration. The synchronous call enables the server-side fallbacks beta in
+// its "default" form; the Batches API rejects it, so batches run without.
+// Every request carries a JSON-schema output format (structured outputs), an
+// explicit effort, and a cached prefix of instructions plus the bill's full
+// text. Callers import only this package, never the SDK.
 //
 // New builds the first-party client for local live runs (stage L3, an
 // operator-supplied key); NewGoogleCloud (gcp builds) uses Claude Models on
@@ -32,6 +34,13 @@ const maxRetries = 2
 // defaultMaxTokens bounds thinking plus the JSON answer of one request.
 const defaultMaxTokens = 16000
 
+// fallbackBeta is the beta header of the server-side fallbacks parameter; its
+// "default" form needs this value (architecture § AI-generated content).
+const fallbackBeta = anthropic.AnthropicBetaServerSideFallback2026_07_01
+
+// iterFallback is the usage.iterations type that shows a fallback model ran.
+const iterFallback = "fallback_message"
+
 // Outcomes of data.GenResult.Outcome.
 const (
 	outcomeOK        = "ok"
@@ -53,6 +62,7 @@ type Config struct {
 // Gen implements data.Generator over the Messages and Message Batches APIs.
 type Gen struct {
 	messages  anthropic.MessageService
+	beta      anthropic.BetaMessageService
 	model     string
 	maxTokens int64
 }
@@ -70,17 +80,17 @@ func New(cfg Config) (*Gen, error) {
 		opts = append(opts, option.WithBaseURL(cfg.BaseURL))
 	}
 	c := anthropic.NewClient(opts...)
-	return newGen(c.Messages, cfg.Model, cfg.MaxTokens), nil
+	return newGen(c.Messages, c.Beta.Messages, cfg.Model, cfg.MaxTokens), nil
 }
 
-func newGen(m anthropic.MessageService, model string, maxTokens int64) *Gen {
+func newGen(m anthropic.MessageService, b anthropic.BetaMessageService, model string, maxTokens int64) *Gen {
 	if model == "" {
 		model = DefaultModel
 	}
 	if maxTokens <= 0 {
 		maxTokens = defaultMaxTokens
 	}
-	return &Gen{messages: m, model: model, maxTokens: maxTokens}
+	return &Gen{messages: m, beta: b, model: model, maxTokens: maxTokens}
 }
 
 // Submit starts one Message Batch with a request per GenRequest.
@@ -139,7 +149,9 @@ func (g *Gen) Collect(ctx context.Context, batchID string) ([]data.GenResult, bo
 	return out, true, nil
 }
 
-// Generate runs one request synchronously.
+// Generate runs one request synchronously on the beta Messages endpoint with
+// the server-side fallbacks parameter set to "default": a policy decline is
+// re-run on the model Anthropic recommends, inside the same call.
 func (g *Gen) Generate(ctx context.Context, req data.GenRequest) (data.GenResult, error) {
 	if err := validate(req); err != nil {
 		return data.GenResult{}, fmt.Errorf("generate: %w", err)
@@ -148,11 +160,41 @@ func (g *Gen) Generate(ctx context.Context, req data.GenRequest) (data.GenResult
 	if err != nil {
 		return data.GenResult{}, fmt.Errorf("generate: %w", err)
 	}
-	msg, err := g.messages.New(ctx, p)
+	msg, err := g.beta.New(ctx, betaParams(p, req))
 	if err != nil {
 		return data.GenResult{}, fmt.Errorf("generate: %w", classify(err))
 	}
-	return fromMessage(req.ID, msg), nil
+	return fromBetaMessage(req.ID, p.Model, msg), nil
+}
+
+// betaParams maps the built request to the beta endpoint, adding the
+// fallbacks beta header and the "default" fallbacks field. Cache breakpoints,
+// the output format and the effort carry over unchanged.
+func betaParams(p anthropic.MessageNewParams, r data.GenRequest) anthropic.BetaMessageNewParams {
+	bp := anthropic.BetaMessageNewParams{
+		MaxTokens: p.MaxTokens,
+		Model:     p.Model,
+		Betas:     []anthropic.AnthropicBeta{fallbackBeta},
+		Fallbacks: anthropic.BetaFallbacksParamOfDefault(),
+	}
+	for _, t := range p.System {
+		bp.System = append(bp.System, anthropic.BetaTextBlockParam{Text: t.Text})
+	}
+	var blocks []anthropic.BetaContentBlockParamUnion
+	if r.Source != "" {
+		src := anthropic.NewBetaTextBlock(r.Source)
+		src.OfText.CacheControl = anthropic.NewBetaCacheControlEphemeralParam()
+		blocks = append(blocks, src)
+	}
+	blocks = append(blocks, anthropic.NewBetaTextBlock(r.Input))
+	bp.Messages = []anthropic.BetaMessageParam{anthropic.NewBetaUserMessage(blocks...)}
+	if p.OutputConfig.Format.Schema != nil {
+		bp.OutputConfig.Format = anthropic.BetaJSONOutputFormatParam{Schema: p.OutputConfig.Format.Schema}
+	}
+	if p.OutputConfig.Effort != "" {
+		bp.OutputConfig.Effort = anthropic.BetaOutputConfigEffort(p.OutputConfig.Effort)
+	}
+	return bp
 }
 
 func validate(r data.GenRequest) error {
@@ -214,7 +256,7 @@ func fromMessage(id string, m *anthropic.Message) data.GenResult {
 		TokensIn:  int(m.Usage.InputTokens + m.Usage.CacheReadInputTokens + m.Usage.CacheCreationInputTokens),
 		TokensOut: int(m.Usage.OutputTokens), CachedIn: int(m.Usage.CacheReadInputTokens),
 	}
-	if outcome := stopOutcome(m.StopReason); outcome != outcomeOK {
+	if outcome := stopOutcome(string(m.StopReason)); outcome != outcomeOK {
 		res.Outcome = outcome
 		return res
 	}
@@ -232,18 +274,57 @@ func fromMessage(id string, m *anthropic.Message) data.GenResult {
 	return res
 }
 
+// fromBetaMessage maps a beta response like fromMessage. Message.Model names
+// the model that produced the message; when a fallback model ran (a
+// fallback_message iteration or a fallback block), FallbackFrom names the
+// requested model. A refusal or max_tokens stop the fallback did not resolve
+// keeps its outcome and no text.
+func fromBetaMessage(id, requested string, m *anthropic.BetaMessage) data.GenResult {
+	res := data.GenResult{
+		ID: id, Model: m.Model, Stop: string(m.StopReason),
+		TokensIn:  int(m.Usage.InputTokens + m.Usage.CacheReadInputTokens + m.Usage.CacheCreationInputTokens),
+		TokensOut: int(m.Usage.OutputTokens), CachedIn: int(m.Usage.CacheReadInputTokens),
+	}
+	for _, it := range m.Usage.Iterations {
+		if it.Type == iterFallback {
+			res.FallbackFrom = requested
+		}
+	}
+	for _, b := range m.Content {
+		if b.Type == "fallback" {
+			res.FallbackFrom = requested
+		}
+	}
+	if outcome := stopOutcome(string(m.StopReason)); outcome != outcomeOK {
+		res.Outcome = outcome
+		return res
+	}
+	var sb strings.Builder
+	for _, b := range m.Content {
+		if t, ok := b.AsAny().(anthropic.BetaTextBlock); ok {
+			sb.WriteString(t.Text)
+		}
+	}
+	res.Text = sb.String()
+	res.Outcome = outcomeOK
+	if res.Text == "" {
+		res.Outcome = outcomeInvalid
+	}
+	return res
+}
+
 // stopOutcome maps a stop reason: only a normal end of turn may be read.
-func stopOutcome(s anthropic.StopReason) string {
-	if s == anthropic.StopReasonRefusal {
+func stopOutcome(s string) string {
+	switch s {
+	case string(anthropic.StopReasonRefusal):
 		return outcomeRefusal
-	}
-	if s == anthropic.StopReasonMaxTokens {
+	case string(anthropic.StopReasonMaxTokens):
 		return outcomeTruncated
-	}
-	if s != anthropic.StopReasonEndTurn {
+	case string(anthropic.StopReasonEndTurn):
+		return outcomeOK
+	default:
 		return outcomeInvalid
 	}
-	return outcomeOK
 }
 
 // classify maps SDK errors to the typed data errors so vendor errors never

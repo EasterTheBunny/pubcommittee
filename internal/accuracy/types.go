@@ -16,6 +16,7 @@ const (
 type TaskStats struct {
 	Task       string
 	Outputs    int            // stored outputs, any status
+	Fallback   int            // outputs answered by a fallback model, not the generator
 	ByStatus   map[string]int // by data.Gen* status
 	Statements int            // statements in all outputs
 	// Failures counts outputs with at least one finding of each check.

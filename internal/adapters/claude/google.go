@@ -29,5 +29,5 @@ func NewGoogleCloud(ctx context.Context, cfg GoogleCloudConfig) (*Gen, error) {
 	if err != nil {
 		return nil, fmt.Errorf("claude: google cloud client: %w", err)
 	}
-	return newGen(c.Messages, cfg.Model, cfg.MaxTokens), nil
+	return newGen(c.Messages, c.Beta.Messages, cfg.Model, cfg.MaxTokens), nil
 }
