@@ -120,10 +120,14 @@ type GeneratedOutput struct {
 	Statements  []Statement `json:"statements"`
 	Section     []string    `json:"section,omitempty"` // explanations: the bill section
 	ProvisionID string      `json:"provision_id,omitempty"`
-	ReviewState string      `json:"review_state"`
-	TokensIn    int         `json:"tokens_in"`
-	TokensOut   int         `json:"tokens_out"`
-	Meta        Meta        `json:"meta"`
+	// CurrentText is the official text of the cited provision (an
+	// explanation's "what it says now"); it is copied from the input, not
+	// generated.
+	CurrentText string `json:"current_text,omitempty"`
+	ReviewState string `json:"review_state"`
+	TokensIn    int    `json:"tokens_in"`
+	TokensOut   int    `json:"tokens_out"`
+	Meta        Meta   `json:"meta"`
 }
 
 // StatementGrade is the grader's verdict on one statement.
