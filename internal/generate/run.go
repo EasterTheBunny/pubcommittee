@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -352,6 +353,7 @@ func (d Deps) publish(ctx context.Context, o data.GeneratedOutput) error {
 	}
 	ex := data.ChangeExplanation{
 		Version: o.Key.Version, Section: o.Section, ProvisionID: o.ProvisionID, CurrentText: o.CurrentText,
+		Anchors:     changeAnchors(o.Statements),
 		WhatChanges: joinRole(o.Statements, data.RoleChanges), WhyMatters: joinRole(o.Statements, data.RoleWhy),
 		Flags: flags, Meta: o.Meta,
 	}
@@ -373,4 +375,26 @@ func joinRole(ss []data.Statement, role string) string {
 		}
 	}
 	return strings.Join(parts, " ")
+}
+
+// changeAnchors lists the anchors of the statements that say what the bill changes, each once, in order; the
+// anchors of every statement when none has that role.
+func changeAnchors(ss []data.Statement) []string {
+	var out []string
+	for _, role := range []string{data.RoleChanges, ""} {
+		for _, s := range ss {
+			if role != "" && s.Role != role {
+				continue
+			}
+			for _, a := range s.Anchors {
+				if !slices.Contains(out, a) {
+					out = append(out, a)
+				}
+			}
+		}
+		if len(out) > 0 {
+			break
+		}
+	}
+	return out
 }
