@@ -43,21 +43,17 @@ func SampleCitationSet(n int, method string) data.CitationSet {
 		Release:     "119-142",
 		ReleaseDate: SampleRelease("119-142", 10).Date,
 		Links: []data.CitationEntry{{
-			CitationLink: data.CitationLink{
-				Version: v, Section: []string{"s2"}, Line: 3, Text: "42 U.S.C. 1395cc-7(a)",
-				ProvisionIDs: []string{"usc/42/1395cc-7/a"}, State: data.CitationResolved,
-			},
+			Version: v, Section: []string{"s2"}, Line: 3, Text: "42 U.S.C. 1395cc-7(a)",
+			ProvisionIDs: []string{"usc/42/1395cc-7/a"}, State: data.CitationResolved,
 			Kind: data.CiteUSC, Target: "usc/42/1395cc-7/a", Source: data.SourceMarkup,
 		}, {
-			CitationLink: data.CitationLink{
-				Version: v, Section: []string{"s3"}, Line: 5, Text: "Public Law 111-163",
-				ProvisionIDs: []string{}, State: data.CitationUnresolved,
-			},
+			Version: v, Section: []string{"s3"}, Line: 5, Text: "Public Law 111-163",
+			ProvisionIDs: []string{}, State: data.CitationUnresolved,
 			Kind: data.CitePublicLaw, Reason: "no source for public law text", Source: data.SourceMarkup,
 		}},
 		Provisions: []data.CitedProvision{{
-			Provision: data.Provision{ID: "usc/42/1395cc-7/a", Citation: "42 U.S.C. 1395cc-7(a)", Text: "(a) In general", CurrentAsOf: SampleRelease("119-142", 10).Date, Meta: SampleMeta()},
-			Release:   "119-142",
+			ID: "usc/42/1395cc-7/a", Citation: "42 U.S.C. 1395cc-7(a)", Text: "(a) In general", CurrentAsOf: SampleRelease("119-142", 10).Date, Meta: SampleMeta(),
+			Release: "119-142",
 		}},
 		Freshness: []data.FreshnessFlag{},
 		Meta:      data.Meta{Version: 1, AsOf: SampleMeta().AsOf, Provenance: data.ProvenanceAuto, ContentClass: data.ContentPlatform},
@@ -159,24 +155,16 @@ func checkLawCurrent(t *testing.T, r data.LawReader, w data.LawWriter) {
 			t.Fatal(err)
 		}
 	}
-	if err := w.SetCurrentRelease(ctx, older.ID); err != nil {
-		t.Fatal(err)
-	}
-	if got, err := r.CurrentRelease(ctx); err != nil || got.ID != older.ID {
-		t.Fatalf("CurrentRelease = %+v, %v; want %s", got, err, older.ID)
-	}
-	if err := w.SetCurrentRelease(ctx, newer.ID); err != nil {
-		t.Fatal(err)
-	}
-	if got, err := r.CurrentRelease(ctx); err != nil || got.ID != newer.ID {
-		t.Fatalf("CurrentRelease = %+v, %v; want %s", got, err, newer.ID)
-	}
-	// The pointer never moves back to an older release.
-	if err := w.SetCurrentRelease(ctx, older.ID); err != nil {
-		t.Fatal(err)
-	}
-	if got, err := r.CurrentRelease(ctx); err != nil || got.ID != newer.ID {
-		t.Errorf("after older set: CurrentRelease = %+v, %v; want %s", got, err, newer.ID)
+	// The pointer moves forward and never back to an older release.
+	for _, step := range []struct{ set, want string }{
+		{older.ID, older.ID}, {newer.ID, newer.ID}, {older.ID, newer.ID},
+	} {
+		if err := w.SetCurrentRelease(ctx, step.set); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := r.CurrentRelease(ctx); err != nil || got.ID != step.want {
+			t.Fatalf("after set %s: CurrentRelease = %+v, %v; want %s", step.set, got, err, step.want)
+		}
 	}
 }
 

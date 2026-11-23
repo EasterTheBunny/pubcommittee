@@ -159,6 +159,7 @@ func (r CitationRef) ObjectPath() string {
 // is not resolved.
 type CitationEntry struct {
 	CitationLink
+
 	Kind   string `json:"kind"`
 	Target string `json:"target,omitempty"` // normalised target as cited, for example "usc/42/1395cc-7/a/1"
 	Reason string `json:"reason,omitempty"` // why the state is not resolved
@@ -170,6 +171,7 @@ type CitationEntry struct {
 // says so.
 type CitedProvision struct {
 	Provision
+
 	Release   string `json:"release"`
 	Truncated bool   `json:"truncated,omitempty"`
 }

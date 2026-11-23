@@ -27,6 +27,8 @@ func wire(tel *telemetry.Telemetry) (data.PublicReadPorts, error) {
 	if err != nil {
 		return data.PublicReadPorts{}, err //nolint:wrapcheck // already names the adapter
 	}
-	ports := data.PublicReadPorts{BillText: objects, PublicDocs: docs, Comparisons: objects, Citations: objects, Law: objects}
+	ports := data.PublicReadPorts{
+		BillText: objects, PublicDocs: docs, Comparisons: objects, Citations: objects, Law: objects,
+	}
 	return tel.WrapPublicRead("local", ports), nil
 }

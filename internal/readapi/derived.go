@@ -109,32 +109,3 @@ func (s *Server) GetVersionChangeSummary(
 	}
 	notFound(w, detailNoChanges)
 }
-
-// ListCitations serves the stored citations of one version. No port holds
-// citations until M1-07, so the page is empty for a version that exists.
-func (s *Server) ListCitations(
-	w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath, p apiv1.ListCitationsParams,
-) {
-	s.citations(w, r, bill, n, p.Cursor, p.Limit)
-}
-
-// ListUnresolvedCitations serves the unresolved and ambiguous citations.
-func (s *Server) ListUnresolvedCitations(
-	w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath,
-	p apiv1.ListUnresolvedCitationsParams,
-) {
-	s.citations(w, r, bill, n, p.Cursor, p.Limit)
-}
-
-func (s *Server) citations(w http.ResponseWriter, r *http.Request, bill, n string, cursor *string, limit *int) {
-	if _, err := s.resolve(r.Context(), bill, n, false); err != nil {
-		fail(w, r, err)
-		return
-	}
-	page, next, err := slicePage([]apiv1.Citation{}, cursor, limit)
-	if err != nil {
-		invalid(w, detailInvalidCur)
-		return
-	}
-	sendJSON(w, r, cacheShort, apiv1.CitationPage{Items: page, Next: next})
-}
