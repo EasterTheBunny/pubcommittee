@@ -46,11 +46,16 @@ check "go tests: admin handler (authorisation, refusals, log atomicity, roster),
 	go test -tags memory -count=1 ./internal/adminapi/... ./cmd/pubctl/...
 check "dependency rules: read-api has no admin-api, admin-api has no read-api" sh test/ci/deps.sh
 
+check "load the fixtures US Code (citations resolve against it)" sh -c "'$tmp/job-ingest' --law >/dev/null 2>&1"
 check "publish selection policy v1 through pubctl" sh -c "'$tmp/pubctl' --url $adm selection-policy publish --builtin v1 --reason 'initial policy' | grep -q '\"version\": 1'"
 check "track without a reason is refused" sh -c "! '$tmp/pubctl' --url $adm bills track us-119-hr-3062 2>/dev/null"
 check "track a catalog bill with a reason" sh -c "'$tmp/pubctl' --url $adm bills track us-119-hr-3062 --reason 'pilot seed: acceptance' >'$tmp/track.json'"
 check "the bill shows the administrator reason" sh -c "grep -rq administrator '$root/catalog'"
-check "its text is ingested" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/1) = 200 ]"
+check "track did not pull: no text yet, and the response names the pull commands" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/1) = 404 ] && grep -q 'bills reingest' '$tmp/track.json' && grep -q 'job-ingest --bill' '$tmp/track.json'"
+check "reingest pulls the text (the explicit, logged pull)" sh -c "'$tmp/pubctl' --url $adm bills reingest us-119-hr-3062 --reason 'pull text' >'$tmp/pull.json'"
+check "its text is served" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/1) = 200 ]"
+check "reingest ran the full pipeline: citations stored and served" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/1/citations) = 200 ] && [ \$(find '$root/bills/us/119/hr/3062' -path '*/citations/*' -name '*.json' ! -name '*.meta.json' | wc -l) -ge 1 ]"
+check "reingest ran the full pipeline: comparisons stored" sh -c "[ \$(find '$root/bills/us/119/hr/3062' -path '*/compare/*' -name '*.json' ! -name '*.meta.json' | wc -l) -ge 1 ]"
 check "its bill document lists the reason" sh -c "curl -sf http://127.0.0.1:18082/v1/bills/us-119-hr-3062 | grep -q administrator"
 check "the public log shows the operator's public name and the reason" sh -c "curl -sf http://127.0.0.1:18082/v1/moderation-log >'$tmp/log.json' && grep -q 'Local Operator' '$tmp/log.json' && grep -q 'pilot seed: acceptance' '$tmp/log.json'"
 check "the public log holds no principal" sh -c "! grep -q 'local-operator' '$tmp/log.json'"

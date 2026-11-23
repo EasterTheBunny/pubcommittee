@@ -179,9 +179,9 @@ func pullAll(
 	enc := json.NewEncoder(out)
 	enc.SetIndent("", "  ")
 	failed, items := false, 0
-	steps, policy, err := pullSteps(ctx, d)
+	steps, policy, err := ingest.PullSteps(ctx, d)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("pull steps: %w", err)
 	}
 	for _, ref := range refs {
 		d.Source = cfg.Source + "/" + ref.Session

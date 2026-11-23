@@ -63,7 +63,7 @@ Every route authenticates first. A principal of the wrong role gets 403. Operato
 
 | Method and path | Who may call | Body or query | Effect |
 | --- | --- | --- | --- |
-| `POST /admin/v1/bills/{bill}/track` | operator | `reason` | Track a bill; then pull its text. |
+| `POST /admin/v1/bills/{bill}/track` | operator | `reason` | Track a bill and log it. No pull; reingest pulls. |
 | `POST /admin/v1/bills/{bill}/untrack` | operator | `reason` | Untrack a bill; stored text is kept. |
 | `PATCH /admin/v1/bills/{bill}/catalog` | operator | `reason`, and any of `title`, `status`, `chamber`, `introduced`, `policy_area`, `subjects` | Correct ingestion errors. |
 | `POST /admin/v1/bills/{bill}/reingest` | operator | `reason` | Pull again, verify by SHA-256. |
@@ -107,5 +107,5 @@ Each mutating action writes one public log entry with kind, subject, reason, ope
 ## Gotchas
 
 - A `track` with no stored selection policy answers 409; publish a policy first (`POST /admin/v1/selection-policy`).
-- A pull that fails after `track` leaves the bill tracked; the response carries `pull_error`. Run `reingest` to retry.
+- `track` does not pull. Run `reingest` (or `job-ingest --bill`) to pull text, citations and comparisons; a failed pull leaves the bill tracked and the response carries `pull_error`.
 - `reparse` answers 503 for a new parser version; it stores nothing.

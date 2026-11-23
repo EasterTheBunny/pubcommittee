@@ -23,33 +23,6 @@ var (
 // policyV1 names the built-in initial policy for --publish-policy.
 const policyV1 = "v1"
 
-// pullSteps returns the pull pipeline. With a stored structured selection
-// policy the policy step is the evaluator of that policy; without one, the
-// manual evaluator stays and a warning says so.
-func pullSteps(ctx context.Context, d ingest.Deps) (ingest.Pipeline, *data.SelectionPolicy, error) {
-	steps, err := ingest.WithAnalysis(ingest.DefaultSteps())
-	if err != nil {
-		return nil, nil, fmt.Errorf("pipeline: %w", err)
-	}
-	p, err := d.Ports.PublicDocs.GetSelectionPolicy(ctx)
-	if errors.Is(err, data.ErrNotFound) || (err == nil && p.Mode == "") {
-		d.Log.Warn("no structured selection policy is stored; tracking only what --track names")
-		return steps, nil, nil
-	}
-	if err != nil {
-		return nil, nil, fmt.Errorf("read selection policy: %w", err)
-	}
-	cat, err := ingest.LoadCatalog(ctx, d.Ports.PublicDocs)
-	if err != nil {
-		return nil, nil, fmt.Errorf("load catalog: %w", err)
-	}
-	steps, err = steps.Replace(ingest.StepPolicy, ingest.PolicyStep(ingest.PolicyEvaluator{Policy: p, Catalog: cat}))
-	if err != nil {
-		return nil, nil, fmt.Errorf("pipeline: %w", err)
-	}
-	return steps, &p, nil
-}
-
 // evaluateCatalog runs the latest policy over the stored catalog.
 func evaluateCatalog(ctx context.Context, d ingest.Deps, opts ingest.Options, out io.Writer) (int, error) {
 	p, err := d.Ports.PublicDocs.GetSelectionPolicy(ctx)

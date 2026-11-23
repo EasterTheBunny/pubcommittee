@@ -28,10 +28,10 @@ Every mutating command needs `--reason`.
 
 | Command | Route | What it does |
 | --- | --- | --- |
-| `bills track <bill> --reason` | `POST /admin/v1/bills/{bill}/track` | Marks the bill tracked with the reason `administrator`, logs it, then pulls its text. Needs a stored selection policy. |
+| `bills track <bill> --reason` | `POST /admin/v1/bills/{bill}/track` | Marks the bill tracked with the reason `administrator` and logs it. Does not pull text; the response names the pull. Needs a stored selection policy. |
 | `bills untrack <bill> --reason` | `POST /admin/v1/bills/{bill}/untrack` | Reverses a selection made in error. Stored text is kept. |
 | `bills catalog patch <bill> --reason [--title --status --chamber --introduced YYYY-MM-DD --policy-area --subjects a,b]` | `PATCH /admin/v1/bills/{bill}/catalog` | Corrects ingestion errors. Body fields: `title`, `status`, `chamber`, `introduced`, `policy_area`, `subjects`. Send at least one. |
-| `bills reingest <bill> --reason` | `POST /admin/v1/bills/{bill}/reingest` | Fetches the bill again. Each stored original is compared by SHA-256; a mismatch is reported and nothing is overwritten. Missing versions are stored. |
+| `bills reingest <bill> --reason` | `POST /admin/v1/bills/{bill}/reingest` | Fetches the bill again with the full pull pipeline (text, citations, comparisons, policy step). Each stored original is compared by SHA-256; a mismatch is reported and nothing is overwritten. Missing versions are stored. |
 | `bills reparse <bill> --version <n> --reason` | `POST /admin/v1/bills/{bill}/v/{n}/reparse` | Parses stored version `n` again with the current parser. Reports only (see below). |
 | `generations create --task T --bill <bill> --version N --reason` | `POST /admin/v1/generations` | Requests a regeneration. Body fields: `task`, `bill`, `version`. Returns 501 until M1-09. |
 | `selection-policy publish (--builtin v1 \| --file policy.json) --reason` | `POST /admin/v1/selection-policy` | Stores the next immutable policy version. Body: `policy` (the policy document, as in `internal/selection/policies/v1.json`) and `reason`. The version must be the latest plus one; the latest again is a no-op. |
@@ -74,7 +74,12 @@ What `catalog patch` can never change: tracked state, reasons, sponsor party, bi
 
 ## Track, pull and reingest
 
-`bills track` sets the bill tracked, then runs the text pull right away. The response has the `pull` report. If the pull fails, the bill stays tracked and the response has `pull_error` and a note. Run `bills reingest <bill>` to retry the text.
+`bills track` sets the bill tracked and writes its log entry. It does not pull text: locally, nothing chains steps automatically. The response has a note naming the pull. Run the pull as its own command:
+
+- `pubctl bills reingest <bill> --reason R`: the explicit, logged pull, through admin-api. It runs the same pipeline as `job-ingest` (original text, parsed versions, citations, comparisons, policy step).
+- `job-ingest --bill <bill>`: the same pull, run directly on the data directory.
+
+If the pull fails, the bill stays tracked; run `bills reingest` again.
 
 ## Reparse
 

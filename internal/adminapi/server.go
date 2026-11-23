@@ -14,7 +14,6 @@ import (
 
 	"github.com/easterthebunny/pubcommittee/internal/data"
 	"github.com/easterthebunny/pubcommittee/internal/httpx"
-	"github.com/easterthebunny/pubcommittee/internal/ingest"
 )
 
 const (
@@ -42,11 +41,8 @@ type Deps struct {
 	Config    Config
 	// Source names the ingest_state key prefix, for example "govinfo".
 	Source string
-	// Steps builds the pull pipeline; nil means the default pipeline with the
-	// stored selection policy.
-	Steps func(ctx context.Context, d ingest.Deps) (ingest.Pipeline, error)
-	Log   *slog.Logger
-	Now   func() time.Time
+	Log    *slog.Logger
+	Now    func() time.Time
 }
 
 // Server is the admin-api handler.

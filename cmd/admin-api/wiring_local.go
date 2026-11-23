@@ -39,6 +39,9 @@ func wire(tel *telemetry.Telemetry, getenv func(string) string) (adminapi.Deps, 
 	var ports data.PlatformPorts
 	ports.BillText, ports.PublicDocs = objects, docs
 	ports.PlatformDocs, ports.Moderation, ports.Publisher = docs, docs, objects
+	// reingest runs the full pull pipeline, which stores citations and comparisons.
+	ports.Comparisons, ports.Citations, ports.Law = objects, objects, objects
+	ports.ComparisonStore, ports.CitationStore, ports.LawStore = objects, objects, objects
 	return adminapi.Deps{
 		Ports: tel.WrapPlatform("local", ports), Fetcher: fetcher, Source: source,
 		Auth: devAuth{fixed: localauth.New()}, Config: cfg,

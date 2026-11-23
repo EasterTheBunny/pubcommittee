@@ -50,30 +50,6 @@ func bodyReasoned(w http.ResponseWriter, r *http.Request) (Reasoned, bool) {
 	return b, decode(w, r, &b, func() string { return b.Reason })
 }
 
-// steps builds the pull pipeline.
-func (s *Server) steps(ctx context.Context, d ingest.Deps) (ingest.Pipeline, error) {
-	if s.Steps != nil {
-		return s.Steps(ctx, d)
-	}
-	steps := ingest.DefaultSteps()
-	p, err := d.Ports.PublicDocs.GetSelectionPolicy(ctx)
-	if errors.Is(err, data.ErrNotFound) || (err == nil && p.Mode == "") {
-		return steps, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("read selection policy: %w", err)
-	}
-	cat, err := ingest.LoadCatalog(ctx, d.Ports.PublicDocs)
-	if err != nil {
-		return nil, fmt.Errorf("load catalog: %w", err)
-	}
-	steps, err = steps.Replace(ingest.StepPolicy, ingest.PolicyStep(ingest.PolicyEvaluator{Policy: p, Catalog: cat}))
-	if err != nil {
-		return nil, fmt.Errorf("pipeline: %w", err)
-	}
-	return steps, nil
-}
-
 // pull runs one pull of a bill.
 func (s *Server) pull(ctx context.Context, ref data.BillRef, o ingest.Options) (ingest.Report, error) {
 	if s.Fetcher == nil {
@@ -82,9 +58,9 @@ func (s *Server) pull(ctx context.Context, ref data.BillRef, o ingest.Options) (
 	d := ingest.Deps{
 		Ports: s.Ports, Fetcher: s.Fetcher, Source: s.Source + "/" + ref.Session, Log: s.Log, Now: s.Now,
 	}
-	steps, err := s.steps(ctx, d)
+	steps, _, err := ingest.PullSteps(ctx, d)
 	if err != nil {
-		return ingest.Report{}, err
+		return ingest.Report{}, fmt.Errorf("pull steps: %w", err)
 	}
 	rep, err := ingest.Pull(ctx, d, o, steps, ref)
 	if err != nil {
@@ -133,8 +109,9 @@ func (s *Server) currentPolicy(ctx context.Context) (data.SelectionPolicy, error
 }
 
 // track selects a bill: the catalog entry becomes tracked with the
-// administrator reason, atomically with its public log entry; then the bill's
-// text is pulled. A refused kind or the sign-off phase changes nothing.
+// administrator reason, atomically with its public log entry. It does not pull
+// text: that is the explicit, logged reingest. A refused kind or the sign-off
+// phase changes nothing.
 func (s *Server) track(w http.ResponseWriter, r *http.Request) {
 	ref, ok := s.billRef(w, r)
 	if !ok {
@@ -167,12 +144,8 @@ func (s *Server) track(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	rep, err := s.pull(ctx, ref, ingest.Options{})
-	res.Pull = &rep
-	if err != nil {
-		res.PullError = err.Error()
-		res.Note = "the bill is tracked; run reingest to retry its text"
-	}
+	res.Note = "the bill is tracked; its text is not pulled yet: run `pubctl bills reingest " + ref.ID() +
+		" --reason R` or `job-ingest --bill " + ref.ID() + "`"
 	writeJSON(w, res)
 }
 
