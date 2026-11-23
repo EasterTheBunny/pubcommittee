@@ -1,6 +1,9 @@
 package data
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // BillText reads immutable version text. Not found: ErrNotFound.
 type BillText interface {
@@ -113,7 +116,8 @@ type BillSource interface {
 
 // ReleasePoint identifies one consolidated-law release.
 type ReleasePoint struct {
-	ID string // for example "119-12"
+	ID   string    // for example "119-12"
+	Date time.Time // date the code is current through; zero when the source does not say
 }
 
 // LawSource lists and fetches existing-law release points.

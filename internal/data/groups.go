@@ -8,6 +8,9 @@ type PublicReadPorts struct {
 	// Comparisons may be nil where an adapter stores none; readers then
 	// answer not found.
 	Comparisons ComparisonReader
+	// Citations and Law may be nil likewise.
+	Citations CitationReader
+	Law       LawReader
 }
 
 // PlatformPorts are held by ingest, generation, exports, and admin-api;
@@ -19,4 +22,6 @@ type PlatformPorts struct {
 	Moderation      Moderation
 	Publisher       Publisher
 	ComparisonStore ComparisonWriter
+	CitationStore   CitationWriter
+	LawStore        LawWriter
 }

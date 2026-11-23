@@ -63,6 +63,10 @@ var (
 	_ data.ComparisonReader = (*Store)(nil)
 	_ data.ComparisonWriter = (*Store)(nil)
 	_ data.SourceInfoReader = (*Store)(nil)
+	_ data.CitationReader   = (*Store)(nil)
+	_ data.CitationWriter   = (*Store)(nil)
+	_ data.LawReader        = (*Store)(nil)
+	_ data.LawWriter        = (*Store)(nil)
 )
 
 // New validates cfg and returns a Store. It touches only the data root.

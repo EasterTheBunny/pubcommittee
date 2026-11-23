@@ -58,3 +58,30 @@ Still missing from the exit set: a table and a formula. None of the 8,042 docume
 ## Catalog sample (M1-05)
 
 `catalog/us-<congress>-<type>-<number>.xml`: 200 BILLSTATUS records (110 `hr`, 55 `s`, 12 `hjres`, 8 `sjres`, 15 `hres` of the 119th Congress), at most 45 KB each, committed byte for byte. Status records only, no text: they stand in for untracked catalog entries and are read by `internal/adapters/fixturesrc` as catalog-only bills. Chosen as every Nth bill of each type's govinfo listing, so the sample is spread across the Congress and has no editorial selection. `scripts/fetch-catalog.sh <urls-file>` fetches them one at a time, 2 s apart, with a descriptive user agent. `catalog/MANIFEST.txt` lists path, bytes, SHA-256, source URL and retrieval date of each file (retrieved 2026-11-23 UTC).
+
+## US Code provisions (M1-07)
+
+The sections the three M1 exit bills cite (by markup or by text such as "section 60502 of title 49, United States Code"), cut byte for byte (the `<section>` element, nothing around it) from the Office of the Law Revision Counsel's XML title files at release point `119-142` (current through Public Law 119-142, November 10, 2026). US government works. Retrieval date: 2026-11-22; the zips came one request at a time (3 s apart, descriptive user agent) from `https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc<TT>@119-142.zip` into the git-ignored `.local-data/uscode/119-142/`; `go run ./scripts/extract-uscode-fixtures` cut the sections. Layout: `fixtures/uscode/119-142/t<title>-s<section>.xml`, with the section's en dash written as a hyphen in the file name. The release date is not in the files; it is the release point's (2026-11-10). Tests wrap a fragment in a `<uscDoc identifier="/us/usc/t<title>">` root before parsing.
+
+| Title | Zip SHA-256 (`xml_usc<TT>@119-142.zip`) | SHA-256 of `usc<TT>.xml` inside it |
+| --- | --- | --- |
+| 3 | `840e4360cd138663246a8a934c824b9b81ded142533e1adc663bc1cbe119d9bd` | `c8f5c97c578aacfa66f3c7517d54376b1d4e9fb7f5b5f3563a7941ed930c11b6` |
+| 15 | `0de372cac2ecdfd08230e4017968227f62358f2c9a3a20a2b3de77614118b7f5` | `36294c32ef49661c4f115d1608490983d33d3403aa0dc2bdb1c7855ed21ffabc` |
+| 16 | `6b824d53508fa103706c1a6cd231ac023dbee150d51875492c93cf95a70ae1bc` | `c0732c3b6cb2abb23722deb1cd8441ccb3c6f3e7368ae3290e27cb87eb1f0136` |
+| 42 | `25738c82e501e6844f7744c492f091500da1497dd3e2074a7882c889c2b14de6` | `d514b50fcfb7a60cb12d0ce5e55263f91d52a6a30840cf62000c67d4cb17c9f5` |
+| 49 | `faa1231506979567488857ebc203007da9e428450e4ed83213b84813ee7db893` | `9f75bba7441a9fa2e5f26fcefbfb3a6df4ec142b7f6a8a5a3f9bc12a8bb9c50c` |
+
+| File | Bytes | Source (title file at release point 119-142) | SHA-256 of the file |
+| --- | --- | --- | --- |
+| `uscode/119-142/t15-s717a.xml` | 6859 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc15@119-142.zip | `82e0e9425308c8cf79f6d51f854528bec79238652fed4fc500dbe2ca2b233c17` |
+| `uscode/119-142/t15-s717b.xml` | 22040 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc15@119-142.zip | `e7e19b862c42274e5f171f019fbd97d26459b3d14a924434e4569bb526ff8f3a` |
+| `uscode/119-142/t16-s796.xml` | 33672 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc16@119-142.zip | `b78c8f499469be07206c15e1019e12fcdfbaef501678a006c8ffa009d4904807` |
+| `uscode/119-142/t16-s824a-4.xml` | 9955 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc16@119-142.zip | `7e24ed7646cde696494a7ba1cb7894270a24c6731f52ae7db3769be70dbae95e` |
+| `uscode/119-142/t16-s824a.xml` | 19439 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc16@119-142.zip | `1c3fa3b0d0e10d722d6820a42ba70cef33f4f31c0407b16088b442d10785647f` |
+| `uscode/119-142/t16-s824o.xml` | 29908 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc16@119-142.zip | `995379e8c74a1064b0156edc5f3318af4f10e6eac81b4c26d1b9509771707577` |
+| `uscode/119-142/t3-s301.xml` | 200391 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc03@119-142.zip | `9f81af7e1e0802e9904e3b6980f9c990538f38cdc711c6ae5710c8fa4bc760a1` |
+| `uscode/119-142/t42-s1395cc-7.xml` | 26124 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc42@119-142.zip | `f8bd5ea46e67ae108181eeb3b7645afa273b73fa86a21378bd070e3880749c0c` |
+| `uscode/119-142/t42-s1395iii.xml` | 24124 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc42@119-142.zip | `4d192031e9ff981c43a00f73360e02f2c28c722bcbe3aad8edbb5ce9913be7af` |
+| `uscode/119-142/t42-s4321.xml` | 245359 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc42@119-142.zip | `a0da1766c9bfe46e94ff4b9fb973058ca034249876690e231d233a23d43072c1` |
+| `uscode/119-142/t42-s7151.xml` | 18668 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc42@119-142.zip | `076e7ab41746de3befa6ea75f8544140784c9ae6d40f254c2adff85e2def2e97` |
+| `uscode/119-142/t49-s60502.xml` | 5958 | https://uscode.house.gov/download/releasepoints/us/pl/119/142/xml_usc49@119-142.zip | `2e985628b3be170e2b25795d31e37a4e1f3b7d9b0a4b3447dcef2e4d578eb6c3` |
