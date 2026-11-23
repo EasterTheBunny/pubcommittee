@@ -34,4 +34,25 @@ if [ -n "${LAW_DIR:-}" ]; then
 else
 	check "resolution rate measured (exit bills, fixtures)" sh -c "go run -tags memory ./scripts/measure-citations -fixtures fixtures/uscode -only us-119-hr-4313,us-119-hr-3062,us-119-hr-3427 -labels test/acceptance/M1-07/labels.json | tee /tmp/m1-07-report.md | grep -q 'Precision of'"
 fi
+
+# job-ingest wiring (part 2): --law stores the release point from fixtures/uscode with no network; a repeat run
+# changes nothing; a pull of the exit bills stores a citation set for every version; unresolved cites are listed.
+check "job-ingest: law mode, citations step, offline" sh -c '
+	set -eu
+	d=$(mktemp -d); trap "rm -rf $d" EXIT
+	export DATA_DIR=$d
+	go build -tags local -o "$d.ji" ./cmd/job-ingest
+	"$d.ji" --law 2>/dev/null | grep -q "\"new_release\": true"
+	snap=$(cd "$d" && find . -type f | sort | xargs sha256sum | sha256sum)
+	"$d.ji" --law 2>/dev/null | grep -q "\"new_release\": false"
+	[ "$snap" = "$(cd "$d" && find . -type f | sort | xargs sha256sum | sha256sum)" ]
+	"$d.ji" --track --bill us-119-hr-4313,us-119-hr-3062,us-119-hr-3427 2>/dev/null >"$d.out"
+	[ "$(grep -c "\"citation_sets\": 4" "$d.out")" = 3 ]
+	[ "$(find "$d/bills" -path "*/citations/*" -name "*@119-142.json" | wc -l)" = 12 ]
+	snap=$(cd "$d" && find . -type f | sort | xargs sha256sum | sha256sum)
+	"$d.ji" --track --bill us-119-hr-4313,us-119-hr-3062,us-119-hr-3427 >/dev/null 2>&1
+	[ "$snap" = "$(cd "$d" && find . -type f | sort | xargs sha256sum | sha256sum)" ]
+	rm -f "$d.ji" "$d.out"
+'
+check "job-ingest: pipeline steps and fixture law source" go test -count=1 -tags memory -run 'Analysis|LawSource' ./internal/ingest/ ./internal/adapters/fixturesrc/
 exit $fail

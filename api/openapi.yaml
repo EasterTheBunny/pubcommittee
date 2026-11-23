@@ -183,6 +183,7 @@ paths:
       tags: [versions]
       operationId: getSection
       summary: One section of an official version
+      description: The text is immutable. A pinned version older than the latest also carries `changed_since`, which can change when a newer version arrives, so that answer is cached short; the latest pinned version's answer stays immutable.
       x-cache: immutable
       parameters:
         - $ref: '#/components/parameters/BillPath'
@@ -204,7 +205,7 @@ paths:
       tags: [versions]
       operationId: getLineRange
       summary: A line or line range of an official version
-      description: Each line carries its number, depth, text, and anchor, so a client can rebuild blocks without page scripts.
+      description: Each line carries its number, depth, text, and anchor, so a client can rebuild blocks without page scripts. A pinned version older than the latest also carries `changed_since`, which can change when a newer version arrives, so that answer is cached short; the latest pinned version's answer stays immutable.
       x-cache: immutable
       parameters:
         - $ref: '#/components/parameters/BillPath'
@@ -875,6 +876,7 @@ components:
             licence: { type: string, enum: [public-domain] }
             address: { $ref: '#/components/schemas/AddressInfo' }
             section: { $ref: '#/components/schemas/Section' }
+            changed_since: { $ref: '#/components/schemas/ChangedSince' }
     LineRangeResource:
       allOf:
         - $ref: '#/components/schemas/Meta'
@@ -893,6 +895,7 @@ components:
             to: { type: integer, minimum: 1, description: Equals `from` for one line. }
             licence: { type: string, enum: [public-domain] }
             address: { $ref: '#/components/schemas/AddressInfo' }
+            changed_since: { $ref: '#/components/schemas/ChangedSince' }
             lines:
               type: array
               items: { $ref: '#/components/schemas/Line' }
@@ -1016,6 +1019,22 @@ components:
         section_id: { $ref: '#/components/schemas/SectionId' }
         from: { type: integer, minimum: 1 }
         to: { type: integer, minimum: 1 }
+    ChangedSince:
+      type: object
+      description: >-
+        Present on a pinned older version when a newer one exists and its comparison is stored: what became of
+        the addressed lines in the latest version. `moved` is the same words elsewhere or renumbered, `changed`
+        words altered with a counterpart, `removed` no counterpart (no `new_*` fields). A section is classified
+        over all its lines. Derived from official text; carries none.
+      required: [to_n, class]
+      properties:
+        to_n: { type: integer, minimum: 1, description: The latest version the lines were compared with. }
+        class: { type: string, enum: [unchanged, moved, changed, removed] }
+        new_section_id: { $ref: '#/components/schemas/SectionId' }
+        new_from: { type: integer, minimum: 1 }
+        new_to: { type: integer, minimum: 1 }
+        new_address: { type: string, description: 'Path of the best new location, for example `/v1/bills/<bill>/v/3/s/2/l/4-5`.' }
+        new_anchor: { type: string, description: 'Fragment of the new location, for example `#s2-l4-5`.' }
     ComparisonChange:
       type: object
       description: Compared text sits in `before` and `after`, each with its own class.

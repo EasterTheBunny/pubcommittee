@@ -113,3 +113,24 @@ func TestNewNilFSIsInvalid(t *testing.T) {
 		t.Fatalf("New with nil FS: err = %v, want ErrInvalid", err)
 	}
 }
+
+func TestLawSource(t *testing.T) {
+	t.Parallel()
+	src := newSource(t)
+	ctx := context.Background()
+	rps, err := src.ListReleasePoints(ctx)
+	if err != nil || len(rps) != 1 || rps[0].ID != "119-142" || rps[0].Date.Format(time.DateOnly) != "2026-11-10" {
+		t.Fatalf("ListReleasePoints = %v, %v", rps, err)
+	}
+	titles, err := src.LawTitles(ctx, rps[0])
+	if err != nil || len(titles) != 5 {
+		t.Fatalf("LawTitles = %v, %v", titles, err)
+	}
+	b, err := src.FetchTitle(ctx, rps[0], 42)
+	if err != nil || !strings.HasPrefix(string(b), `<uscDoc identifier="/us/usc/t42">`) {
+		t.Fatalf("FetchTitle 42: %v", err)
+	}
+	if _, err := src.FetchTitle(ctx, rps[0], 7); !errors.Is(err, data.ErrNotFound) {
+		t.Fatalf("FetchTitle 7 err = %v, want ErrNotFound", err)
+	}
+}

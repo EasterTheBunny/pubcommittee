@@ -33,6 +33,8 @@ func wire(tel *telemetry.Telemetry, cfg config) (data.PlatformPorts, data.BillFe
 	}
 	var ports data.PlatformPorts
 	ports.BillText, ports.PublicDocs = objects, docs
+	ports.Comparisons, ports.Citations, ports.Law = objects, objects, objects
+	ports.ComparisonStore, ports.CitationStore, ports.LawStore = objects, objects, objects
 	ports.PlatformDocs, ports.Moderation, ports.Publisher = docs, docs, objects
 	return tel.WrapPlatform("local", ports), fetcher, nil
 }
