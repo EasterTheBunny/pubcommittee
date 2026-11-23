@@ -1,0 +1,9 @@
+# oapi-codegen settings for api/openapi.yaml. Regenerate with `sh api/generate.sh`, which supplies the output path.
+package: apiv1
+generate:
+  std-http-server: true
+  models: true
+  client: false # read-api serves the spec; clients use the TypeScript types or their own
+  embedded-spec: true
+output-options:
+  skip-prune: true

@@ -22,7 +22,7 @@ PubCommittee lets the public review active bills the way an editor reviews a dra
 
 It is not a vote and it does not change bill text. It gives existing representatives a more specific signal. The first version covers the US Congress.
 
-The current code is the **M0 proof of concept**: a static SvelteKit site on mocked data with no backend. See [`design/MILESTONES.md`](design/MILESTONES.md) for the roadmap.
+The M0 proof of concept (a static SvelteKit site on mocked data with no backend) is archived in [`demo/`](demo/README.md). The M1 web app in [`app/`](app/README.md) renders real bill text from `read-api`. See [`design/MILESTONES.md`](design/MILESTONES.md) for the roadmap.
 
 ## Guide for AI agents
 
@@ -34,7 +34,7 @@ Start here, then read only the files your task needs.
 2. [`design/README.md`](design/README.md): index of the feature docs (01–11) and how they depend on each other.
 3. [`design/MILESTONES.md`](design/MILESTONES.md): what each milestone (M0–M6) delivers.
 4. [`architecture/README.md`](architecture/README.md): stack, hosting, and storage decisions from M1 onward.
-5. [`app/README.md`](app/README.md): how to run the demo app and where its code lives.
+5. [`app/README.md`](app/README.md): how to run the web app and where its code lives. [`demo/README.md`](demo/README.md) covers the archived M0 demo.
 
 ### Folder map
 
@@ -55,31 +55,25 @@ pubcommittee/
 ├── architecture/
 │   └── README.md          implementation architecture (Go on Google Cloud,
 │                          REST/OpenAPI, adapters, ingest, notifications)
-└── app/                   M0 proof of concept (SvelteKit 3, Svelte 5,
-    │                      Tailwind 4, adapter-static, PWA)
+├── demo/                  archived M0 proof of concept (static SvelteKit site
+│                          on mock data; served from the Netlify site)
+└── app/                   M1 web app (SvelteKit 3, Svelte 5, Tailwind 4,
+    │                      adapter-node, PWA), renders from read-api
     ├── README.md          run commands and code map
-    ├── package.json       scripts: dev, build, check, lint, format
+    ├── package.json       scripts: dev, build, start, check, lint, test
     ├── static/            PWA manifest, icons, robots.txt
+    ├── tests/             Playwright UI tests
     └── src/
-        ├── app.html
+        ├── hooks.server.ts    content negotiation (303 to read-api)
         ├── service-worker/    offline caching for the PWA
         ├── lib/
-        │   ├── types.ts       domain types, named after design-doc terms
-        │   ├── mock/          mock bills, issues, personas, catalog, feed, seed
-        │   ├── state/         demo state (localStorage) and UI dialog state
+        │   ├── api/           generated types and the read-api client
+        │   ├── server/        server-only code (environment, client)
         │   ├── components/    Svelte UI components
-        │   ├── anchors.ts     line anchors, URL hashes, stale detection
-        │   ├── diff.ts        word-level diff for suggested edits
+        │   ├── anchors.ts     line anchors, URL hashes, ranges
         │   ├── links.ts       URL builders
-        │   ├── rules.ts       steward conflict rule
         │   └── placeholders.ts  registry of not-yet-built features
         └── routes/            pages (file-based routing)
-            ├── +page.svelte               home
-            ├── bills/[bill]/v/[version]/  bill text, sections, line ranges
-            ├── issues/[issue]/            competing bills compared
-            ├── briefs/[bill]/             legislator brief
-            ├── catalog/                   public bill catalog
-            └── inbox/                     notifications
 ```
 
 ### Where to look for a task
@@ -90,7 +84,7 @@ pubcommittee/
 | What is in scope now versus later | `design/MILESTONES.md` |
 | Build work for a milestone | `design/tasks/README.md`, then the task file |
 | Stack, hosting, data stores, API shape | `architecture/README.md` |
-| Change demo data | `app/src/lib/mock/` |
+| Change demo data (archived M0) | `demo/src/lib/mock/` |
 | Change a page | `app/src/routes/` |
 | Change shared UI | `app/src/lib/components/` |
 | Domain vocabulary | `app/src/lib/types.ts` and the design docs |
@@ -111,16 +105,44 @@ For a question not covered above, follow these steps in order:
 
 - The design docs name no languages, frameworks, or vendors. Put stack choices in `architecture/`, not `design/`.
 - Code names follow design-doc vocabulary, for example steward, rider tag, brief, and suggested edit.
-- Features not built in M0 appear as dashed buttons. They open a pop-up that names the milestone and design doc, through `app/src/lib/placeholders.ts`.
+- Features not built yet appear as dashed buttons. They open a pop-up that names the milestone and design doc, through `app/src/lib/placeholders.ts`.
 
 ## Run the app
+
+The whole app runs locally in Docker (Docker with Compose v2 is the only requirement): the web app, `read-api`, `admin-api`, and an OpenTelemetry Collector, over a data directory filled from the example bills in `fixtures/`. No cloud account and no model calls; explanations and summaries come from the fake generator.
+
+```sh
+scripts/local.sh build    # build every image
+scripts/local.sh up       # serve; Ctrl+C stops it and removes every container and network
+scripts/local.sh down     # stop and remove the stack (use after `up -d`, or to clean up after a crash)
+scripts/local.sh test     # acceptance checks against the running app (start it first with `up -d`)
+```
+
+| Service | Address |
+| --- | --- |
+| Web app | http://localhost:3000 |
+| `read-api` | http://localhost:8080 (spec at `/v1/openapi.yaml`) |
+| `admin-api` | http://localhost:8081, for `pubctl` ([cmd/pubctl/README.md](cmd/pubctl/README.md)) |
+
+- **First run.** `up` fills `.local-data/` when it is empty: US Code provisions, selection policy v1, the 200-bill catalog sample, the three exit bills with every version, citations and comparisons, generated explanations, exports, and the change feed. `scripts/local.sh seed` refills it on demand.
+- **In the background.** `scripts/local.sh up -d` returns once every service is healthy; stop it with `scripts/local.sh down`.
+- **Start over.** Your data stays in `.local-data/` (git-ignored) across runs. Delete that directory to start from the example data again.
+- **Settings.** `COMPOSE_PROJECT` names the Compose project (default `pubcommittee`). `RATE_LIMITS` overrides `read-api`'s limits, which the script lifts for a single local user.
+- **Acceptance checks.** `test` runs, against the running app: the HTTP checks of `test/acceptance/M1-01`, `M1-03a` and `M1-16` (every M1 exit criterion on the three exit bills), then the M1-16 browser checks in Playwright (pages without scripts, labels, version history, catalog, installability, offline). It changes nothing in your data. `test --with-admin` also drives `admin-api` with `pubctl` (track, then untrack a bill), which adds entries to the public log. Ctrl+C stops the checks and removes their containers; the app keeps running. Code-level checks (`go test`, lint, the API spec) run in CI and in the dev container, not here.
+- **Live-model data.** `scripts/local.sh data live` switches to the stored outputs of the M1-09 live-model run (real paraphrased explanations; no key or model call), and `scripts/local.sh data fake` switches back. The set not in use is kept in `.local-data.<name>/`; a running stack is restarted on the new set. `scripts/local.sh data` shows which set is in use.
+- **One job at a time.** `scripts/local.sh job job-ingest --bill <id> --track` (likewise `job-summarize`, `job-exports`; flags in each `cmd/<job>/README.md`). It runs as your user, so files in `.local-data/` stay yours, and works with the stack up or down.
+
+Front-end work with hot reload, against a running stack:
 
 ```sh
 cd app
 npm install
-npm run dev      # http://localhost:5173
+READ_API_URL=http://localhost:8080 npm run dev      # http://localhost:5173
 npm run check    # type check
-npm run build    # static site in app/build/
+npm run build    # Node server in app/build/ (run with `npm start`)
+
+# The archived M0 demo builds on its own:
+cd ../demo && npm install && npm run build   # static site in demo/build/
 ```
 
 ## License

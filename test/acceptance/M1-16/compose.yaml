@@ -1,0 +1,51 @@
+# M1-16 local gate: the whole application as one Compose project, added to the root compose.yaml:
+#   docker compose -p pc-m1-16 -f compose.yaml -f test/acceptance/M1-16/compose.yaml \
+#     -f .task/compose.limits.yaml up -d --wait read-api app
+# read-api serves the data under ./.local-data (local target); app is the SvelteKit app on Node 24
+# built from app/ and reading only from read-api; playwright shares the app's network so the
+# browser reaches the app as localhost (service workers need a secure context).
+# The limits file (uncommitted, .task/compose.limits.yaml) gives every service limits and labels.
+services:
+  read-api:
+    environment:
+      # Test runs make many requests from one client; the published defaults are covered elsewhere.
+      RATE_LIMITS: ${RATE_LIMITS:-text=100000,live=100000,bulk=100000,discovery=100000}
+
+  app:
+    image: pc-dev:orch
+    user: "1000:1000"
+    working_dir: /src/app
+    volumes:
+      - ./:/src
+    environment:
+      HOME: /tmp
+      READ_API_URL: http://read-api:8080
+      PUBLIC_API_URL: http://read-api:8080
+      PORT: "3000"
+      NPM_CONFIG_CACHE: /tmp/npm
+    command: ["sh", "-c", "npm ci --no-audit --no-fund >/tmp/npm-ci.log 2>&1 && npm run build >/tmp/build.log 2>&1 && exec node build"]
+    depends_on:
+      read-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/policy').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+
+  playwright:
+    profiles: ["browser"]
+    image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
+    network_mode: "service:app"
+    user: "1000:1000"
+    working_dir: /src/app
+    volumes:
+      - ./:/src
+    environment:
+      HOME: /tmp
+      BASE_URL: http://localhost:3000
+      API_URL: http://read-api:8080
+    command: ["sleep", "infinity"]
+    depends_on:
+      app:
+        condition: service_healthy

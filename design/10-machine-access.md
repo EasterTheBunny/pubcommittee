@@ -34,6 +34,7 @@ Reading never requires an account. Content an anonymous person can see in a brow
 
 ### Canonical addresses
 - Every anchor ([01](01-bill-ingestion-and-display.md)) has a canonical address the server can resolve on its own, without client-side state: bill, version, section path, and line or line range.
+- Anchors (M1-04): a section anchor is `s` plus the section's position among the version's sections, from 1 (`s0` is the preamble); a line anchor is `s<ordinal>-l<n>`, where `n` counts lines from 1 across the whole version. Anchors come from document order, not XML ids (kept as `source_id`), so the same bytes and parser version give the same anchors. The UI fragment `#s4-l12-13` and the canonical address bill / version / `s4` / `12-13` both use this form.
 - Addresses are human-readable and pinned to a version. An address without a version resolves to the latest version and says so.
 - Client-only forms (in-page fragments for scrolling) may exist but are never the only way to reach a piece of text.
 - Combined, linked, stale, or moderated targets resolve the same way they do for people ([06](06-sharing.md)), with the redirect or state given explicitly.

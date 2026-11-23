@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "mode": "pilot",
+  "phase": "early_pilot",
+  "measure_kinds": ["bill", "joint_resolution"],
+  "exclude_kinds": ["war_powers_resolution", "commemorative"],
+  "committee_activity": ["hearing", "markup", "reported", "discharged", "floor", "calendar"],
+  "follow_companions": true,
+  "topics": {
+    "healthcare": {
+      "policy_areas": ["Health"],
+      "subjects": [
+        "Health care coverage and access",
+        "Health programs administration and funding",
+        "Health facilities and institutions",
+        "Health personnel",
+        "Health technology, devices, supplies",
+        "Health promotion and preventive care",
+        "Health information and medical records",
+        "Medicare",
+        "Medicaid"
+      ],
+      "title_terms": ["health", "health care", "healthcare", "medicare", "medicaid", "hospital", "patient", "prescription drug"]
+    },
+    "deficit_reduction": {
+      "policy_areas": [],
+      "subjects": ["Budget process"],
+      "title_terms": ["deficit", "deficits", "budget deficit", "national debt", "federal debt", "debt limit", "balanced budget"]
+    },
+    "affordability": {
+      "policy_areas": [],
+      "subjects": ["Inflation and prices", "Low- and moderate-income housing", "Student aid and college costs"],
+      "title_terms": ["affordable", "affordability", "cost of living", "lower costs", "prices", "inflation"]
+    }
+  }
+}

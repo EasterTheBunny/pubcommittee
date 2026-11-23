@@ -1,7 +1,6 @@
-import type { Anchor, Bill, Line } from '#lib/types.ts';
-import { latestVersion, sectionOf, versionOf } from '#lib/mock/index.ts';
+import type { Line } from '#lib/types.ts';
 
-/** Hash fragment for a section or line range: "#s4" or "#s4-l12-13". */
+/** Hash fragment for a section or line range: "#s4" or "#s4-l12-13". Line numbers are version-wide. */
 export function anchorHash(sectionId: string, from?: number, to?: number): string {
 	if (from === undefined) return `#${sectionId}`;
 	return to === undefined || to === from
@@ -39,55 +38,11 @@ export function rangeLabel(from: number, to: number): string {
 	return from === to ? `line ${from}` : `lines ${from}–${to}`;
 }
 
-export function linesFor(bill: Bill, anchor: Anchor): Line[] {
-	const version = versionOf(bill, anchor.version);
-	const section = version && sectionOf(version, anchor.sectionId);
-	return section ? section.lines.filter((l) => l.n >= anchor.from && l.n <= anchor.to) : [];
-}
-
-export function anchorText(bill: Bill, anchor: Anchor): string {
-	return linesFor(bill, anchor)
-		.map((l) => l.text)
-		.join(' ');
-}
-
 /**
- * An item is stale when the latest official version changed the text it targets (design/02).
- * M0 compares the same line numbers; M1 replaces this with a real version-to-version mapping.
+ * The block starting at line n is the line plus every deeper line nested under it.
+ * The API gives it as `block_to` on each line (design/10 Canonical addresses).
  */
-export function isStale(bill: Bill, anchor: Anchor): boolean {
-	const latest = latestVersion(bill);
-	if (anchor.version === latest.n) return false;
-	return anchorText(bill, anchor) !== anchorText(bill, { ...anchor, version: latest.n });
-}
-
-export const overlaps = (a: Anchor, b: Anchor) =>
-	a.billId === b.billId && a.sectionId === b.sectionId && a.from <= b.to && b.from <= a.to;
-
-// --- Nesting (design/01 Block) -----------------------------------------------
-// A line's block is the line plus every following line nested deeper under it
-// (subsections, paragraphs, list items). Blocks are always contiguous.
-
-const depth = (l: Line) => l.indent ?? 0;
-
-/** Last line number of the block that starts at line n (n itself for a leaf). */
-export function blockEnd(lines: Line[], n: number): number {
-	const i = lines.findIndex((l) => l.n === n);
-	if (i < 0) return n;
-	let end = n;
-	for (let j = i + 1; j < lines.length && depth(lines[j]) > depth(lines[i]); j++) end = lines[j].n;
-	return end;
-}
-
-/** Number of lines nested under line n. */
-export const nestedCount = (lines: Line[], n: number) => blockEnd(lines, n) - n;
-
-/**
- * Smallest range containing [from, to] that is closed under nesting: every line in it
- * brings all its nested lines. Required for suggested edits (design/03).
- */
-export function closeRange(lines: Line[], from: number, to: number): { from: number; to: number } {
-	let end = to;
-	for (const l of lines) if (l.n >= from && l.n <= end) end = Math.max(end, blockEnd(lines, l.n));
-	return { from, to: end };
+export function blockRange(lines: Line[], n: number): { from: number; to: number } | null {
+	const line = lines.find((l) => l.n === n);
+	return line ? { from: line.n, to: line.block_to } : null;
 }

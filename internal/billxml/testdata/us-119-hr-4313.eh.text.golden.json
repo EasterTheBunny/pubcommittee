@@ -1,0 +1,277 @@
+{
+  "parser_version": "billxml/1",
+  "source_sha256": "862f1b0ff7548fc94977670d96293c6125082f60add977013843657c566e914a",
+  "kind": "bill",
+  "stage": "Engrossed-in-House",
+  "legis_num": "H. R. 4313",
+  "official_title": "To amend title XVIII of the Social Security Act to extend acute hospital care at home waiver flexibilities, and to require an additional study and report on such flexibilities.",
+  "source_id": "H68F50A8CAB1C49E5A096E10136A5971A",
+  "sections": [
+    {
+      "path": [
+        "s1"
+      ],
+      "enum": "1.",
+      "label": "Sec. 1",
+      "heading": "Short title",
+      "source_id": "HF338B1738AEC42F186C111279B5049A6",
+      "lines": [
+        {
+          "n": 1,
+          "anchor": "s1-l1",
+          "depth": 0,
+          "text": "This Act may be cited as the “Hospital Inpatient Services Modernization Act”.",
+          "source_id": "HF338B1738AEC42F186C111279B5049A6",
+          "kind": "text"
+        }
+      ]
+    },
+    {
+      "path": [
+        "s2"
+      ],
+      "enum": "2.",
+      "label": "Sec. 2",
+      "heading": "Extending acute hospital care at home waiver flexibilities",
+      "source_id": "HEE6B956D3B0E45B7B7164034E08779A7",
+      "lines": [
+        {
+          "n": 2,
+          "anchor": "s2-l2",
+          "depth": 0,
+          "text": "Section 1866G(a)(1) of the Social Security Act (42 U.S.C. 1395cc–7(a)(1)) is amended by striking “January 30, 2026” and inserting “September 30, 2030”.",
+          "source_id": "HEE6B956D3B0E45B7B7164034E08779A7",
+          "kind": "text"
+        }
+      ]
+    },
+    {
+      "path": [
+        "s3"
+      ],
+      "enum": "3.",
+      "label": "Sec. 3",
+      "heading": "Requiring additional study and report on acute hospital care at home waiver flexibilities",
+      "source_id": "HA92302DFBCBB4A7A85CDBC829FA937EB",
+      "lines": [
+        {
+          "n": 3,
+          "anchor": "s3-l3",
+          "depth": 0,
+          "text": "Section 1866G of the Social Security Act (42 U.S.C. 1395cc–7), as amended by section 2, is further amended—",
+          "source_id": "HA92302DFBCBB4A7A85CDBC829FA937EB",
+          "kind": "text"
+        },
+        {
+          "n": 4,
+          "anchor": "s3-l4",
+          "depth": 1,
+          "text": "(1) in subsection (a)(3)(E)—",
+          "source_id": "H8FF556BAFEA2475FBE9C262D983C4F4D",
+          "kind": "text"
+        },
+        {
+          "n": 5,
+          "anchor": "s3-l5",
+          "depth": 2,
+          "text": "(A) in clause (ii), by striking “the study described in subsection (b)” and inserting “the studies described in subsections (b) and (c)”; and",
+          "source_id": "H9D8D056025334ACA96882D7C16448D03",
+          "kind": "text"
+        },
+        {
+          "n": 6,
+          "anchor": "s3-l6",
+          "depth": 2,
+          "text": "(B) by adding at the end the following new flush sentence:",
+          "source_id": "H39728BA2CD3744A38DE8C4617D89A6B4",
+          "kind": "text"
+        },
+        {
+          "n": 7,
+          "anchor": "s3-l7",
+          "depth": 3,
+          "text": "The Secretary may require that such data and information be submitted through a hospital’s cost report, through such survey instruments as the Secretary may develop, through medical record information, or through such other means as the Secretary determines appropriate.;",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 8,
+          "anchor": "s3-l8",
+          "depth": 1,
+          "text": "(2) in subsection (b)—",
+          "source_id": "H8398ADDF89FE4422987888C42B64561B",
+          "kind": "text"
+        },
+        {
+          "n": 9,
+          "anchor": "s3-l9",
+          "depth": 2,
+          "text": "(A) in the subsection heading, by striking “Study” and inserting “Initial study”; and",
+          "source_id": "H809C6C1846F2481994F69EA033100C0D",
+          "kind": "text"
+        },
+        {
+          "n": 10,
+          "anchor": "s3-l10",
+          "depth": 2,
+          "text": "(B) in paragraph (3), by inserting “or subsection (c)” before the period at the end;",
+          "source_id": "H9A7E3ADCAB4449038D4E556DD3F76079",
+          "kind": "text"
+        },
+        {
+          "n": 11,
+          "anchor": "s3-l11",
+          "depth": 1,
+          "text": "(3) by redesignating subsections (c) and (d) as subsections (d) and (e), respectively; and",
+          "source_id": "HE8889BD54039436B865E2EDD618DFFAE",
+          "kind": "text"
+        },
+        {
+          "n": 12,
+          "anchor": "s3-l12",
+          "depth": 1,
+          "text": "(4) by inserting after subsection (b) the following new subsection:",
+          "source_id": "H579A23FFB6604BC8981F4D4C895E02FA",
+          "kind": "text"
+        },
+        {
+          "n": 13,
+          "anchor": "s3-l13",
+          "depth": 2,
+          "text": "(c) Subsequent study and report",
+          "source_id": "H3EEBCDEFE7D44C8EB31146CF01CBCB0B",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 14,
+          "anchor": "s3-l14",
+          "depth": 3,
+          "text": "(1) In general Not later than September 30, 2028, the Secretary shall conduct a study to—",
+          "source_id": "HDF9D7E5D3FA54D6A81171BCF7BE52F02",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 15,
+          "anchor": "s3-l15",
+          "depth": 4,
+          "text": "(A) analyze, to the extent practicable, the criteria established by hospitals under the Acute Hospital Care at Home initiative to determine which individuals may be furnished services under such initiative; and",
+          "source_id": "HC2EF66619E3F4862BF365CD80810C8B2",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 16,
+          "anchor": "s3-l16",
+          "depth": 4,
+          "text": "(B) analyze and compare (both within and between hospitals participating in the initiative, and relative to comparable hospitals that do not participate in the initiative, for relevant parameters such as diagnosis-related groups)—",
+          "source_id": "H4F1635041D044E069BCA093BD8EC09BF",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 17,
+          "anchor": "s3-l17",
+          "depth": 5,
+          "text": "(i) quality of care furnished to individuals with similar conditions and characteristics in the inpatient setting and through the Acute Hospital Care at Home initiative, including health outcomes, hospital readmission rates (including readmissions both within and beyond 30 days post-discharge), hospital mortality rates, length of stay, infection rates, composition of care team (including the types of labor used, such as contracted labor), the ratio of nursing staff, transfers from the hospital to the home, transfers from the home to the hospital (including the timing, frequency, and causes of such transfers), transfers and discharges to post-acute care settings (including the timing, frequency, and causes of such transfers and discharges), and patient and caregiver experience of care;",
+          "source_id": "H75A46CD2144446509C3D5C53AF79117E",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 18,
+          "anchor": "s3-l18",
+          "depth": 5,
+          "text": "(ii) clinical conditions treated and diagnosis-related groups of discharges from inpatient settings relative to discharges from the Acute Hospital Care at Home initiative;",
+          "source_id": "HED77A3931C13445198E840D32B1B2FC0",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 19,
+          "anchor": "s3-l19",
+          "depth": 5,
+          "text": "(iii) costs incurred by the hospital for furnishing care in inpatient settings relative to costs incurred by the hospital for furnishing care through the Acute Hospital Care at Home initiative, including costs relating to staffing, equipment, food, prescriptions, and other services, as determined by the Secretary;",
+          "source_id": "HEE316B283BBA489FAE847D179F243D3B",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 20,
+          "anchor": "s3-l20",
+          "depth": 5,
+          "text": "(iv) the quantity, mix, and intensity of services (such as in-person visits and virtual contacts with patients and the intensity of such services) furnished in inpatient settings relative to the Acute Hospital Care at Home initiative, and, to the extent practicable, the nature and extent of family or caregiver involvement;",
+          "source_id": "HF110FA6EA0FB40F8B099861BA4338B47",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 21,
+          "anchor": "s3-l21",
+          "depth": 5,
+          "text": "(v) socioeconomic information on individuals treated in comparable inpatient settings relative to the initiative, including racial and ethnic data, income, housing, geographic proximity to the brick-and-mortar facility and whether such individuals are dually eligible for benefits under this title and title XIX; and",
+          "source_id": "H22797D5DB8C34A8099244E36F7A58F94",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 22,
+          "anchor": "s3-l22",
+          "depth": 5,
+          "text": "(vi) the quality of care, outcomes, costs, quantity and intensity of services, and other relevant metrics between individuals who entered into the Acute Hospital Care at Home initiative directly from an emergency department compared with individuals who entered into the Acute Hospital Care at Home initiative directly from an existing inpatient stay in a hospital.",
+          "source_id": "HE0EDD25F70604DBC927918139ABFF582",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 23,
+          "anchor": "s3-l23",
+          "depth": 3,
+          "text": "(2) Selection bias In conducting the study under paragraph (1), the Secretary shall, to the extent practicable, analyze and compare individuals who participate and do not participate in the initiative controlling for selection bias or other factors that may impact the reliability of data.",
+          "source_id": "H17A1AD1CEBED4592B103B0E1EA68ABCD",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 24,
+          "anchor": "s3-l24",
+          "depth": 3,
+          "text": "(3) Report Not later than September 30, 2028, the Secretary of Health and Human Services shall submit to the Committee on Ways and Means of the House of Representatives and the Committee on Finance of the Senate a report on the study conducted under paragraph (1).",
+          "source_id": "HA15E7DCA49BB486982AA53E01235CFF7",
+          "kind": "text",
+          "quoted": true
+        },
+        {
+          "n": 25,
+          "anchor": "s3-l25",
+          "depth": 3,
+          "text": "(4) Funding In addition to amounts otherwise available, there is appropriated to the Centers for Medicare & Medicaid Services Program Management Account for fiscal year 2026, out of any amounts in the Treasury not otherwise appropriated, $2,500,000, to remain available until expended, for purposes of carrying out this subsection..",
+          "source_id": "H440547C9B0994956B52B88876317C89F",
+          "kind": "text",
+          "quoted": true
+        }
+      ]
+    },
+    {
+      "path": [
+        "s4"
+      ],
+      "enum": "4.",
+      "label": "Sec. 4",
+      "heading": "Medicare Improvement Fund",
+      "source_id": "H4AD845A9DBDD42DA956A6178ACD075FE",
+      "lines": [
+        {
+          "n": 26,
+          "anchor": "s4-l26",
+          "depth": 0,
+          "text": "Section 1898(b)(1) of the Social Security Act (42 U.S.C. 1395iii(b)(1)) is amended by striking “$1,403,000,000” and inserting “$1,400,500,000”.",
+          "source_id": "H4AD845A9DBDD42DA956A6178ACD075FE",
+          "kind": "text"
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

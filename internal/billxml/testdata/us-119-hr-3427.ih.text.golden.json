@@ -1,0 +1,210 @@
+{
+  "parser_version": "billxml/1",
+  "source_sha256": "614d2e961ebe4d275c85dfe341d435410c6cb807e108b21a81eaceb48b407a4d",
+  "kind": "bill",
+  "stage": "Introduced-in-House",
+  "legis_num": "H. R. 3427",
+  "official_title": "To require the Comptroller General of the United States to review all clean water-related technical assistance authorities of the Environmental Protection Agency, and for other purposes.",
+  "source_id": "H2D12E7EBF507488CA34CA90A80D89FC4",
+  "sections": [
+    {
+      "path": [
+        "s1"
+      ],
+      "enum": "1.",
+      "label": "Sec. 1",
+      "heading": "Short title",
+      "source_id": "HE8D5ADDE105143B78DD1CA85ADFE3B6F",
+      "lines": [
+        {
+          "n": 1,
+          "anchor": "s1-l1",
+          "depth": 0,
+          "text": "This Act may be cited as the “Water Resources Technical Assistance Review Act”.",
+          "source_id": "HE8D5ADDE105143B78DD1CA85ADFE3B6F",
+          "kind": "text"
+        }
+      ]
+    },
+    {
+      "path": [
+        "s2"
+      ],
+      "enum": "2.",
+      "label": "Sec. 2",
+      "heading": "GAO report on clean water technical assistance",
+      "source_id": "H67F75FDB074643F2A5F46099244D06CA",
+      "lines": [
+        {
+          "n": 2,
+          "anchor": "s2-l2",
+          "depth": 0,
+          "text": "(a) In general Not later than 1 year after the date of enactment of this Act, the Comptroller General of the United States shall initiate a comprehensive review of all covered technical assistance.",
+          "source_id": "H0108A333A8B24A5EA94A60C90D2E6A80",
+          "kind": "text"
+        },
+        {
+          "n": 3,
+          "anchor": "s2-l3",
+          "depth": 0,
+          "text": "(b) Requirements The Comptroller General shall include in the review required under subsection (a) the following:",
+          "source_id": "HD878220096F04A56BC41D4FD5B55EC4A",
+          "kind": "text"
+        },
+        {
+          "n": 4,
+          "anchor": "s2-l4",
+          "depth": 1,
+          "text": "(1) A description of all covered technical assistance available to States, Tribes, local governments, and non-governmental organizations, including—",
+          "source_id": "HB50335E06B7841E295634C4030BEFB19",
+          "kind": "text"
+        },
+        {
+          "n": 5,
+          "anchor": "s2-l5",
+          "depth": 2,
+          "text": "(A) the regions and populations that are served through the provision of technical assistance; and",
+          "source_id": "H29BDF82D688D47F9A9E51AF48843ACF5",
+          "kind": "text"
+        },
+        {
+          "n": 6,
+          "anchor": "s2-l6",
+          "depth": 2,
+          "text": "(B) a summary of the activities and actions carried out through covered technical assistance during the 5-year period preceding this Act.",
+          "source_id": "H9A8D853127CA436B8E23C9EEF1A65384",
+          "kind": "text"
+        },
+        {
+          "n": 7,
+          "anchor": "s2-l7",
+          "depth": 1,
+          "text": "(2) A comprehensive review of how the Administrator of the Environmental Protection Agency, through the Water Technical Assistance initiative (known as “WaterTA initiative”), identifies, selects, and partners with technical assistance providers to support communities, including—",
+          "source_id": "H39D96AFF8D3840469E1EB548D083B5D4",
+          "kind": "text"
+        },
+        {
+          "n": 8,
+          "anchor": "s2-l8",
+          "depth": 2,
+          "text": "(A) a description of the criteria, evaluation process, and contracting mechanisms used for selecting such providers;",
+          "source_id": "H9FC07F21E8244D21B10D2739A6566E41",
+          "kind": "text"
+        },
+        {
+          "n": 9,
+          "anchor": "s2-l9",
+          "depth": 2,
+          "text": "(B) a description of the extent of coordination with State, Tribal, and regional partners in the selection and deployment of such providers;",
+          "source_id": "H88C355614E3B4126998133FC98BF9A00",
+          "kind": "text"
+        },
+        {
+          "n": 10,
+          "anchor": "s2-l10",
+          "depth": 2,
+          "text": "(C) a description of how such providers are matched to meet the needs of local communities, including any pre-engagement scoping activities or community consultations;",
+          "source_id": "H8DCBCCE710A24B328957ECB11D18A783",
+          "kind": "text"
+        },
+        {
+          "n": 11,
+          "anchor": "s2-l11",
+          "depth": 2,
+          "text": "(D) a description of how such providers identify communities in need of technical assistance, including economically distressed communities, and conduct outreach to such communities;",
+          "source_id": "HCFDD906E2F58440C8AA306106A08A127",
+          "kind": "text"
+        },
+        {
+          "n": 12,
+          "anchor": "s2-l12",
+          "depth": 2,
+          "text": "(E) a description of the scope and types of assistance delivered through such initiative; and",
+          "source_id": "H8244E9AE2FF44FC1A911C52A2C084F02",
+          "kind": "text"
+        },
+        {
+          "n": 13,
+          "anchor": "s2-l13",
+          "depth": 2,
+          "text": "(F) a list of communities that received technical assistance support through such initiative, including the type and cost of assistance received by each such community and a summary of the outcomes associated with the provision of such assistance.",
+          "source_id": "H8098EE067B0545D1A4A20B2C45462F3E",
+          "kind": "text"
+        },
+        {
+          "n": 14,
+          "anchor": "s2-l14",
+          "depth": 1,
+          "text": "(3) An analysis of any duplication of covered technical assistance available through multiple programs of the Environmental Protection Agency.",
+          "source_id": "HFB0291189EBE4CFC8E675FD6C80B2EE6",
+          "kind": "text"
+        },
+        {
+          "n": 15,
+          "anchor": "s2-l15",
+          "depth": 1,
+          "text": "(4) An evaluation of how the provision of covered technical assistance builds capacity in communities to access other water infrastructure programs carried out by the Administrator.",
+          "source_id": "HC7E2EBC3FB3F43B481CD20370DC3AA71",
+          "kind": "text"
+        },
+        {
+          "n": 16,
+          "anchor": "s2-l16",
+          "depth": 1,
+          "text": "(5) An assessment of the needs of economically distressed communities eligible to receive assistance under a clean water infrastructure program carried out by the Administrator that are not addressed through covered technical assistance.",
+          "source_id": "HA15324221A394E4FBEB99B170C40CAEC",
+          "kind": "text"
+        },
+        {
+          "n": 17,
+          "anchor": "s2-l17",
+          "depth": 1,
+          "text": "(6) An evaluation of how the Administrator carries out covered technical assistance in coordination with other Federal agencies providing technical assistance related to water infrastructure.",
+          "source_id": "HCFBDC9415CE84D97B89CAC8E8202BAC8",
+          "kind": "text"
+        },
+        {
+          "n": 18,
+          "anchor": "s2-l18",
+          "depth": 0,
+          "text": "(c) Report Upon the completion of the review conducted under subsection (a), the Comptroller General shall submit to the Committee on Transportation and Infrastructure of the House of Representatives and the Committee on Environment and Public Works of the Senate a report containing—",
+          "source_id": "H33ADD48E85424FC9A8AC528DFA766FB1",
+          "kind": "text"
+        },
+        {
+          "n": 19,
+          "anchor": "s2-l19",
+          "depth": 1,
+          "text": "(1) the findings of such review; and",
+          "source_id": "H5FA82BE6749C44308E04B3E5BB6A3A93",
+          "kind": "text"
+        },
+        {
+          "n": 20,
+          "anchor": "s2-l20",
+          "depth": 1,
+          "text": "(2) any recommendations to improve covered technical assistance.",
+          "source_id": "HD3DB899977884AB5BED7C5D834826969",
+          "kind": "text"
+        },
+        {
+          "n": 21,
+          "anchor": "s2-l21",
+          "depth": 0,
+          "text": "(d) Plan for compliance Not later than 90 days after the Comptroller General submits the report required under subsection (c), and annually thereafter for a period of 5 years, the Administrator shall submit to the Committee on Transportation and Infrastructure of the House of Representatives and the Committee on Environment and Public Works of the Senate a plan detailing any actions the Administrator has taken to comply with the recommendations contained in such a report.",
+          "source_id": "H8AD3948A9EC7420EB95DB48E0B9C7995",
+          "kind": "text"
+        },
+        {
+          "n": 22,
+          "anchor": "s2-l22",
+          "depth": 0,
+          "text": "(e) Covered technical assistance defined In this section, the term “covered technical assistance” means a technical assistance authority, initiative, or program of the Environmental Protection Agency that is related to clean water infrastructure.",
+          "source_id": "H05052E122F7F430BA87F870B95134067",
+          "kind": "text"
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

@@ -42,7 +42,7 @@ Keep the app installable on phones and desktops after the move to server renderi
 
 1. Audit M0 service worker against new routes and the API origin.
 2. Strategy per resource class; cache names and versioning.
-3. Offline label and fallback pages.
+3. Offline label and fallback pages. (Done in M1-14: `OfflineLabel.svelte` and an offline page for never-opened URLs.)
 4. Eviction policy for bill text.
 5. CI installability audit and offline test.
 

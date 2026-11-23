@@ -1,3 +1,11 @@
-# allow crawling everything by default
+# All public content may be crawled and read by machines (design/10 Published policy).
+# Sign-in and write routes do not exist in M1; they are disallowed ahead of time so
+# they stay out of any index once they do.
+# Machine-access notice: /.well-known/machine-access.json
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /sign-in
+Disallow: /sign-out
+Disallow: /account
+Disallow: /write/
+Disallow: /api/

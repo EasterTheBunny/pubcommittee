@@ -72,4 +72,6 @@ Implement filesystem adapters for every M1 storage port, so every service and jo
 ## Open questions
 
 - Does the catalog index file stay fast enough for a full Congress (about 15,000 entries), or does `fsdocs` need an in-memory index built at startup?
+  - **Answered (M1-03a):** neither. File names encode the bill key; a page lists the directory, sorts, and reads only its entries. The first page of 15,000 entries takes about 10 ms (`TestCatalogScale`). Recorded in [architecture § Adapter packages](../../../architecture/README.md#adapter-packages).
 - Should the local data directory be resettable from a fixture snapshot (for example `make local-reset`), so tests and demos start from a known state?
+  - Not built in M1-03a; open for the operator. Nothing blocks on it.
