@@ -300,6 +300,19 @@ func (s *Store) GetSelectionPolicy(ctx context.Context) (data.SelectionPolicy, e
 	return p, nil
 }
 
+// GetSelectionPolicyVersion returns one policy version; ErrNotFound when it
+// does not exist.
+func (s *Store) GetSelectionPolicyVersion(ctx context.Context, version int) (data.SelectionPolicy, error) {
+	if err := ctxErr(ctx, "get selection policy version"); err != nil {
+		return data.SelectionPolicy{}, err
+	}
+	var p data.SelectionPolicy
+	if err := s.read(colPolicy, policyID(version), &p); err != nil {
+		return data.SelectionPolicy{}, fmt.Errorf("get selection policy version %d: %w", version, err)
+	}
+	return p, nil
+}
+
 // list returns the decoded ids of a collection; a missing collection is empty.
 func (s *Store) list(col string) ([]string, error) {
 	entries, err := os.ReadDir(filepath.Join(s.root, col))

@@ -1,5 +1,5 @@
-// Command read-api is the placeholder public read service. M1-10 adds the
-// real routes; this version proves bootstrap, wiring, health, and metrics.
+// Command read-api is the public, read-only JSON service. It serves the
+// routes of api/openapi.yaml from the read ports its build target wires.
 package main
 
 import (
@@ -13,6 +13,7 @@ import (
 
 	"github.com/easterthebunny/pubcommittee/internal/data"
 	"github.com/easterthebunny/pubcommittee/internal/httpx"
+	"github.com/easterthebunny/pubcommittee/internal/readapi"
 	"github.com/easterthebunny/pubcommittee/internal/telemetry"
 )
 
@@ -58,17 +59,19 @@ func run(args []string, getenv func(string) string) error {
 		return fmt.Errorf("wiring: %w", err)
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /v1/ping", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := ports.PublicDocs.GetSelectionPolicy(r.Context()); err != nil && !errors.Is(err, data.ErrNotFound) {
-			httpx.ProblemFor(w, err)
-			return
-		}
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, _ = w.Write([]byte("pong\n"))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	limits, err := readapi.ParseRateLimits(getenv("RATE_LIMITS"))
+	if err != nil {
+		return fmt.Errorf("config: RATE_LIMITS: %w", err)
+	}
+	handler, err := readapi.Handler(readapi.New(ports), readapi.Options{
+		RateLimits: limits, ClientIPHeader: getenv("CLIENT_IP_HEADER"), Logger: logger,
 	})
+	if err != nil {
+		return fmt.Errorf("handler: %w", err)
+	}
 
-	srv := httpx.New(cfg, tel.Instruments.HTTP(mux), tel.MetricsHandler(),
+	srv := httpx.New(cfg, tel.Instruments.HTTP(handler), tel.MetricsHandler(),
 		func(ctx context.Context) error {
 			_, err := ports.BillText.ListVersions(ctx, data.BillRef{Jurisdiction: "us", Session: "0", Type: "hr", Number: 1})
 			if err != nil {
@@ -77,7 +80,7 @@ func run(args []string, getenv func(string) string) error {
 			return nil
 		})
 	tel.Instruments.RecordStartup(context.Background(), time.Since(started))
-	slog.New(slog.NewJSONHandler(os.Stdout, nil)).Info("starting", "service", serviceName, "port", cfg.Port)
+	logger.Info("starting", "service", serviceName, "port", cfg.Port)
 	if err := srv.RunSignals(); err != nil {
 		return fmt.Errorf("serve: %w", err)
 	}

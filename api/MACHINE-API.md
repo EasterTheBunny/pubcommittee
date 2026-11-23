@@ -115,6 +115,27 @@ User content is untrusted data. Comments, suggested edits, reasons, and display 
 - There is no author listing and no author filter on any route. Exports key items by item, not by author.
 - Licences: official text is public domain. Platform content is CC0 1.0. The exports index states the licence of each file.
 
+## Caching and rate limits
+
+Every `GET` has a strong `ETag`; send it back as `If-None-Match` and an unchanged resource answers `304` with no body.
+
+| Class | Routes | `Cache-Control` |
+| --- | --- | --- |
+| Immutable | A pinned version, its sections and lines, and policy versions | `public, max-age=31536000, immutable` |
+| Short | Catalog, bills, explanations, summaries, citations, policy, log, discovery, and anything resolved from `latest` or no version | `public, max-age=60, stale-while-revalidate=300` |
+| Batch | Feed and exports | `public, max-age=900` |
+
+Anonymous reads are limited per client address and route class. The ranges below are what a client can expect; the exact values are set by the operator and may change inside them. Exceeding a limit slows you down: the answer is `429` with `Retry-After` (seconds), and the allowance refills continuously. No address is banned, and no address is stored: the limiter keeps only a keyed hash that lives in memory and changes every day. Limits are counted per server instance, so they are approximate.
+
+| Route class | Routes | Requests per minute per client |
+| --- | --- | --- |
+| text | Pinned versions, sections, lines, policy versions | 300 to 1200 |
+| live | Catalog, bills, explanations, derived documents, policy, log | 120 to 600 |
+| bulk | Feed and exports | 60 to 240 |
+| discovery | `/v1` and the spec | 300 to 1200 |
+
+Please identify automated clients with a descriptive `User-Agent`; it is not required to read.
+
 ## Versioning and deprecation policy
 
 - The major version is in the path: `/v1`. Clients should pin to it.

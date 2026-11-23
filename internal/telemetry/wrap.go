@@ -109,6 +109,13 @@ func (w timedPublicDocs) GetSelectionPolicy(ctx context.Context) (r data.Selecti
 	return w.n.GetSelectionPolicy(ctx)
 }
 
+func (w timedPublicDocs) GetSelectionPolicyVersion(
+	ctx context.Context, version int,
+) (r data.SelectionPolicy, err error) {
+	defer w.t.start(ctx, "PublicDocs", "GetSelectionPolicyVersion", &err)()
+	return w.n.GetSelectionPolicyVersion(ctx, version)
+}
+
 func (w timedPublicDocs) ListLog(ctx context.Context, p data.Page) (r data.Paged[data.LogEntry], err error) {
 	defer w.t.start(ctx, "PublicDocs", "ListLog", &err)()
 	return w.n.ListLog(ctx, p)

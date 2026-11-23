@@ -154,23 +154,71 @@ func Block(s Section, n int) (from, to int, ok bool) {
 	return 0, 0, false
 }
 
-// Bill holds a bill's metadata and its version list.
-type Bill struct {
-	Ref      BillRef          `json:"ref"`
-	Title    string           `json:"title"`
-	Sponsor  string           `json:"sponsor"`
-	Status   string           `json:"status"`
-	Versions []VersionSummary `json:"versions"`
-	Meta     Meta             `json:"meta"`
+// Chamber values of Bill.Chamber and CatalogEntry.Chamber.
+const (
+	ChamberHouse  = "house"
+	ChamberSenate = "senate"
+	ChamberJoint  = "joint"
+)
+
+// Review states of Bill.ReviewState.
+const (
+	ReviewOpen   = "open"
+	ReviewClosed = "closed"
+)
+
+// Markup statuses of CatalogEntry.MarkupStatus.
+const (
+	MarkupInReview      = "in-review"
+	MarkupEligible      = "eligible"
+	MarkupNotACandidate = "not-a-candidate"
+)
+
+// Link kinds of Link.Kind.
+const (
+	LinkBillPage    = "bill-page"
+	LinkTextVersion = "text-version"
+	LinkOther       = "other"
+)
+
+// Link points to an official page for a bill.
+type Link struct {
+	Label string `json:"label"`
+	URL   string `json:"url"`
+	Kind  string `json:"kind,omitempty"`
 }
 
-// CatalogEntry is one row of the public catalog.
+// Bill holds a bill's metadata and its version list. ReviewState is empty
+// for documents written before M1-10; readers treat empty as ReviewOpen.
+type Bill struct {
+	Ref            BillRef          `json:"ref"`
+	Title          string           `json:"title"`
+	Sponsor        string           `json:"sponsor"`
+	Status         string           `json:"status"`
+	Chamber        string           `json:"chamber,omitempty"`
+	ReviewState    string           `json:"review_state,omitempty"`
+	OfficialLinks  []Link           `json:"official_links,omitempty"`
+	TrackedReasons []string         `json:"tracked_reasons,omitempty"`
+	PolicyVersion  int              `json:"policy_version,omitempty"`
+	Versions       []VersionSummary `json:"versions"`
+	Meta           Meta             `json:"meta"`
+}
+
+// CatalogEntry is one row of the public catalog. Untracked entries carry no
+// bill text, only metadata and official links.
 type CatalogEntry struct {
-	Bill    BillRef  `json:"bill"`
-	Title   string   `json:"title"`
-	Tracked bool     `json:"tracked"`
-	Reasons []string `json:"reasons"`
-	Meta    Meta     `json:"meta"`
+	Bill              BillRef  `json:"bill"`
+	Title             string   `json:"title"`
+	Status            string   `json:"status,omitempty"`
+	Chamber           string   `json:"chamber,omitempty"`
+	Subjects          []string `json:"subjects,omitempty"`
+	CommitteeActivity bool     `json:"committee_activity,omitempty"`
+	Tracked           bool     `json:"tracked"`
+	Reasons           []string `json:"reasons"`
+	MarkupStatus      string   `json:"markup_status,omitempty"`
+	ExclusionReason   string   `json:"exclusion_reason,omitempty"`
+	OfficialLinks     []Link   `json:"official_links,omitempty"`
+	Meta              Meta     `json:"meta"`
 }
 
 // Provision is an addressable unit of existing law.
@@ -197,7 +245,8 @@ const (
 type CitationLink struct {
 	Version      VersionRef    `json:"version"`
 	Section      []string      `json:"section"`
-	Text         string        `json:"text"` // the citation as written in the bill
+	Line         int           `json:"line,omitempty"` // line holding the citation, when known
+	Text         string        `json:"text"`           // the citation as written in the bill
 	ProvisionIDs []string      `json:"provision_ids"`
 	State        CitationState `json:"state"`
 }

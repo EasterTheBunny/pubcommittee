@@ -50,8 +50,20 @@ func Spec(root string) (*openapi3.T, error) {
 	return doc, nil
 }
 
+// yamlText decodes a YAML body as its text, because the spec types
+// /v1/openapi.yaml as a string; the default decoder would parse it into an
+// object and fail the check.
+func yamlText(body io.Reader, _ http.Header, _ *openapi3.SchemaRef, _ openapi3filter.EncodingFn) (any, error) {
+	b, err := io.ReadAll(body)
+	if err != nil {
+		return nil, fmt.Errorf("read yaml body: %w", err)
+	}
+	return string(b), nil
+}
+
 // New builds a Harness for the service at baseURL.
 func New(baseURL string) (*Harness, error) {
+	openapi3filter.RegisterBodyDecoder("application/yaml", yamlText)
 	baseURL = strings.TrimRight(baseURL, "/")
 	doc, err := Spec(baseURL)
 	if err != nil {

@@ -25,6 +25,9 @@ type PublicDocs interface {
 	GetExplanations(ctx context.Context, ref VersionRef) ([]ChangeExplanation, error)
 	// GetSelectionPolicy returns the latest policy version.
 	GetSelectionPolicy(ctx context.Context) (SelectionPolicy, error)
+	// GetSelectionPolicyVersion returns one policy version; ErrNotFound if
+	// that version does not exist.
+	GetSelectionPolicyVersion(ctx context.Context, version int) (SelectionPolicy, error)
 	// ListLog pages through the public log, newest first.
 	ListLog(ctx context.Context, p Page) (Paged[LogEntry], error)
 }

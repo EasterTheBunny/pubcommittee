@@ -3,7 +3,7 @@ package: apiv1
 generate:
   std-http-server: true
   models: true
-  client: true
+  client: false # read-api serves the spec; clients use the TypeScript types or their own
   embedded-spec: true
 output-options:
   skip-prune: true

@@ -306,7 +306,7 @@ func TestWriteProblem(t *testing.T) {
 		t.Fatalf("body is not JSON: %v", err)
 	}
 	want := httpx.Problem{
-		Type:   "about:blank",
+		Type:   "/problems/invalid",
 		Title:  http.StatusText(http.StatusUnprocessableEntity),
 		Status: http.StatusUnprocessableEntity,
 		Detail: "name is required",
@@ -326,6 +326,29 @@ func TestWriteProblemTitle(t *testing.T) {
 	}
 	if p.Title != "Short and Stout" || p.Type != "about:blank" || p.Detail != "" {
 		t.Fatalf("problem = %+v, want explicit title, about:blank type, no detail", p)
+	}
+}
+
+func TestProblemTypes(t *testing.T) {
+	t.Parallel()
+	want := map[int]string{
+		http.StatusBadRequest:          "/problems/invalid",
+		http.StatusNotFound:            "/problems/not-found",
+		http.StatusConflict:            "/problems/conflict",
+		http.StatusTooManyRequests:     "/problems/rate-limited",
+		http.StatusServiceUnavailable:  "/problems/unavailable",
+		http.StatusInternalServerError: "about:blank",
+	}
+	for status, typ := range want {
+		rec := httptest.NewRecorder()
+		httpx.WriteProblem(rec, status, "", "")
+		var p httpx.Problem
+		if err := json.Unmarshal(rec.Body.Bytes(), &p); err != nil {
+			t.Fatalf("body is not JSON: %v", err)
+		}
+		if p.Type != typ {
+			t.Errorf("status %d type = %q, want %q", status, p.Type, typ)
+		}
 	}
 }
 

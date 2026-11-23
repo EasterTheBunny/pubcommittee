@@ -141,6 +141,21 @@ func (s *Store) GetSelectionPolicy(ctx context.Context) (data.SelectionPolicy, e
 	return docClonePolicy(latest), nil
 }
 
+// GetSelectionPolicyVersion returns one policy version; ErrNotFound when it
+// does not exist.
+func (s *Store) GetSelectionPolicyVersion(ctx context.Context, version int) (data.SelectionPolicy, error) {
+	if err := docCheck(ctx, "get selection policy version"); err != nil {
+		return data.SelectionPolicy{}, err
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	p, ok := s.policies[version]
+	if !ok {
+		return data.SelectionPolicy{}, fmt.Errorf("get selection policy version %d: %w", version, data.ErrNotFound)
+	}
+	return docClonePolicy(p), nil
+}
+
 // PutSelectionPolicy writes a policy version; an existing Version is
 // write-once and ErrConflict when its content differs.
 func (s *Store) PutSelectionPolicy(ctx context.Context, p data.SelectionPolicy) error {
@@ -519,11 +534,15 @@ func docCopy[T any](in []T) []T {
 
 func docCloneBill(b data.Bill) data.Bill {
 	b.Versions = docCopy(b.Versions)
+	b.OfficialLinks = docCopy(b.OfficialLinks)
+	b.TrackedReasons = docCopy(b.TrackedReasons)
 	return b
 }
 
 func docCloneCatalog(e data.CatalogEntry) data.CatalogEntry {
 	e.Reasons = docCopy(e.Reasons)
+	e.Subjects = docCopy(e.Subjects)
+	e.OfficialLinks = docCopy(e.OfficialLinks)
 	return e
 }
 

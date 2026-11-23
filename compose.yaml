@@ -32,6 +32,36 @@ services:
           memory: 128M
     mem_reservation: 64M
 
+  # Stands in for a platform job in another container: writes the invented
+  # fixture bills into the shared data volume, so read-api (a different
+  # container) can be shown serving documents it did not write (M1-10).
+  #   docker compose --profile seed run --rm seed
+  seed:
+    profiles: ["seed", "acceptance"]
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    working_dir: /src
+    command: ["go", "run", "-tags", "local", "./test/acceptance/M1-10/seed"]
+    environment:
+      DATA_DIR: /data
+      GOFLAGS: -buildvcs=false
+      GOCACHE: /tmp/gocache
+    volumes:
+      - ./go.mod:/src/go.mod:ro
+      - ./go.sum:/src/go.sum:ro
+      - ./api:/src/api:ro
+      - ./cmd:/src/cmd:ro
+      - ./internal:/src/internal:ro
+      - ./test:/src/test:ro
+      - ./.local-data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+    mem_reservation: 256M
+
   otel-collector:
     image: otel/opentelemetry-collector@sha256:34b24b740c3c88d3467740e8642a397c13898ef76d7295c5425164c482ed1b73
     command: ["--config=/etc/otelcol.yaml"]
@@ -65,6 +95,8 @@ services:
     depends_on:
       read-api:
         condition: service_healthy
+      seed:
+        condition: service_completed_successfully
     deploy:
       resources:
         limits:

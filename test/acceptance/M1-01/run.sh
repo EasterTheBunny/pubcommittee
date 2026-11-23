@@ -20,7 +20,7 @@ check() {
 check healthz "$api/healthz" 200
 check readyz "$api/readyz" 200
 check metrics "$metrics/metrics" 200
-grep -q 'http_server_request_duration' /tmp/m101.out || curl -s "$api/v1/ping" >/dev/null
+grep -q 'http_server_request_duration' /tmp/m101.out || curl -s "$api/v1" >/dev/null
 curl -s "$metrics/metrics" | grep -q 'pubcommittee_startup_duration' || {
 	echo "FAIL: pubcommittee.startup.duration missing from /metrics" >&2
 	exit 1
