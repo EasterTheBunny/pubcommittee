@@ -222,8 +222,17 @@ for (const b of bills) {
 			tally('summary-anchors', sj.statements.every((st) => st.anchors?.length && st.anchors.every((a) => a.startsWith('prev:') || pg.body.includes(`id="${a.replace(/-l(\d+)-\d+$/, '-l$1')}"`))), `${b} v${n} statement anchor not in page`);
 		}
 		const ex = await json(`/v1/bills/${b}/v/${n}/explanations`);
+		const ver = await json(`/v1/bills/${b}/v/${n}`);
 		for (const e of ex.items ?? ex) {
 			tally('label', e.provenance === 'auto' && e.content_class === 'platform' && e.flags?.includes('auto'), `${b} v${n} ${e.section_id} explanation unlabelled`);
+			// Pinned to lines of its own section, shown above them, and naming the provision in readable form.
+			const sec = ver.sections.find((x) => x.id === e.section_id);
+			const nums = new Set((sec?.lines ?? []).map((l) => l.n));
+			tally('pinned', Number.isInteger(e.line_from) && e.line_to >= e.line_from && nums.has(e.line_from) && nums.has(e.line_to), `${b} v${n} ${e.section_id} ${e.provision_id ?? ''} has no valid line_from/line_to`);
+			tally('pinned-page', pg.body.includes(`data-lines="${e.line_from}-${e.line_to}"`), `${b} v${n} ${e.section_id} page lacks the explanation pinned to ${e.line_from}-${e.line_to}`);
+			if (e.provision_id) tally('citation', /^\d+ U\.S\.C\. \S/.test(e.provision_citation ?? ''), `${b} v${n} ${e.provision_id} has citation ${e.provision_citation}`);
+			// A section that only names the Act has no explanation.
+			tally('short-title', !(sec?.lines ?? []).every((l) => / may be cited as /i.test(l.text)), `${b} v${n} ${e.section_id} short-title section has an explanation`);
 		}
 		const ch = await get(api, `/v1/bills/${b}/v/${n}/changes`);
 		if (ch.status === 200) {
@@ -238,6 +247,10 @@ check('a summary is served for every version of the three exit bills', summaries
 check('at least one change summary is served', changeSummaries >= 2, `${changeSummaries}`, `${changeSummaries} served`);
 report('every served explanation, summary and change summary is labelled auto, content class platform', 'label');
 report('every page with an explanation shows the Auto-generated label', 'label-page');
+report('every explanation is pinned to valid lines of its section and its page shows it there', 'pinned');
+report('every explanation page carries the explanation pinned at the served lines', 'pinned-page');
+report('every explanation of a provision names it as "<title> U.S.C. <section>(<sub>)"', 'citation');
+report('no explanation is served for a section that only gives the short title', 'short-title');
 report('every summary statement points at lines that exist in the page', 'summary-anchors');
 
 // ---- 5. Catalog, markup status, selection policy, tracked-set disclosure ------------------------

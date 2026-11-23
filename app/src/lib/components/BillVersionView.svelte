@@ -3,7 +3,6 @@
 	import type { BillPageData } from '#lib/server/bill.ts';
 	import type { Citation, Explanation } from '#lib/types.ts';
 	import CitationList from './CitationList.svelte';
-	import ExplanationPanel from './ExplanationPanel.svelte';
 	import LineList from './LineList.svelte';
 	import LineSelectionBar from './LineSelectionBar.svelte';
 	import PlaceholderLink from './PlaceholderLink.svelte';
@@ -130,14 +129,15 @@
 							· <a href={latestSectionHref(bill.id, s.id)}>latest</a>
 						{/if}
 					</p>
-					<div class="mt-3 grid gap-4 {ex.length ? 'lg:grid-cols-[3fr_2fr]' : ''}">
-						<div>
-							<h3 class="mb-1 eyebrow">Bill text</h3>
-							<LineList billId={bill.id} version={version.n} sectionId={s.id} lines={s.lines} />
-						</div>
-						{#if ex.length}
-							<ExplanationPanel explanations={ex} />
-						{/if}
+					<div class="mt-3">
+						<h3 class="mb-1 eyebrow">Bill text</h3>
+						<LineList
+							billId={bill.id}
+							version={version.n}
+							sectionId={s.id}
+							lines={s.lines}
+							explanations={ex}
+						/>
 					</div>
 				</section>
 			{/each}

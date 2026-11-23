@@ -37,6 +37,22 @@ async function timed(page: Page, name: string, path: string) {
 
 test.describe('without scripts', () => {
 	test.use({ javaScriptEnabled: false });
+	test('every part of every explanation is reachable without scripts', async ({ page }) => {
+		await page.goto('/bills/us-119-hr-4313/v/2');
+		const asides = page.locator('[data-bill-text] aside[data-explanation]');
+		const total = await asides.count();
+		expect(total).toBeGreaterThan(0);
+		for (const i of [0, total - 1]) {
+			const ex = asides.nth(i);
+			await expect(ex.getByText('Auto-generated').first()).toBeVisible();
+			const ctl = ex.locator('summary');
+			for (let k = 0; k < (await ctl.count()); k++) {
+				await ctl.nth(k).click();
+				await expect(ex.locator('details[open] .ex-body')).toBeVisible();
+				await expect(ex.locator('details[open]')).toHaveCount(1);
+			}
+		}
+	});
 	for (const b of exitBills) {
 		test(`${b.id}: find in the catalog, read every line of the latest version, follow a line address`, async ({ page }) => {
 			await page.goto(`/catalog?q=${encodeURIComponent(b.title.split(' ').slice(0, 2).join(' '))}`);
@@ -59,6 +75,42 @@ test.describe('without scripts', () => {
 		await expect(page.getByText('Auto-generated').first()).toBeVisible();
 		await expect(page.locator('[data-content-class="platform"]').first()).toBeVisible();
 		await expect(page.locator('[data-bill-text] [data-content-class="official"]').first()).toBeVisible();
+	});
+	test('explanations are pinned above the line they describe; the controls open, close and switch', async ({ page }) => {
+		await page.goto('/bills/us-119-hr-4313/v/2');
+		const asides = page.locator('[data-bill-text] aside[data-explanation]');
+		expect(await asides.count()).toBeGreaterThan(0);
+		for (const i of [0, (await asides.count()) - 1]) {
+			const ex = asides.nth(i);
+			const [from] = (await ex.getAttribute('data-lines'))!.split('-');
+			// the list of lines that follows it starts with the first line it describes
+			await expect(ex.locator('+ ol > li').first()).toHaveAttribute('id', new RegExp(`-l${from}$`));
+			await expect(ex.getByText('Auto-generated').first()).toBeVisible();
+			await expect(ex).not.toContainText('usc/');
+			const ctl = ex.locator('summary');
+			const body = ex.locator('details[open] .ex-body');
+			await ctl.first().click();
+			await expect(body).toBeVisible();
+			await ctl.first().click();
+			await expect(body).toBeHidden();
+			if ((await ctl.count()) > 1) {
+				await ctl.first().click();
+				await ctl.nth(1).click();
+				await expect(ex.locator('details[open]')).toHaveCount(1);
+				await expect(ex.locator('details[open] summary')).toHaveText((await ctl.nth(1).textContent())!);
+			}
+		}
+	});
+	test('a section that only gives the short title shows no explanation', async ({ page }) => {
+		for (const b of exitBills) {
+			const res = await fetch(`${api}/v1/bills/${b.id}/v/1`);
+			const j = (await res.json()) as { sections: { id: string; lines: Line[] }[] };
+			await page.goto(`/bills/${b.id}/v/1`);
+			for (const sec of j.sections.filter((x) => x.lines.every((l) => / may be cited as /i.test(l.text)))) {
+				await expect(page.locator(`#${sec.id}`)).toBeVisible();
+				await expect(page.locator(`#${sec.id} aside[data-explanation]`)).toHaveCount(0);
+			}
+		}
 	});
 	test('version history: the older version says what changed since; every version is a link', async ({ page }) => {
 		await page.goto('/bills/us-119-hr-4313/v/1/s/s2/l/2');

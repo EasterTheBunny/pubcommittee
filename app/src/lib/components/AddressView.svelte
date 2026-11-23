@@ -3,7 +3,6 @@
 	import { billHref, linesHref, sectionHref } from '#lib/links.ts';
 	import type { AddressPageData } from '#lib/server/bill.ts';
 	import ChangedNotice from './ChangedNotice.svelte';
-	import ExplanationPanel from './ExplanationPanel.svelte';
 	import LineList from './LineList.svelte';
 	import LineSelectionBar from './LineSelectionBar.svelte';
 
@@ -66,6 +65,7 @@
 			sectionId={data.sectionId}
 			{lines}
 			highlight={data.range}
+			explanations={data.explanations}
 		/>
 		{#if data.range}
 			<p class="mt-3 text-sm">
@@ -73,9 +73,5 @@
 			</p>
 		{/if}
 	</section>
-
-	{#if data.explanations.length}
-		<div class="mt-4"><ExplanationPanel explanations={data.explanations} /></div>
-	{/if}
 </div>
 <LineSelectionBar billId={data.bill.id} version={data.n} />

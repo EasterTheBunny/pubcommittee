@@ -30,3 +30,27 @@ test('without scripts: placeholders open natively and name their milestone', asy
 	await page.getByText('Sign in').click();
 	await expect(page.getByText(/Coming in M2/)).toBeVisible();
 });
+
+test('without scripts: every part of an explanation is reachable, one open at a time', async ({
+	page
+}) => {
+	await page.goto('/bills/us-119-hr-4127/v/2');
+	const ex = page.locator('#s4 aside[data-explanation]');
+	await expect(ex.getByText('Auto-generated').first()).toBeVisible();
+	// the text of every part is in the page itself, scripts or not
+	await expect(ex).toContainText('Clinics must post hours.');
+	await expect(ex).toContainText('Patients can plan visits.');
+	await expect(ex).toContainText('Clinics may post hours.');
+	for (const [label, part, text] of [
+		['What changes', 'what', 'Clinics must post hours.'],
+		['Why it matters', 'why', 'Patients can plan visits.'],
+		['Existing law cited', 'law', 'Clinics may post hours.']
+	]) {
+		await ex.getByText(label, { exact: true }).click();
+		await expect(ex.locator(`[data-part="${part}"] .ex-body`)).toBeVisible();
+		await expect(ex.locator(`[data-part="${part}"] .ex-body`)).toContainText(text);
+		await expect(ex.locator('details[open]')).toHaveCount(1);
+	}
+	await ex.getByText('Existing law cited', { exact: true }).click();
+	await expect(ex.locator('details[open]')).toHaveCount(0);
+});
