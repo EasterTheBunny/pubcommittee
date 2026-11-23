@@ -45,7 +45,7 @@ Context for every item: the local run uses the fake generator (`adapters/fakegen
 **Checked.**
 - The catalog's bill links point to Congress.gov, using the `legislationUrl` from each bill's official status record (for example `https://www.congress.gov/bill/119th-congress/house-bill/1025`); bills whose record has none get the same form derived from the bill id (M1-16 finding 1).
 - Congress.gov answers `403` to every automated request, so their status could not be checked from the local run.
-- The local seed tracks only the three exit bills; every other catalog bill has a catalog entry and no text, so an in-app page for it shows no text by design (01 § Public catalog).
+- The local seed stores text only for the three exit bills. The selection policy also tracks other catalog bills (for example `us-119-s-219`), but the fixtures hold only their status records, so they have no stored text; untracked catalog bills show no text by design (01 § Public catalog).
 
 **Found (2026-11-22): `/bills/us-119-s-219`.** The selection policy tracks this bill, but the fixtures hold only its status record, so no text version is stored (the text pull is its own step). The app looked for a catalog entry only among untracked bills, found none, and answered 404, although `read-api` serves the bill.
 
