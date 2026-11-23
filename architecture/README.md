@@ -814,7 +814,7 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 | `GET /v1/bills/{bill}/v/{n}/summary`, `.../changes` | `read-api` | None | Short: bill summary and change summary against the previous version ([M1-09](../design/tasks/m1/09-ai-generation.md)) |
 | `GET /v1/bills/{bill}/v/{n}/citations?state=`, `.../citations/unresolved` | `read-api` | None | Short ([M1-07](../design/tasks/m1/07-us-code-and-citations.md)) |
 | `GET /v1/bills/{bill}/v/{n}/compare/{m}` | `read-api` | None | Immutable: base `n` against `m` ([M1-08](../design/tasks/m1/08-version-history-and-stale.md)) |
-| `GET /v1/bills/{bill}/v/{n}/explanations` | `read-api` | None | Short (stewards correct explanations) |
+| `GET /v1/bills/{bill}/v/{n}/explanations` | `read-api` | None | Short (stewards correct explanations). Each carries `line_from`, `line_to` (the lines it rests on) and `provision_citation` (for example `16 U.S.C. 824a(f)`); for explanations stored without line anchors they are derived on read from the citation lines, else the whole section. Sections that need no explanation (`data.Section.NeedsExplanation`) are left out, here and in the change-explanations export |
 | `GET /v1/bills/{bill}/v/{n}/review` | `read-api` | None | Short: threads and suggestions for that version |
 | `GET /v1/threads/{id}`, `GET /v1/suggestions/{id}` | `read-api` | None | Short |
 | `GET /v1/issues`, `GET /v1/issues/{id}` | `read-api` | None | Short |

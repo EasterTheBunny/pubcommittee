@@ -143,13 +143,14 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 
 | Layer | Compares | Presentation |
 | --- | --- | --- |
-| Bill against law | Bill section vs. the provisions it touches | Explanation: current provision text, what changes, why it matters; optional unofficial preview |
+| Bill against law | Bill section vs. the provisions it touches | Explanation: current provision text, what changes, why it matters; optional unofficial preview. Shown directly above the lines it explains, naming the provision it changes, as one control per part that has content; one part is open at a time and pushes the text down. Readable without scripts (M1 operator feedback) |
 | Citizen edit against bill | Suggested edit vs. bill lines | Literal side-by-side: deletions struck, insertions marked (rendered by [03](03-review-features-and-support.md)) |
 
 ### Existing law freshness
 - Each provision records the effective date of the consolidated source.
 - If the bill cites a provision changed by a recent enactment not yet in the consolidated source, the explanation is flagged and routed to a steward.
 - Where no consolidated code exists, the explanation is written from the bill alone and marked as such.
+- A section that only gives the Act its short title gets no explanation: its text says all there is to say.
 
 ## Rules and invariants
 
