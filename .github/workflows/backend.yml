@@ -1,7 +1,7 @@
 name: backend
 on:
   push:
-    paths-ignore: ["app/**", "design/**", "architecture/**"]
+    paths-ignore: ["app/**", "demo/**", "design/**", "architecture/**"]
   pull_request:
 
 permissions:

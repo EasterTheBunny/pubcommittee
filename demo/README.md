@@ -1,4 +1,6 @@
-# PubCommittee — M0 proof of concept
+# PubCommittee — M0 proof of concept (archived)
+
+This is the archived M0 demo. It lives in `demo/` and is served from its existing Netlify site, pointed at this directory (build command `npm run build`, publish directory `build`). The M1 app is in [`../app/`](../app/README.md).
 
 A clickable demo of the full review cycle on mocked data. See [`design/MILESTONES.md`](../design/MILESTONES.md) for M0 scope and [`design/`](../design/) for the feature docs.
 

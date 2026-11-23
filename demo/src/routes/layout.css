@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
+/* Design tokens from the M0 mockups. Blue = support and insertions, orange = opposition and deletions. */
+@theme {
+	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Space Grotesk', 'Inter', ui-sans-serif, sans-serif;
+	--font-serif: 'Source Serif 4', Georgia, serif;
+
+	--color-paper: #f6f5f1;
+	--color-card: #ffffff;
+	--color-subtle: #fbfaf7;
+	--color-line: #e2e0d8;
+	--color-line-strong: #d4d1c7;
+	--color-line-soft: #efede6;
+
+	--color-ink: #1b1f24;
+	--color-ink-2: #333a44;
+	--color-muted: #4a515c;
+	--color-faint: #6b717c;
+
+	--color-support: #1f4fd1;
+	--color-support-strong: #163a9c;
+	--color-support-soft: #eaf0ff;
+	--color-support-tint: #dce6ff;
+	--color-support-line: #c9d6fa;
+	--color-ins-ink: #0f2e86;
+
+	--color-oppose: #b4530c;
+	--color-oppose-ink: #8a3d00;
+	--color-oppose-soft: #fff1e0;
+	--color-oppose-tint: #fff8f0;
+	--color-oppose-line: #f2c9a0;
+	--color-oppose-bar: #d9731f;
+	--color-del: #ffe2cc;
+	--color-del-ink: #7a3300;
+
+	--color-ok: #1e5b32;
+	--color-ok-soft: #e8f4ec;
+
+	--color-hl: #fff6d6;
+	--color-hl-strong: #c99a00;
+	--color-hl-mark: #ffe58a;
+	--color-hl-ink: #5c4a00;
+}
+
+@layer base {
+	html {
+		@apply bg-paper font-sans text-ink antialiased;
+	}
+	a {
+		@apply text-support hover:text-support-strong;
+	}
+	:focus-visible {
+		@apply outline-2 outline-offset-2 outline-support;
+	}
+	dialog::backdrop {
+		background: rgb(27 31 36 / 0.55);
+	}
+}
+
+@utility card {
+	@apply rounded-xl border border-line bg-card;
+}
+@utility btn {
+	@apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4 text-sm font-semibold no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+	@apply btn border-support bg-support text-white hover:bg-support-strong hover:text-white;
+}
+@utility btn-outline {
+	@apply btn border-support bg-card text-support hover:bg-support-soft;
+}
+@utility btn-secondary {
+	@apply btn border-line-strong bg-card text-ink hover:bg-subtle hover:text-ink;
+}
+@utility btn-oppose {
+	@apply btn border-oppose bg-card text-oppose-ink hover:bg-oppose-soft hover:text-oppose-ink;
+}
+@utility btn-oppose-solid {
+	@apply btn border-oppose bg-oppose text-white hover:bg-oppose-ink hover:text-white;
+}
+@utility btn-ghost {
+	@apply btn border-transparent bg-transparent text-support hover:bg-support-soft;
+}
+/* Dashed = not built in M0; opens a placeholder pop-up. */
+@utility btn-future {
+	@apply btn border-dashed border-faint bg-card text-ink-2 hover:bg-subtle;
+}
+@utility chip {
+	@apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+@utility eyebrow {
+	@apply text-xs font-bold tracking-wider text-muted uppercase;
+}
+@utility field {
+	@apply rounded-lg border-line-strong text-[15px] focus:border-support focus:ring-support;
+}
