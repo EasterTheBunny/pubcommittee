@@ -48,6 +48,7 @@ Deliver every merged change on the public repository's `main` to `dev` with no m
 
 - GitHub App, installed on the private repository only; `deploy-trigger` environment in the public repository
 - `.github/workflows/dispatch-deploy.yml` in this repository
+- Agents never edit `deploy/`. Every deliverable in the deployment repository is proposed as a unified diff; the operator applies and commits it ([AGENTS.md](../../../AGENTS.md)).
 - `deploy-dev.yml`, `promote.yml`, the `deployed` branch format, and smoke tests in the private repository
 - Unit list (which units deploy, and how a new unit is added)
 - Operator runbook in the private repository: set up the App and environments, approve a promotion, roll back

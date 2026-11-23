@@ -284,7 +284,7 @@ Build: `CGO_ENABLED=0 go build -tags gcp -trimpath -ldflags="-s -w" ./cmd/write-
 | `internal/data` | Port interfaces, domain types, errors, conformance tests | — |
 | `internal/adapters/memory` | Every port | Process memory; seeded from the M0 mock data |
 | `internal/adapters/firestore` | `PublicDocs`, `ReviewItems`, `Moderation`, `PlatformDocs`, `Sessions`, `RateLimits` | Firestore |
-| `internal/adapters/gcs` | `BillText`, `Snapshots`, `Publisher` | Cloud Storage |
+| `internal/adapters/gcs` | `BillText`, `Snapshots`, `Publisher` | Cloud Storage, through the JSON API client of `cloud.google.com/go/storage` (not gRPC; M1-00) |
 | `internal/adapters/postgres` | `SignalLedger`, `Identities`, `Accounts` | Any Postgres (Neon in production) |
 | `internal/adapters/kmsgcp` | `Keys` | Cloud KMS |
 | `internal/adapters/localkeys` | `Keys` | Keys from a local file; development only, excluded from `gcp` builds |

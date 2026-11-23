@@ -29,7 +29,7 @@ Google publishes no supported Cloud Storage emulator. Its own Go client tests us
 **Out**
 - Writing `adapters/gcs` itself ([M1-03b](03b-cloud-storage-adapters.md)). The spike's tests are handed to M1-03b as a starting point for its conformance runs.
 - Tests against a real bucket. This needs a cloud project (stage C1). The spike lists which behaviors need it.
-- The gRPC client: see open questions.
+- The gRPC client: `adapters/gcs` uses the JSON API client (see open questions).
 
 ## Anticipated tests
 
@@ -112,7 +112,7 @@ Test 17 is expected to fail on both stand-ins, since neither checks IAM. Record 
 
 ## Open questions
 
-- Does `adapters/gcs` use the JSON API client (the default) or the gRPC client? The architecture does not say. The spike tests JSON; if gRPC is chosen, which stand-in supports it?
+- Does `adapters/gcs` use the JSON API client (the default) or the gRPC client? **Answered (operator, 2026-11-23): the JSON API client.** Objects are small (at most about 2 MB per bill), traffic is low and mostly cached, services scale to zero, and the JSON API has the widest stand-in support; gRPC is not needed for M1. Switching later is a constructor change inside `adapters/gcs`, rechecked with the conformance suite against a stand-in that supports gRPC. Recorded in [architecture § Adapter packages](../../../architecture/README.md#adapter-packages).
 - Should the expected behaviors be confirmed against a real bucket in `dev` once it exists (stage C1), and who provides that bucket?
 - If the result is "both", is running two stand-in images in CI acceptable?
 - Where does the spike's test code live once handed over: inside `adapters/gcs` tests, or discarded after M1-03b writes its own?
