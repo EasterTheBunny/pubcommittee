@@ -3,3 +3,5 @@ job-ingest 20000000
 job-exports 20000000
 admin-api 20000000
 pubctl 20000000
+job-summarize 30000000
+accuracy-report 20000000

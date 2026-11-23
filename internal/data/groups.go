@@ -14,6 +14,8 @@ type PublicReadPorts struct {
 	// Feed and Exports may be nil likewise.
 	Feed    FeedReader
 	Exports ExportReader
+	// Generated may be nil likewise: summaries answer not found.
+	Generated GeneratedReader
 }
 
 // PlatformPorts are held by ingest, generation, exports, and admin-api;
@@ -29,4 +31,5 @@ type PlatformPorts struct {
 	LawStore        LawWriter
 	FeedStore       FeedWriter
 	ExportStore     ExportWriter
+	GeneratedStore  GeneratedWriter
 }

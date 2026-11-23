@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 )
 
@@ -132,17 +133,33 @@ type LawSource interface {
 type GenRequest struct {
 	ID    string // caller-chosen, unique within a batch
 	Task  string
-	Input string
+	Input string // volatile part: the target of this request, as a JSON document
+	// Instructions and Source are the stable prefix shared by every request
+	// of one bill: task instructions, then the bill's full text as delimited
+	// source material. Adapters cache them. Optional for simple adapters.
+	Instructions string
+	Source       string
+	// Schema is the JSON schema of the output; Effort the thinking effort
+	// (low, medium, high, xhigh, max); PromptVersion names the prompt files.
+	Schema        json.RawMessage
+	Effort        string
+	PromptVersion string
+	// Model overrides the adapter's default model (the grader uses it).
+	Model string
 }
 
 // GenResult is the outcome of one GenRequest.
 type GenResult struct {
-	ID        string
-	Outcome   string // ok, refusal, invalid, truncated, error
-	Text      string
-	Model     string
-	TokensIn  int
-	TokensOut int
+	ID        string `json:"id"`
+	Outcome   string `json:"outcome"` // ok, refusal, invalid, truncated, error
+	Text      string `json:"text"`
+	Model     string `json:"model"`
+	TokensIn  int    `json:"tokens_in"`
+	TokensOut int    `json:"tokens_out"`
+	// Stop is the model's stop reason (end_turn, max_tokens, refusal, ...).
+	Stop string `json:"stop,omitempty"`
+	// CachedIn counts input tokens read from the prompt cache.
+	CachedIn int `json:"cached_in,omitempty"`
 }
 
 // Generator submits generation tasks.

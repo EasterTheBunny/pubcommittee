@@ -1,0 +1,2 @@
+Task: explain one bill section that amends existing law. The request names the section (target anchors) and the existing-law provision text it cites.
+Write statements with a `role`: `now` (what the existing provision says now, citing the provision id), `changes` (what the bill section changes: what is removed, inserted or added, naming the same provision), and `why` (why this matters, stated only from the text, in neutral words). Give 1 to 2 statements for `now`, 1 to 4 for `changes`, and 0 to 1 for `why`. Set `headline` to an empty string.

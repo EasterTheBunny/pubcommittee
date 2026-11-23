@@ -35,6 +35,7 @@ func (t *Telemetry) WrapPlatform(adapter string, g data.PlatformPorts) data.Plat
 		LawStore:        wrapLawWriter(tm, g.LawStore),
 		FeedStore:       wrapFeedWriter(tm, g.FeedStore),
 		ExportStore:     wrapExportWriter(tm, g.ExportStore),
+		GeneratedStore:  wrapGeneratedWriter(tm, g.GeneratedStore),
 	}
 }
 
@@ -49,6 +50,7 @@ func (t *Telemetry) WrapPublicRead(adapter string, g data.PublicReadPorts) data.
 		Law:         wrapLawReader(tm, g.Law),
 		Feed:        wrapFeedReader(tm, g.Feed),
 		Exports:     wrapExportReader(tm, g.Exports),
+		Generated:   wrapGeneratedReader(tm, g.Generated),
 	}
 }
 

@@ -43,7 +43,7 @@ linters:
   exclusions:
     rules:
       # Decorators return the wrapped port's error unchanged so errors.Is and identity hold.
-      - path: internal/telemetry/wrap\.go
+      - path: internal/telemetry/wrap(_generated)?\.go
         linters: [wrapcheck]
       # Fixtures and suites use literal line numbers, ids, and repeated strings on purpose.
       - path: (_test\.go|internal/data/conformance/)
