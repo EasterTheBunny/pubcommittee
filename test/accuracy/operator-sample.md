@@ -2,40 +2,7 @@
 
 Read each statement against ONLY its cited lines, shown under it. Write your label into the JSON file next to this one, in the field operator_label, on the item with the same id.
 
-1. This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.
-
-   Item `2e955f6fc526db802c54a68b21b55dc0#0` (bill-explanation)
-
-   > s1-l1: This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.
-
-   Your label (supported / unsupported / contradicted): ______
-
-2. This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.
-
-   Item `3eb2eada381a54cb853d7e4a1dfe681c#0` (bill-summary)
-
-   > s1-l1: This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.
-
-   Your label (supported / unsupported / contradicted): ______
-
-3. § 717a. Definitions When used in this chapter, unless the context otherwise requires— (1) “Person” includes an individual or a corporation. (2) “Corporation” includes any corporation, joint
-
-   Item `573652e8ed36268243865e5922216766#0` (change-explanation)
-
-   > s2-l2: (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
-   > usc/15/717a: § 717a. Definitions When used in this chapter, unless the context otherwise requires— (1) “Person” includes an individual or a corporation. (2) “Corporation” includes any corporation, joint-stock company, partnership, association, business trust, organized group of persons, whether incorporated or not, receiver or receivers, trustee or trustees of any of the foregoing, but shall not include municipalities as hereinafter defined. (3) “Municipality” means a city, county, or other political subdivision or agency of a State. (4) “State” means a State admitted to the Union, the District of
-
-   Your label (supported / unsupported / contradicted): ______
-
-4. Changed text: (1) Border-crossing facility The term border-crossing facility means the portion of an oil or natural gas pipeline or electric transmission facility that is located within 1,000 feet of the international boundary of the United States, measured from the point at which the facility crosses such boundary into the United States.
-
-   Item `bbdf7544bc4cbf6297195018c55f1c19#0` (version-changes)
-
-   > s2-l40: (1) Border-crossing facility The term border-crossing facility means the portion of an oil or natural gas pipeline or electric transmission facility that is located within 1,000 feet of the international boundary of the United States, measured from the point at which the facility crosses such boundary into the United States.
-
-   Your label (supported / unsupported / contradicted): ______
-
-5. This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.
+1. This section gives the bill its short title: the "Promoting Cross-border Energy Infrastructure Act".
 
    Item `88effaee574112157c79132c01a97b15#0` (bill-explanation)
 
@@ -43,35 +10,37 @@ Read each statement against ONLY its cited lines, shown under it. Write your lab
 
    Your label (supported / unsupported / contradicted): ______
 
-6. (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
+2. No one could build, connect, operate, or maintain a border-crossing facility for oil, natural gas, or electricity without a certificate of crossing; within 120 days after final action under the National Environmental Policy Act, the Federal Energy Regulatory Commission (for oil and gas pipelines) or the Secretary of Energy (for electric transmission) must issue the certificate unless it finds the facility is not in the U.S. public interest.
 
-   Item `3eb2eada381a54cb853d7e4a1dfe681c#1` (bill-summary)
+   Item `a04a30cb11d5ee757191f9acf71ee97a#0` (bill-summary)
 
-   > s2-l2: (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
+   > s2-l3: (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.
+   > s2-l5: (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
+   > s2-l6: (B) Relevant official or agency The relevant official or agency referred to in subparagraph (A) is—
+   > s2-l7: (i) the Federal Energy Regulatory Commission with respect to border-crossing facilities consisting of oil or natural gas pipelines; and
+   > s2-l8: (ii) the Secretary of Energy with respect to border-crossing facilities consisting of electric transmission facilities.
 
    Your label (supported / unsupported / contradicted): ______
 
-7. (a) Authorization of certain energy infrastructure projects at an international boundary of the United States (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection. (2) Certificate of crossing (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
+3. 15 U.S.C. 717a is the definitions section of the Natural Gas Act chapter. It defines terms used in that chapter: for example, "person" includes an individual or a corporation, and "municipality" means a city, county, or other political subdivision or agency of a State.
 
-   Item `573652e8ed36268243865e5922216766#1` (change-explanation)
+   Item `573652e8ed36268243865e5922216766#0` (change-explanation)
 
-   > s2-l2: (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
-   > s2-l3: (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.
-   > s2-l4: (2) Certificate of crossing
-   > s2-l5: (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
+   > s2-l42: (3) Natural gas The term natural gas has the meaning given that term in section 2 of the Natural Gas Act (15 U.S.C. 717a).
    > usc/15/717a: § 717a. Definitions When used in this chapter, unless the context otherwise requires— (1) “Person” includes an individual or a corporation. (2) “Corporation” includes any corporation, joint-stock company, partnership, association, business trust, organized group of persons, whether incorporated or not, receiver or receivers, trustee or trustees of any of the foregoing, but shall not include municipalities as hereinafter defined. (3) “Municipality” means a city, county, or other political subdivision or agency of a State. (4) “State” means a State admitted to the Union, the District of
 
    Your label (supported / unsupported / contradicted): ______
 
-8. Changed text: (e) Covered technical assistance defined In this section, the term covered technical assistance means a technical assistance authority, initiative, or program of the Environmental Protection Agency that is related to clean water infrastructure.
+4. In section 2(h), the definition of "border-crossing facility" changes. The earlier version defined it as the portion of an oil or natural gas pipeline or electric transmission facility located at an international boundary of the United States. The new version defines it as the portion located within 1,000 feet of the international boundary, measured from the point where the facility crosses the boundary into the United States.
 
-   Item `dc484c5bde51d7022ae464dd72eb93be#0` (version-changes)
+   Item `bbdf7544bc4cbf6297195018c55f1c19#0` (version-changes)
 
-   > s2-l23: (e) Covered technical assistance defined In this section, the term covered technical assistance means a technical assistance authority, initiative, or program of the Environmental Protection Agency that is related to clean water infrastructure.
+   > prev:s2-l40: (1) Border-crossing facility The term border-crossing facility means the portion of an oil or natural gas pipeline or electric transmission facility that is located at an international boundary of the United States.
+   > s2-l40: (1) Border-crossing facility The term border-crossing facility means the portion of an oil or natural gas pipeline or electric transmission facility that is located within 1,000 feet of the international boundary of the United States, measured from the point at which the facility crosses such boundary into the United States.
 
    Your label (supported / unsupported / contradicted): ______
 
-9. This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.
+5. This section gives the bill its short title: the “Promoting Cross-border Energy Infrastructure Act”.
 
    Item `8e43c7180c0a1dc06f143a5d72db8196#0` (bill-explanation)
 
@@ -79,32 +48,35 @@ Read each statement against ONLY its cited lines, shown under it. Write your lab
 
    Your label (supported / unsupported / contradicted): ______
 
-10. (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.
+6. For electric transmission facilities, the Secretary of Energy must require that the facility follow the policies and standards of the Electric Reliability Organization, the regional entity, and any Regional Transmission Organization or Independent System Operator that controls it.
 
-   Item `3eb2eada381a54cb853d7e4a1dfe681c#2` (bill-summary)
+   Item `a04a30cb11d5ee757191f9acf71ee97a#1` (bill-summary)
 
-   > s2-l3: (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.
-
-   Your label (supported / unsupported / contradicted): ______
-
-11. (c) Expedited application and approval process For purposes of subsection (a), the importation of the natural gas referred to in subsection (b), or the exportation of natural gas to a nation with whic
-
-   Item `a2ee0de389e0028a5057142cc7b6edb2#0` (change-explanation)
-
-   > s2-l2: (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
-   > usc/15/717b/c: (c) Expedited application and approval process For purposes of subsection (a), the importation of the natural gas referred to in subsection (b), or the exportation of natural gas to a nation with which there is in effect a free trade agreement requiring national treatment for trade in natural gas, shall be deemed to be consistent with the public interest, and applications for such importation or exportation shall be granted without modification or delay.
+   > s2-l9: (C) Additional requirement for electric transmission facilities In the case of a request for a certificate of crossing for a border-crossing facility consisting of an electric transmission facility, the Secretary of Energy shall require, as a condition of issuing the certificate of crossing under subparagraph (A), that the border-crossing facility be constructed, connected, operated, or maintained consistent with all applicable policies and standards of—
+   > s2-l10: (i) the Electric Reliability Organization and the applicable regional entity; and
+   > s2-l11: (ii) any Regional Transmission Organization or Independent System Operator with operational or functional control over the border-crossing facility.
 
    Your label (supported / unsupported / contradicted): ______
 
-12. Changed text: (7) An evaluation of how covered technical assistance supports communities in understanding, identifying, and implementing alternative and cost-effective technologies and features of treatment works that achieve long-term savings and improved outcomes in addressing water quality challenges.
+7. The bill does not change the text of 15 U.S.C. 717a. It adopts that provision's meaning of "natural gas" for its own new border-crossing rules.
 
-   Item `dc484c5bde51d7022ae464dd72eb93be#1` (version-changes)
+   Item `573652e8ed36268243865e5922216766#1` (change-explanation)
+
+   > s2-l42: (3) Natural gas The term natural gas has the meaning given that term in section 2 of the Natural Gas Act (15 U.S.C. 717a).
+   > usc/15/717a: § 717a. Definitions When used in this chapter, unless the context otherwise requires— (1) “Person” includes an individual or a corporation. (2) “Corporation” includes any corporation, joint-stock company, partnership, association, business trust, organized group of persons, whether incorporated or not, receiver or receivers, trustee or trustees of any of the foregoing, but shall not include municipalities as hereinafter defined. (3) “Municipality” means a city, county, or other political subdivision or agency of a State. (4) “State” means a State admitted to the Union, the District of
+
+   Your label (supported / unsupported / contradicted): ______
+
+8. Section 2 adds a seventh required item to the Comptroller General's review: an evaluation of how covered technical assistance helps communities understand, identify, and implement alternative and cost-effective technologies and features of treatment works that achieve long-term savings and improved outcomes in addressing water quality challenges.
+
+   Item `dc484c5bde51d7022ae464dd72eb93be#0` (version-changes)
 
    > s2-l18: (7) An evaluation of how covered technical assistance supports communities in understanding, identifying, and implementing alternative and cost-effective technologies and features of treatment works that achieve long-term savings and improved outcomes in addressing water quality challenges.
+   > s2-l3: (b) Requirements The Comptroller General shall include in the review required under subsection (a) the following:
 
    Your label (supported / unsupported / contradicted): ______
 
-13. This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.
+9. This section gives the bill its short title: the "Promoting Cross-border Energy Infrastructure Act".
 
    Item `ea2486d16896e26c4408fef93871609e#0` (bill-explanation)
 
@@ -112,35 +84,46 @@ Read each statement against ONLY its cited lines, shown under it. Write your lab
 
    Your label (supported / unsupported / contradicted): ______
 
-14. (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
+10. The certificate requirement does not apply to facilities already operating or already holding a Presidential permit, applies to pending permit applications only after denial or two years, and no certificate or permit is needed for modifications such as flow reversals, ownership changes, or volume changes to existing or permitted facilities.
 
-   Item `3eb2eada381a54cb853d7e4a1dfe681c#3` (bill-summary)
+   Item `a04a30cb11d5ee757191f9acf71ee97a#2` (bill-summary)
 
-   > s2-l5: (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
+   > s2-l12: (3) Exclusions This subsection shall not apply to any construction, connection, operation, or maintenance of a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity—
+   > s2-l13: (A) if the border-crossing facility is operating for such import, export, or transmission as of the date of enactment of this Act;
+   > s2-l14: (B) if a Presidential permit (or similar permit) for the construction, connection, operation, or maintenance has been issued pursuant to any provision of law or Executive order; or
+   > s2-l15: (C) if an application for a Presidential permit (or similar permit) for the construction, connection, operation, or maintenance is pending on the date of enactment of this Act, until the earlier of—
+   > s2-l16: (i) the date on which such application is denied; or
+   > s2-l17: (ii) two years after the date of enactment of this Act, if such a permit has not been issued by such date of enactment.
+   > s2-l29: (e) Modifications to existing projects No certificate of crossing under subsection (a), or Presidential permit (or similar permit), shall be required for a modification to—
+   > s2-l30: (1) an oil or natural gas pipeline or electric transmission facility that is operating for the import or export of oil or natural gas or the transmission of electricity as of the date of enactment of this Act;
+   > s2-l31: (2) an oil or natural gas pipeline or electric transmission facility for which a Presidential permit (or similar permit) has been issued pursuant to any provision of law or Executive order; or
+   > s2-l32: (3) a border-crossing facility for which a certificate of crossing has previously been issued under subsection (a).
+   > s2-l41: (2) Modification The term modification includes a reversal of flow direction, change in ownership, change in flow volume, addition or removal of an interconnection, or an adjustment to maintain flow (such as a reduction or increase in the number of pump or compressor stations).
 
    Your label (supported / unsupported / contradicted): ______
 
-15. (a) Authorization of certain energy infrastructure projects at an international boundary of the United States (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection. (2) Certificate of crossing (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
+11. The bill requires a certificate of crossing to build, connect, operate or maintain a border-crossing facility for oil, natural gas or electricity, with some exceptions. The Federal Energy Regulatory Commission handles pipelines, and the Secretary of Energy handles electric transmission. The certificate must be issued within 120 days after final environmental review action, unless the official finds the facility is not in the public interest.
 
-   Item `a2ee0de389e0028a5057142cc7b6edb2#1` (change-explanation)
+   Item `573652e8ed36268243865e5922216766#2` (change-explanation)
 
-   > s2-l2: (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
    > s2-l3: (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.
-   > s2-l4: (2) Certificate of crossing
    > s2-l5: (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
-   > usc/15/717b/c: (c) Expedited application and approval process For purposes of subsection (a), the importation of the natural gas referred to in subsection (b), or the exportation of natural gas to a nation with which there is in effect a free trade agreement requiring national treatment for trade in natural gas, shall be deemed to be consistent with the public interest, and applications for such importation or exportation shall be granted without modification or delay.
+   > s2-l6: (B) Relevant official or agency The relevant official or agency referred to in subparagraph (A) is—
+   > s2-l7: (i) the Federal Energy Regulatory Commission with respect to border-crossing facilities consisting of oil or natural gas pipelines; and
+   > s2-l8: (ii) the Secretary of Energy with respect to border-crossing facilities consisting of electric transmission facilities.
 
    Your label (supported / unsupported / contradicted): ______
 
-16. Changed text: Section 1866G(a)(1) of the Social Security Act (42 U.S.C. 1395cc–7(a)(1)) is amended by striking “January 30, 2026” and inserting “September 30, 2030”.
+12. In section 2(e), the definition of "covered technical assistance" keeps the same wording, meaning an EPA technical assistance authority, initiative, or program related to clean water infrastructure. The only visible difference is that the defined term no longer appears in quotation marks.
 
-   Item `1763b2a6ef12765fb307254cc59c36d7#0` (version-changes)
+   Item `dc484c5bde51d7022ae464dd72eb93be#1` (version-changes)
 
-   > s2-l2: Section 1866G(a)(1) of the Social Security Act (42 U.S.C. 1395cc–7(a)(1)) is amended by striking “January 30, 2026” and inserting “September 30, 2030”.
+   > prev:s2-l22: (e) Covered technical assistance defined In this section, the term “covered technical assistance” means a technical assistance authority, initiative, or program of the Environmental Protection Agency that is related to clean water infrastructure.
+   > s2-l23: (e) Covered technical assistance defined In this section, the term covered technical assistance means a technical assistance authority, initiative, or program of the Environmental Protection Agency that is related to clean water infrastructure.
 
    Your label (supported / unsupported / contradicted): ______
 
-17. This Act may be cited as the “Water Resources Technical Assistance Review Act”.
+13. This section gives the law its short title: the "Water Resources Technical Assistance Review Act".
 
    Item `f694c7a650eeae9b30f9a1b470c52ad3#0` (bill-explanation)
 
@@ -148,71 +131,24 @@ Read each statement against ONLY its cited lines, shown under it. Write your lab
 
    Your label (supported / unsupported / contradicted): ______
 
-18. This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.
+14. The Natural Gas Act is amended so that the Commission must grant applications to import natural gas from, or export it to, Canada or Mexico within 30 days after receiving a complete application.
 
-   Item `a04a30cb11d5ee757191f9acf71ee97a#0` (bill-summary)
+   Item `a04a30cb11d5ee757191f9acf71ee97a#3` (bill-summary)
 
-   > s1-l1: This Act may be cited as the “Promoting Cross-border Energy Infrastructure Act”.
-
-   Your label (supported / unsupported / contradicted): ______
-
-19. § 717b. Exportation or importation of natural gas; LNG terminals (a) Mandatory authorization order After six months from June 21, 1938, no person shall export any natural gas from the United States t
-
-   Item `09adc82afb4fe090931246585c7651b5#0` (change-explanation)
-
-   > s2-l2: (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
-   > usc/15/717b: § 717b. Exportation or importation of natural gas; LNG terminals (a) Mandatory authorization order After six months from June 21, 1938, no person shall export any natural gas from the United States to a foreign country or import any natural gas from a foreign country without first having secured an order of the Commission authorizing it to do so. The Commission shall issue such order upon application, unless, after opportunity for hearing, it finds that the proposed exportation or importation will not be consistent with the public interest. The Commission may by its order grant such
+   > s2-l22: (b) Importation or exportation of natural gas to Canada and Mexico Section 3(c) of the Natural Gas Act (15 U.S.C. 717b(c)) is amended by adding at the end the following: “In the case of an application for the importation of natural gas from, or the exportation of natural gas to, Canada or Mexico, the Commission shall grant the application not later than 30 days after the date on which the Commission receives the complete application.”.
 
    Your label (supported / unsupported / contradicted): ______
 
-20. Changed text: (A) in the subsection heading, by striking “Study” and inserting “Initial study”; and
+15. No Presidential permit would be required for these pipelines, transmission facilities or their border crossings. The President could not revoke existing such permits unless an Act of Congress authorizes the revocation.
 
-   Item `1763b2a6ef12765fb307254cc59c36d7#1` (version-changes)
+   Item `573652e8ed36268243865e5922216766#3` (change-explanation)
 
-   > s3-l9: (A) in the subsection heading, by striking “Study” and inserting “Initial study”; and
-
-   Your label (supported / unsupported / contradicted): ______
-
-21. (a) In general Not later than 1 year after the date of enactment of this Act, the Comptroller General of the United States shall initiate a comprehensive review of all covered technical assistance. (b) Requirements The Comptroller General shall include in the review required under subsection (a) the following: (1) A description of all covered technical assistance available to States, Tribes, local governments, and non-governmental organizations, including— (A) the regions and populations that are served through the provision of technical assistance; and
-
-   Item `5c94eb571b245d5fb2fb1a3c9abab09e#0` (bill-explanation)
-
-   > s2-l2: (a) In general Not later than 1 year after the date of enactment of this Act, the Comptroller General of the United States shall initiate a comprehensive review of all covered technical assistance.
-   > s2-l3: (b) Requirements The Comptroller General shall include in the review required under subsection (a) the following:
-   > s2-l4: (1) A description of all covered technical assistance available to States, Tribes, local governments, and non-governmental organizations, including—
-   > s2-l5: (A) the regions and populations that are served through the provision of technical assistance; and
+   > s2-l28: (d) No Presidential permit required No Presidential permit (or similar permit) shall be required pursuant to any provision of law or Executive order for the construction, connection, operation, or maintenance of an oil or natural gas pipeline or electric transmission facility, or any border-crossing facility thereof.
+   > s2-l33: (f) Prohibition on revocation of Presidential permits Notwithstanding any other provision of law, the President may not revoke a Presidential permit (or similar permit) issued pursuant to Executive Order No. 13337 (3 U.S.C. 301 note), Executive Order No. 11423 (3 U.S.C. 301 note), Executive Order No. 12038 (42 U.S.C. 7151 note), Executive Order No. 10485 (15 U.S.C. 717b note), or any other Executive order for the construction, connection, operation, or maintenance of an oil or natural gas pipeline or electric transmission facility, or any border-crossing facility thereof, unless such revocation is authorized by an Act of Congress.
 
    Your label (supported / unsupported / contradicted): ______
 
-22. (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
-
-   Item `a04a30cb11d5ee757191f9acf71ee97a#1` (bill-summary)
-
-   > s2-l2: (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
-
-   Your label (supported / unsupported / contradicted): ______
-
-23. (a) Authorization of certain energy infrastructure projects at an international boundary of the United States (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection. (2) Certificate of crossing (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
-
-   Item `09adc82afb4fe090931246585c7651b5#1` (change-explanation)
-
-   > s2-l2: (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
-   > s2-l3: (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.
-   > s2-l4: (2) Certificate of crossing
-   > s2-l5: (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
-   > usc/15/717b: § 717b. Exportation or importation of natural gas; LNG terminals (a) Mandatory authorization order After six months from June 21, 1938, no person shall export any natural gas from the United States to a foreign country or import any natural gas from a foreign country without first having secured an order of the Commission authorizing it to do so. The Commission shall issue such order upon application, unless, after opportunity for hearing, it finds that the proposed exportation or importation will not be consistent with the public interest. The Commission may by its order grant such
-
-   Your label (supported / unsupported / contradicted): ______
-
-24. Changed text: (3) Report Not later than September 30, 2028, the Secretary of Health and Human Services shall submit to the Committee on Ways and Means of the House of Representatives and the Committee on Finance of the Senate a report on the study conducted under paragraph (1).
-
-   Item `1763b2a6ef12765fb307254cc59c36d7#2` (version-changes)
-
-   > s3-l24: (3) Report Not later than September 30, 2028, the Secretary of Health and Human Services shall submit to the Committee on Ways and Means of the House of Representatives and the Committee on Finance of the Senate a report on the study conducted under paragraph (1).
-
-   Your label (supported / unsupported / contradicted): ______
-
-25. This Act may be cited as the “Water Resources Technical Assistance Review Act”.
+16. This section gives the bill its short title, the “Water Resources Technical Assistance Review Act”.
 
    Item `10fe56cb3fb6aaf783f3108fb91862c2#0` (bill-explanation)
 
@@ -220,47 +156,144 @@ Read each statement against ONLY its cited lines, shown under it. Write your lab
 
    Your label (supported / unsupported / contradicted): ______
 
-26. (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.
+17. The bill repeals section 202(e) of the Federal Power Act on electricity transmission to other countries and makes related changes to the Federal Power Act and the Public Utility Regulatory Policies Act of 1978.
 
-   Item `a04a30cb11d5ee757191f9acf71ee97a#2` (bill-summary)
+   Item `a04a30cb11d5ee757191f9acf71ee97a#4` (bill-summary)
 
-   > s2-l3: (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.
-
-   Your label (supported / unsupported / contradicted): ______
-
-27. § 796. Definitions The words defined in this section shall have the following meanings for purposes of this chapter, to wit: (1) “public lands” means such lands and interest in lands owned by the
-
-   Item `bb2e2c2dc58ce76a477b2de332f38eb0#0` (change-explanation)
-
-   > s2-l2: (a) Authorization of certain energy infrastructure projects at an international boundary of the United States
-   > usc/16/796: § 796. Definitions The words defined in this section shall have the following meanings for purposes of this chapter, to wit: (1) “public lands” means such lands and interest in lands owned by the United States as are subject to private appropriation and disposal under public land laws. It shall not include “reservations”, as hereinafter defined; (2) “reservations” means national forests, tribal lands embraced within Indian reservations, military reservations, and other lands and interests in lands owned by the United States, and withdrawn, reserved, or withheld from private appropriation and
+   > s2-l24: (1) Repeal of requirement to secure order Section 202(e) of the Federal Power Act (16 U.S.C. 824a(e)) is repealed.
+   > s2-l26: (A) State regulations Section 202(f) of the Federal Power Act (16 U.S.C. 824a(f)) is amended by striking “insofar as such State regulation does not conflict with the exercise of the Commission’s powers under or relating to subsection 202(e)”.
+   > s2-l27: (B) Seasonal diversity electricity exchange Section 602(b) of the Public Utility Regulatory Policies Act of 1978 (16 U.S.C. 824a–4(b)) is amended by striking “the Commission has conducted hearings and made the findings required under section 202(e) of the Federal Power Act” and all that follows through the period at the end and inserting “the Secretary has conducted hearings and finds that the proposed transmission facilities would not impair the sufficiency of electric supply within the United States or would not impede or tend to impede the coordination in the public interest of facilities subject to the jurisdiction of the Secretary.”.
 
    Your label (supported / unsupported / contradicted): ______
 
-28. Changed text: (2) in subsection (b)—
+18. The bill amends section 3(c) of the Natural Gas Act so the Commission must grant applications to import natural gas from, or export it to, Canada or Mexico within 30 days of receiving a complete application. It also repeals section 202(e) of the Federal Power Act.
 
-   Item `1763b2a6ef12765fb307254cc59c36d7#3` (version-changes)
+   Item `573652e8ed36268243865e5922216766#4` (change-explanation)
 
-   > s3-l8: (2) in subsection (b)—
+   > s2-l22: (b) Importation or exportation of natural gas to Canada and Mexico Section 3(c) of the Natural Gas Act (15 U.S.C. 717b(c)) is amended by adding at the end the following: “In the case of an application for the importation of natural gas from, or the exportation of natural gas to, Canada or Mexico, the Commission shall grant the application not later than 30 days after the date on which the Commission receives the complete application.”.
+   > s2-l24: (1) Repeal of requirement to secure order Section 202(e) of the Federal Power Act (16 U.S.C. 824a(e)) is repealed.
 
    Your label (supported / unsupported / contradicted): ______
 
-29. (a) In general Not later than 1 year after the date of enactment of this Act, the Comptroller General of the United States shall initiate a comprehensive review of all covered technical assistance. (b) Requirements The Comptroller General shall include in the review required under subsection (a) the following: (1) A description of all covered technical assistance available to States, Tribes, local governments, and non-governmental organizations, including— (A) the regions and populations that are served through the provision of technical assistance; and
+19. Within 1 year of enactment, the Comptroller General must begin a comprehensive review of all Environmental Protection Agency technical assistance authorities, initiatives and programs related to clean water infrastructure.
 
    Item `e9e0868137b98a5de0178e6cd34caf08#0` (bill-explanation)
 
    > s2-l2: (a) In general Not later than 1 year after the date of enactment of this Act, the Comptroller General of the United States shall initiate a comprehensive review of all covered technical assistance.
-   > s2-l3: (b) Requirements The Comptroller General shall include in the review required under subsection (a) the following:
-   > s2-l4: (1) A description of all covered technical assistance available to States, Tribes, local governments, and non-governmental organizations, including—
-   > s2-l5: (A) the regions and populations that are served through the provision of technical assistance; and
+   > s2-l22: (e) Covered technical assistance defined In this section, the term “covered technical assistance” means a technical assistance authority, initiative, or program of the Environmental Protection Agency that is related to clean water infrastructure.
 
    Your label (supported / unsupported / contradicted): ______
 
-30. (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
+20. No Presidential permit or similar permit would be required for oil or natural gas pipelines, electric transmission facilities, or their border-crossing facilities.
 
-   Item `a04a30cb11d5ee757191f9acf71ee97a#3` (bill-summary)
+   Item `a04a30cb11d5ee757191f9acf71ee97a#5` (bill-summary)
 
+   > s2-l28: (d) No Presidential permit required No Presidential permit (or similar permit) shall be required pursuant to any provision of law or Executive order for the construction, connection, operation, or maintenance of an oil or natural gas pipeline or electric transmission facility, or any border-crossing facility thereof.
+
+   Your label (supported / unsupported / contradicted): ______
+
+21. The certificate requirement covers only the part of a pipeline or transmission facility within 1,000 feet of the international boundary. These changes take effect 1 year after enactment.
+
+   Item `573652e8ed36268243865e5922216766#5` (change-explanation)
+
+   > s2-l40: (1) Border-crossing facility The term border-crossing facility means the portion of an oil or natural gas pipeline or electric transmission facility that is located within 1,000 feet of the international boundary of the United States, measured from the point at which the facility crosses such boundary into the United States.
+   > s2-l35: (1) Effective date Subsections (a) through (e), and the amendments made by such subsections, shall take effect on the date that is 1 year after the date of enactment of this Act.
+
+   Your label (supported / unsupported / contradicted): ______
+
+22. The review must describe the assistance available to States, Tribes, local governments and non-governmental organizations, including regions and populations served and activities over the prior 5 years. It must also analyze duplication across EPA programs, evaluate capacity-building and coordination with other federal agencies, and assess unmet needs of economically distressed communities.
+
+   Item `e9e0868137b98a5de0178e6cd34caf08#1` (bill-explanation)
+
+   > s2-l3: (b) Requirements The Comptroller General shall include in the review required under subsection (a) the following:
+   > s2-l4: (1) A description of all covered technical assistance available to States, Tribes, local governments, and non-governmental organizations, including—
+   > s2-l5: (A) the regions and populations that are served through the provision of technical assistance; and
+   > s2-l6: (B) a summary of the activities and actions carried out through covered technical assistance during the 5-year period preceding this Act.
+   > s2-l14: (3) An analysis of any duplication of covered technical assistance available through multiple programs of the Environmental Protection Agency.
+   > s2-l15: (4) An evaluation of how the provision of covered technical assistance builds capacity in communities to access other water infrastructure programs carried out by the Administrator.
+   > s2-l16: (5) An assessment of the needs of economically distressed communities eligible to receive assistance under a clean water infrastructure program carried out by the Administrator that are not addressed through covered technical assistance.
+   > s2-l17: (6) An evaluation of how the Administrator carries out covered technical assistance in coordination with other Federal agencies providing technical assistance related to water infrastructure.
+
+   Your label (supported / unsupported / contradicted): ______
+
+23. The President could not revoke an existing Presidential permit for such pipelines or transmission facilities issued under the listed Executive orders or any other Executive order unless an Act of Congress authorizes it.
+
+   Item `a04a30cb11d5ee757191f9acf71ee97a#6` (bill-summary)
+
+   > s2-l33: (f) Prohibition on revocation of Presidential permits Notwithstanding any other provision of law, the President may not revoke a Presidential permit (or similar permit) issued pursuant to Executive Order No. 13337 (3 U.S.C. 301 note), Executive Order No. 11423 (3 U.S.C. 301 note), Executive Order No. 12038 (42 U.S.C. 7151 note), Executive Order No. 10485 (15 U.S.C. 717b note), or any other Executive order for the construction, connection, operation, or maintenance of an oil or natural gas pipeline or electric transmission facility, or any border-crossing facility thereof, unless such revocation is authorized by an Act of Congress.
+
+   Your label (supported / unsupported / contradicted): ______
+
+24. Under current law, importing certain natural gas, or exporting natural gas to a nation that has a free trade agreement with the United States requiring national treatment for trade in natural gas, is deemed consistent with the public interest, and applications for such imports or exports must be granted without modification or delay.
+
+   Item `a2ee0de389e0028a5057142cc7b6edb2#0` (change-explanation)
+
+   > s2-l22: (b) Importation or exportation of natural gas to Canada and Mexico Section 3(c) of the Natural Gas Act (15 U.S.C. 717b(c)) is amended by adding at the end the following: “In the case of an application for the importation of natural gas from, or the exportation of natural gas to, Canada or Mexico, the Commission shall grant the application not later than 30 days after the date on which the Commission receives the complete application.”.
+   > usc/15/717b/c: (c) Expedited application and approval process For purposes of subsection (a), the importation of the natural gas referred to in subsection (b), or the exportation of natural gas to a nation with which there is in effect a free trade agreement requiring national treatment for trade in natural gas, shall be deemed to be consistent with the public interest, and applications for such importation or exportation shall be granted without modification or delay.
+
+   Your label (supported / unsupported / contradicted): ______
+
+25. The review must examine how EPA's Water Technical Assistance (WaterTA) initiative selects and partners with providers, including selection criteria and contracting, coordination with State, Tribal and regional partners, matching and outreach to communities, and a list of communities served with the type, cost and outcomes of assistance.
+
+   Item `e9e0868137b98a5de0178e6cd34caf08#2` (bill-explanation)
+
+   > s2-l7: (2) A comprehensive review of how the Administrator of the Environmental Protection Agency, through the Water Technical Assistance initiative (known as “WaterTA initiative”), identifies, selects, and partners with technical assistance providers to support communities, including—
+   > s2-l8: (A) a description of the criteria, evaluation process, and contracting mechanisms used for selecting such providers;
+   > s2-l9: (B) a description of the extent of coordination with State, Tribal, and regional partners in the selection and deployment of such providers;
+   > s2-l10: (C) a description of how such providers are matched to meet the needs of local communities, including any pre-engagement scoping activities or community consultations;
+   > s2-l11: (D) a description of how such providers identify communities in need of technical assistance, including economically distressed communities, and conduct outreach to such communities;
+   > s2-l12: (E) a description of the scope and types of assistance delivered through such initiative; and
+   > s2-l13: (F) a list of communities that received technical assistance support through such initiative, including the type and cost of assistance received by each such community and a summary of the outcomes associated with the provision of such assistance.
+
+   Your label (supported / unsupported / contradicted): ______
+
+26. Subsections (a) through (e) take effect one year after enactment, and the responsible agencies must publish a proposed rule within 180 days and a final rule within one year.
+
+   Item `a04a30cb11d5ee757191f9acf71ee97a#7` (bill-summary)
+
+   > s2-l35: (1) Effective date Subsections (a) through (e), and the amendments made by such subsections, shall take effect on the date that is 1 year after the date of enactment of this Act.
+   > s2-l37: (A) not later than 180 days after the date of enactment of this Act, publish in the Federal Register notice of a proposed rulemaking to carry out the applicable requirements of subsection (a); and
+   > s2-l38: (B) not later than 1 year after the date of enactment of this Act, publish in the Federal Register a final rule to carry out the applicable requirements of subsection (a).
+
+   Your label (supported / unsupported / contradicted): ______
+
+27. The bill adds a sentence to this provision: for applications to import natural gas from, or export natural gas to, Canada or Mexico, the Commission must grant the application within 30 days after it receives the complete application.
+
+   Item `a2ee0de389e0028a5057142cc7b6edb2#1` (change-explanation)
+
+   > s2-l22: (b) Importation or exportation of natural gas to Canada and Mexico Section 3(c) of the Natural Gas Act (15 U.S.C. 717b(c)) is amended by adding at the end the following: “In the case of an application for the importation of natural gas from, or the exportation of natural gas to, Canada or Mexico, the Commission shall grant the application not later than 30 days after the date on which the Commission receives the complete application.”.
+   > usc/15/717b/c: (c) Expedited application and approval process For purposes of subsection (a), the importation of the natural gas referred to in subsection (b), or the exportation of natural gas to a nation with which there is in effect a free trade agreement requiring national treatment for trade in natural gas, shall be deemed to be consistent with the public interest, and applications for such importation or exportation shall be granted without modification or delay.
+
+   Your label (supported / unsupported / contradicted): ______
+
+28. The Comptroller General must report findings and any recommendations to the House Transportation and Infrastructure Committee and the Senate Environment and Public Works Committee. Within 90 days after that report, and annually for 5 years, the EPA Administrator must submit a plan detailing actions taken to comply with the recommendations.
+
+   Item `e9e0868137b98a5de0178e6cd34caf08#3` (bill-explanation)
+
+   > s2-l18: (c) Report Upon the completion of the review conducted under subsection (a), the Comptroller General shall submit to the Committee on Transportation and Infrastructure of the House of Representatives and the Committee on Environment and Public Works of the Senate a report containing—
+   > s2-l19: (1) the findings of such review; and
+   > s2-l20: (2) any recommendations to improve covered technical assistance.
+   > s2-l21: (d) Plan for compliance Not later than 90 days after the Comptroller General submits the report required under subsection (c), and annually thereafter for a period of 5 years, the Administrator shall submit to the Committee on Transportation and Infrastructure of the House of Representatives and the Committee on Environment and Public Works of the Senate a plan detailing any actions the Administrator has taken to comply with the recommendations contained in such a report.
+
+   Your label (supported / unsupported / contradicted): ______
+
+29. The bill is titled the "Water Resources Technical Assistance Review Act."
+
+   Item `6205449ea1082c684709d6aa954d179d#0` (bill-summary)
+
+   > s1-l1: This Act may be cited as the “Water Resources Technical Assistance Review Act”.
+
+   Your label (supported / unsupported / contradicted): ______
+
+30. Separately, the bill requires a certificate of crossing to build, connect, operate or maintain a border-crossing facility for oil, natural gas or electricity. The Federal Energy Regulatory Commission (for pipelines) or the Secretary of Energy (for electric transmission) must issue it within 120 days after final environmental review unless it finds the facility is not in the public interest.
+
+   Item `a2ee0de389e0028a5057142cc7b6edb2#2` (change-explanation)
+
+   > s2-l3: (1) Authorization Except as provided in paragraph (3) and subsection (e), no person may construct, connect, operate, or maintain a border-crossing facility for the import or export of oil or natural gas, or the transmission of electricity, across an international border of the United States without obtaining a certificate of crossing for the border-crossing facility under this subsection.
    > s2-l5: (A) Requirement Not later than 120 days after final action is taken, by the relevant official or agency identified under subparagraph (B), under the National Environmental Policy Act of 1969 (42 U.S.C. 4321 et seq.) with respect to a border-crossing facility for which a person requests a certificate of crossing under this subsection, the relevant official or agency, in consultation with appropriate Federal agencies, shall issue a certificate of crossing for the border-crossing facility unless the relevant official or agency finds that the construction, connection, operation, or maintenance of the border-crossing facility is not in the public interest of the United States.
+   > s2-l6: (B) Relevant official or agency The relevant official or agency referred to in subparagraph (A) is—
+   > s2-l7: (i) the Federal Energy Regulatory Commission with respect to border-crossing facilities consisting of oil or natural gas pipelines; and
+   > s2-l8: (ii) the Secretary of Energy with respect to border-crossing facilities consisting of electric transmission facilities.
 
    Your label (supported / unsupported / contradicted): ______
 
