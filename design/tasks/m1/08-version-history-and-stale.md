@@ -51,6 +51,7 @@ Compute, for every pair of consecutive official versions of a tracked bill, a ma
 ## Acceptance criteria
 
 - For the M1 multi-version exit bill, every old anchor has a classification, and a manual check of 50 sampled anchors agrees with it.
+  - **Met (operator decision, 2026-11-22):** the exit-bill fixtures have 18 to 45 lines per version, so 50 distinct sampled anchors do not exist across the changed pairs. The one differing pair (hr-4313 `ih` to `rh`) was checked in full and agrees with the classification.
 - Opening an old-version line address whose words changed yields the notice data and a new location.
 - Tests show a renumbered identical subsection classified *moved*.
 
