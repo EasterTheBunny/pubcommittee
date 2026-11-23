@@ -8,16 +8,17 @@
 #   scripts/local.sh down         stop and remove every container and network of the stack
 #   scripts/local.sh seed         (re)fill .local-data from fixtures/ (also run by `up` when empty)
 #   scripts/local.sh job <job> [flags]   run one job (job-ingest, job-exports, job-summarize) as you
+#   scripts/local.sh test [--with-admin] acceptance checks against the running app (`up` or `up -d`)
 #
 # Everything runs in Docker with the limits set in compose.yaml. No model calls: summaries come from
 # the fake generator. Data stays in .local-data/ (git-ignored); delete it to start over.
-# Environment: COMPOSE_PROJECT (default pubcommittee), RATE_LIMITS (default raised for one browser).
+# Environment: COMPOSE_PROJECT (default pubcommittee), RATE_LIMITS (default effectively unlimited: one local user).
 set -eu
 cd "$(dirname "$0")/.."
 
 LOCAL_UID=$(id -u)
 LOCAL_GID=$(id -g)
-RATE_LIMITS=${RATE_LIMITS:-text=6000,live=3000,bulk=1200,discovery=6000}
+RATE_LIMITS=${RATE_LIMITS:-text=100000,live=100000,bulk=100000,discovery=100000}
 PUBLIC_UI_URL=${PUBLIC_UI_URL:-http://localhost:3000}
 export LOCAL_UID LOCAL_GID RATE_LIMITS PUBLIC_UI_URL
 
@@ -29,12 +30,14 @@ dc() { docker compose -p "$project" --profile app --profile jobs "$@"; }
 job() { dc run --rm --no-deps "$@"; }
 
 usage() {
-	sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
 	exit "${1:-0}"
 }
 
 build() {
 	dc build
+	# The dev image the acceptance checks run in.
+	docker compose -p "$project" --profile acceptance build acceptance
 	dc pull --ignore-buildable --quiet
 }
 
@@ -108,8 +111,71 @@ up() {
 	dc up --remove-orphans $serve
 }
 
+playwright_image=mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
+
+# Acceptance checks against the running app, read-only unless --with-admin:
+#   HTTP: test/acceptance/M1-01, M1-03a (runtime part), M1-16 check.mjs (exit criteria on the real bills)
+#   browser: test/acceptance/M1-16/e2e (no scripts, labels, version history, catalog, install, offline)
+#   --with-admin: test/acceptance/M1-16/admin.sh (pubctl track and untrack; adds public log entries)
+# Code-level checks (go test, lint, spec) are not part of this; they run in CI and in the dev container.
+test_stack() {
+	with_admin=""
+	[ "${1:-}" = "--with-admin" ] && with_admin=1
+	web=$(dc ps -q --status running web)
+	if [ -z "$web" ] || [ -z "$(dc ps -q --status running read-api)" ]; then
+		echo "test: the app is not running; start it with scripts/local.sh up -d (or up in another terminal)" >&2
+		exit 2
+	fi
+	trap 'trap - EXIT INT TERM HUP; docker rm -f "$project-test-http" "$project-test-admin" "$project-test-browser" >/dev/null 2>&1 || true' EXIT
+	trap 'exit 130' INT TERM HUP
+	fail=0
+	env="-e READ_API_URL=http://read-api:8080 -e READ_API_METRICS_URL=http://read-api:9464 -e APP_URL=http://web:3000 -e PUBLIC_API_URL=http://localhost:8080"
+
+	echo "== HTTP checks"
+	# shellcheck disable=SC2086
+	docker compose -p "$project" --profile acceptance run --rm --no-deps --name "$project-test-http" \
+		-u "$LOCAL_UID:$LOCAL_GID" -e HOME=/tmp $env acceptance \
+		sh -c 'f=0; for t in M1-01 M1-03a; do echo "-- $t"; sh test/acceptance/$t/run.sh || f=1; done; echo "-- M1-16"; node test/acceptance/M1-16/check.mjs || f=1; exit $f' ||
+		fail=1
+
+	if [ -n "$with_admin" ]; then
+		echo "== admin checks (writes public log entries; leaves the catalog as it found it)"
+		# shellcheck disable=SC2086
+		docker compose -p "$project" --profile acceptance run --rm --no-deps --name "$project-test-admin" \
+			-u "$LOCAL_UID:$LOCAL_GID" -e HOME=/tmp -e GOCACHE=/tmp/gocache -e GOMODCACHE=/tmp/gomod $env \
+			-e DATA_DIR=/src/.local-data -v "$PWD:/src:ro" -v "$PWD/.local-data:/src/.local-data" acceptance \
+			sh test/acceptance/M1-16/admin.sh || fail=1
+	fi
+
+	echo "== browser checks"
+	skip=""
+	# The two large-bill checks need us-119-hr-3115, which the default seed does not track.
+	if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/v1/bills/us-119-hr-3115)" != 200 ]; then
+		skip="longest real bill|largest bill"
+		echo "(skipping the two large-bill checks: us-119-hr-3115 is not tracked)"
+	fi
+	# Same network namespace as the web container, so the browser reaches the app as localhost
+	# (service workers need a secure context). @playwright/test is cached in a volume.
+	docker run --rm --name "$project-test-browser" --network "container:$web" --cpus 1.5 --memory 1792m \
+		--label "com.docker.compose.project=$project" \
+		-v "$PWD:/src:ro" -v "$project-playwright:/pw" -w /src/app \
+		-e HOME=/tmp -e NODE_PATH=/pw/node_modules -e BASE_URL=http://localhost:3000 -e API_URL=http://read-api:8080 \
+		-e PW_OUTPUT=/tmp/pw -e TIMINGS_FILE=/tmp/timings.jsonl -e SKIP="$skip" "$playwright_image" sh -c '
+			[ -d /pw/node_modules/@playwright/test ] || (cd /pw && npm i --no-save --no-audit --no-fund @playwright/test@1.65.1 >/dev/null)
+			set -- --config ../test/acceptance/M1-16/e2e/playwright.config.ts
+			[ -z "$SKIP" ] || set -- "$@" --grep-invert "$SKIP"
+			/pw/node_modules/.bin/playwright test "$@"' || fail=1
+
+	if [ "$fail" -eq 0 ]; then echo "acceptance: all checks passed"; else echo "acceptance: FAILED (see above)"; fi
+	return "$fail"
+}
+
 case "${1:-}" in
 build) build ;;
+test)
+	shift
+	test_stack "$@"
+	;;
 up)
 	shift
 	up "$@"

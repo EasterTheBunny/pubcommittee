@@ -115,6 +115,7 @@ The whole app runs locally in Docker (Docker with Compose v2 is the only require
 scripts/local.sh build    # build every image
 scripts/local.sh up       # serve; Ctrl+C stops it and removes every container and network
 scripts/local.sh down     # stop and remove the stack (use after `up -d`, or to clean up after a crash)
+scripts/local.sh test     # acceptance checks against the running app (start it first with `up -d`)
 ```
 
 | Service | Address |
@@ -126,7 +127,8 @@ scripts/local.sh down     # stop and remove the stack (use after `up -d`, or to 
 - **First run.** `up` fills `.local-data/` when it is empty: US Code provisions, selection policy v1, the 200-bill catalog sample, the three exit bills with every version, citations and comparisons, generated explanations, exports, and the change feed. `scripts/local.sh seed` refills it on demand.
 - **In the background.** `scripts/local.sh up -d` returns once every service is healthy; stop it with `scripts/local.sh down`.
 - **Start over.** Your data stays in `.local-data/` (git-ignored) across runs. Delete that directory to start from the example data again.
-- **Settings.** `COMPOSE_PROJECT` names the Compose project (default `pubcommittee`). `RATE_LIMITS` overrides `read-api`'s limits, which the script raises for one local browser.
+- **Settings.** `COMPOSE_PROJECT` names the Compose project (default `pubcommittee`). `RATE_LIMITS` overrides `read-api`'s limits, which the script lifts for a single local user.
+- **Acceptance checks.** `test` runs, against the running app: the HTTP checks of `test/acceptance/M1-01`, `M1-03a` and `M1-16` (every M1 exit criterion on the three exit bills), then the M1-16 browser checks in Playwright (pages without scripts, labels, version history, catalog, installability, offline). It changes nothing in your data. `test --with-admin` also drives `admin-api` with `pubctl` (track, then untrack a bill), which adds entries to the public log. Ctrl+C stops the checks and removes their containers; the app keeps running. Code-level checks (`go test`, lint, the API spec) run in CI and in the dev container, not here.
 - **One job at a time.** `scripts/local.sh job job-ingest --bill <id> --track` (likewise `job-summarize`, `job-exports`; flags in each `cmd/<job>/README.md`). It runs as your user, so files in `.local-data/` stay yours, and works with the stack up or down.
 
 Front-end work with hot reload, against a running stack:
