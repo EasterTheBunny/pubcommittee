@@ -79,5 +79,6 @@ Let an operator pull a bill from Congress's official sources on demand: its stat
 - How do downstream steps start after a pull? **Decided for the local phase:** each step runs as its own command over stored data; nothing chains steps automatically ([README § Example data and local triggers](../README.md#example-data-and-local-triggers)). Automatic chaining is a cloud-phase question.
 - `ingest_state` in M1: **Decided:** yes, for failed pulls to retry and inspect ([M1-12](12-administration.md) `ingest failures`); no watermark.
 - Which milestone takes automatic feed ingestion, and does `job-ingest` keep its architecture name for the manual pull in M1?
+  - **Answered in part (M1-05):** the manual pull is `job-ingest --bill <id[,id]> [--source fixtures|govinfo] [--track] [--dry-run] [--verify]` (guide: `cmd/job-ingest/README.md`). Until [M1-06](06-selection-policy.md), `--track` tracks with reason `manual-pull`. The milestone for feed ingestion is an operator decision.
 - How quickly must a new official version be pulled after publication ([01](../../01-bill-ingestion-and-display.md#open-questions)), when pulls are manual?
 - Backfill depth: current Congress only, or earlier Congresses ([architecture § Open decisions](../../../architecture/README.md#open-decisions))?

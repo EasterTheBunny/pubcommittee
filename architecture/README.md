@@ -197,6 +197,7 @@ Ports are grouped by the boundary they sit behind. A service receives only the g
 M1 notes (from M1-01):
 - The public read group holds only `BillText` and `PublicDocs` in M1; `Snapshots` arrives in M2.
 - `PublicDocs` also has `GetSelectionPolicyVersion` (M1-10).
+- Ingest (M1-05): `BillFetcher` (`FetchRecord`, `FetchOriginal`) sits beside `BillSource`; `ListChanged` and watermark ingestion stay out of M1. `OfficialVersion` gains `ParserVersion` and an unserialised `Source`; `IngestState` gains `Failed`. `CatalogEntry` gains `search_terms`, `sponsor_id`, `sponsor`, `introduced`, `latest_action`, `policy_area`, `committees`, and `related`; `Bill` gains `sponsor_id` (bioguide). The pipeline is `internal/ingest.DefaultSteps()`, an ordered list of named steps (`fetch-record`, `catalog`, `policy`, `versions`, `after-store`, `write-bill`, `write-catalog`, `ingest-state`) that later tasks extend with `After` and `Replace`.
 - Comparisons (M1-08): `ComparisonReader` in the public read group (`PublicReadPorts.Comparisons`), `ComparisonWriter` in the platform group (`PlatformPorts.ComparisonStore`); `fsobject` and `memory` implement both, and `gcp`/`emulator` wiring leaves the reader nil (route answers 404) until M1-03b.
 - `PlatformDocs` also has `PutBill`, `GetIngestState`, and `PutIngestState`. `ApplyLogged` takes a `Change`, which carries exactly one of a bill, catalog entry, policy, or explanation, plus a `LogEntry`.
 - `BillSource` declares `ListChanged(ctx, since, page)` in M1. Manual pulls ([M1-05](../design/tasks/m1/05-manual-bill-pull-and-storage.md)) pass an empty watermark.
@@ -577,7 +578,11 @@ What carries over: the collector's directory layout and JSON schema are a well-k
 | Office of the Law Revision Counsel | US Code as XML release points | HTTPS download | **Primary** for existing law ([01](../design/01-bill-ingestion-and-display.md)) |
 | `usgpo/bill-dtd` | DTDs for bill XML | Git repository | Parser tests and validation |
 
-Exact paths, listing formats, and update cadences are confirmed against GPO's published guides at M1 start.
+Exact paths, listing formats, and update cadences are confirmed against GPO's published guides at M1 start. Confirmed by M1-05:
+- Status: `https://www.govinfo.gov/bulkdata/BILLSTATUS/{congress}/{type}/BILLSTATUS-{congress}{type}{number}.xml`.
+- Text: the XML URL each status lists, of the form `https://www.govinfo.gov/content/pkg/BILLS-{congress}{type}{number}{code}/xml/BILLS-{congress}{type}{number}{code}.xml`. The version code is the part of the file name after the number, in lower case. A status lists XML only for versions already published; items without an XML URL are skipped.
+- Listings: `https://www.govinfo.gov/bulkdata/json/BILLSTATUS/{congress}/{type}` with `Accept: application/json`, about 4 MB for `hr`, including file sizes.
+- Servers send `Last-Modified` and no `ETag`, so conditional requests use `If-Modified-Since`. The `govinfo` adapter fetches only `www.govinfo.gov` URLs, one request at a time.
 
 ### Recommendation
 **Pull directly from govinfo in Go, behind a `BillSource` port.** No Python collector, no shared disk, no API key.
@@ -649,10 +654,10 @@ Implements [01 Markup requests](../design/01-bill-ingestion-and-display.md#marku
 
 | Record | Where | Contents |
 | --- | --- | --- |
-| Original document | Object store, write-once | Source bytes, URL, retrieved-at, SHA-256 |
+| Original document | Object store, write-once | Source bytes; URL, retrieved-at, and SHA-256 in a sidecar (`source.xml.meta.json`), read through `SourceInfoReader` |
 | Parsed version | Object store, write-once | Sections, lines, anchors, parser version |
 | Bill metadata | `bills` | Status, titles, sponsors, actions, version list with source references |
-| Watermark | `ingest_state` | Last processed position per source and Congress; failures to retry |
+| Watermark | `ingest_state` | Last processed position per source and Congress; failures to retry. In M1 the key is `<source>/<session>` (for example `govinfo/119`) and it holds failed items only, with no watermark; its read-modify-write is not atomic, so overlapping pulls can drop a failure that the next pull records again |
 
 ## AI-generated content
 
