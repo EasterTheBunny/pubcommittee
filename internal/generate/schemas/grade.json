@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["statements", "neutral"],
+  "properties": {
+    "statements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["index", "label", "reason"],
+        "properties": {
+          "index": {"type": "integer"},
+          "label": {"type": "string", "enum": ["supported", "unsupported", "contradicted"]},
+          "reason": {"type": "string"}
+        }
+      }
+    },
+    "neutral": {"type": "boolean"}
+  }
+}

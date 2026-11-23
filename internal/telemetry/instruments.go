@@ -21,6 +21,8 @@ type Instruments struct {
 	jobDuration  metric.Float64Histogram
 	jobItems     metric.Int64Counter
 	jobLastRun   metric.Float64Gauge
+	genTokens    metric.Int64Histogram
+	genResults   metric.Int64Counter
 }
 
 func newInstruments(m metric.Meter) (*Instruments, error) {
@@ -59,6 +61,9 @@ func newInstruments(m metric.Meter) (*Instruments, error) {
 	if ins.jobLastRun, err = m.Float64Gauge("pubcommittee.job.last_run_timestamp",
 		metric.WithUnit("s"), metric.WithDescription("Unix seconds of the last run.")); err != nil {
 		return fail("pubcommittee.job.last_run_timestamp", err)
+	}
+	if err = ins.newGenInstruments(m); err != nil {
+		return nil, err
 	}
 	return ins, nil
 }
@@ -134,3 +139,15 @@ func (s *statusRecorder) WriteHeader(code int) {
 
 // Unwrap lets http.ResponseController reach the underlying writer.
 func (s *statusRecorder) Unwrap() http.ResponseWriter { return s.ResponseWriter }
+
+// newGenInstruments creates the model-call instruments.
+func (i *Instruments) newGenInstruments(m metric.Meter) (err error) {
+	if i.genTokens, err = m.Int64Histogram("gen_ai.client.token.usage",
+		metric.WithUnit("{token}"), metric.WithDescription("Input and output tokens per model call.")); err != nil {
+		return fmt.Errorf("telemetry: instrument gen_ai.client.token.usage: %w", err)
+	}
+	if i.genResults, err = m.Int64Counter("pubcommittee.generation.results"); err != nil {
+		return fmt.Errorf("telemetry: instrument pubcommittee.generation.results: %w", err)
+	}
+	return nil
+}

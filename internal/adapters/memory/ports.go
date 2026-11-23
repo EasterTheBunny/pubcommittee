@@ -31,10 +31,14 @@ func (s *Store) PlatformPorts() data.PlatformPorts {
 		ComparisonStore: s,
 		CitationStore:   s,
 		LawStore:        s,
+		GeneratedStore:  data.NewGeneratedStore(s),
 	}
 }
 
 // PublicReadPorts returns the public read group backed by s.
 func (s *Store) PublicReadPorts() data.PublicReadPorts {
-	return data.PublicReadPorts{BillText: s, PublicDocs: s, Comparisons: s, Citations: s, Law: s}
+	return data.PublicReadPorts{
+		BillText: s, PublicDocs: s, Comparisons: s, Citations: s, Law: s,
+		Generated: data.NewGeneratedStore(s),
+	}
 }

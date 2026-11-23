@@ -1,6 +1,8 @@
 package readapi
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -91,11 +93,36 @@ func (s *Server) ListExplanations(
 
 // GetBillSummary answers not found until M1-09 stores summaries.
 func (s *Server) GetBillSummary(w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath) {
-	if _, err := s.resolve(r.Context(), bill, n, false); err != nil {
+	res, err := s.resolve(r.Context(), bill, n, false)
+	if err != nil {
 		fail(w, r, err)
 		return
 	}
-	notFound(w, detailNoSummary)
+	vs, err := s.listVersions(r.Context(), res.ref)
+	if err != nil {
+		fail(w, r, err)
+		return
+	}
+	out, err := s.published(r.Context(), data.TaskBillSummary, vs[res.n-1].Ref, "")
+	if errors.Is(err, data.ErrNotFound) {
+		notFound(w, detailNoSummary)
+		return
+	}
+	if err != nil {
+		fail(w, r, err)
+		return
+	}
+	doc := apiv1.BillSummaryDoc{
+		Address:    res.address(versionPath(res.id, res.n)+"/summary", ""),
+		Bill:       res.id,
+		N:          res.n,
+		Headline:   out.Headline,
+		Statements: toStatements(out.Statements),
+		Flags:      new([]apiv1.BillSummaryDocFlags{apiv1.BillSummaryDocFlagsAuto}),
+	}
+	doc.Version, doc.AsOf, doc.Provenance, doc.ContentClass = meta(out.Meta)
+	// Summaries are short-lived even for a pinned version: stewards may correct them.
+	sendJSON(w, r, cacheShort, doc)
 }
 
 // GetVersionChangeSummary answers not found until M1-09 stores change
@@ -103,9 +130,72 @@ func (s *Server) GetBillSummary(w http.ResponseWriter, r *http.Request, bill api
 func (s *Server) GetVersionChangeSummary(
 	w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath,
 ) {
-	if _, err := s.resolve(r.Context(), bill, n, false); err != nil {
+	res, err := s.resolve(r.Context(), bill, n, false)
+	if err != nil {
 		fail(w, r, err)
 		return
 	}
-	notFound(w, detailNoChanges)
+	if res.n == 1 {
+		notFound(w, detailNoChanges)
+		return
+	}
+	vs, err := s.listVersions(r.Context(), res.ref)
+	if err != nil {
+		fail(w, r, err)
+		return
+	}
+	// The target of a change summary is the code of the previous version.
+	out, err := s.published(r.Context(), data.TaskVersionChanges, vs[res.n-1].Ref, vs[res.n-2].Ref.Version)
+	if errors.Is(err, data.ErrNotFound) {
+		notFound(w, detailNoChanges)
+		return
+	}
+	if err != nil {
+		fail(w, r, err)
+		return
+	}
+	doc := apiv1.VersionChangeSummary{
+		Bill:       res.id,
+		FromN:      res.n - 1,
+		ToN:        res.n,
+		Headline:   out.Headline,
+		Statements: toStatements(out.Statements),
+		Flags:      new([]apiv1.VersionChangeSummaryFlags{apiv1.VersionChangeSummaryFlagsAuto}),
+	}
+	doc.Version, doc.AsOf, doc.Provenance, doc.ContentClass = meta(out.Meta)
+	sendJSON(w, r, cacheShort, doc)
+}
+
+// published reads the current output of a task for a version and target. A
+// server with no generated store, and a version with nothing published, both
+// answer data.ErrNotFound.
+func (s *Server) published(
+	ctx context.Context, task string, v data.VersionRef, target string,
+) (data.GeneratedOutput, error) {
+	if s.ports.Generated == nil {
+		return data.GeneratedOutput{}, fmt.Errorf("%s: %w", task, data.ErrNotFound)
+	}
+	out, err := s.ports.Generated.GetCurrent(ctx, task, v, target)
+	if err != nil {
+		return data.GeneratedOutput{}, fmt.Errorf("get %s: %w", task, err)
+	}
+	return out, nil
+}
+
+// toStatements maps stored statements to the contract. Every statement is
+// platform content; anchors and statements are never null on the wire.
+func toStatements(in []data.Statement) []apiv1.Statement {
+	out := make([]apiv1.Statement, len(in))
+	for i, s := range in {
+		st := apiv1.Statement{
+			Text:         s.Text,
+			ContentClass: apiv1.StatementContentClassPlatform,
+			Anchors:      append([]string{}, s.Anchors...),
+		}
+		if len(s.ProvisionIDs) > 0 {
+			st.ProvisionIds = new(slices.Clone(s.ProvisionIDs))
+		}
+		out[i] = st
+	}
+	return out
 }

@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["headline", "statements"],
+  "properties": {
+    "headline": {"type": "string"},
+    "statements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "anchors", "provision_ids"],
+        "properties": {
+          "text": {"type": "string"},
+          "anchors": {"type": "array", "items": {"type": "string"}},
+          "provision_ids": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}
