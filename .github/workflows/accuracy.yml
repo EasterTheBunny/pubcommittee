@@ -27,7 +27,12 @@ jobs:
         run: |
           docker run --rm --cpus 2 --memory 4g -v "$PWD":/src -w /src \
             -v pc-gomod:/go/pkg/mod -v pc-gocache:/root/.cache/go-build \
-            pc-dev:ci sh test/acceptance/M1-09/run.sh
+            pc-dev:ci sh -c '
+              set -eu
+              # api/check.sh lints the spec and regenerates types with tools from app/node_modules.
+              (cd app && npm ci)
+              sh test/acceptance/M1-09/run.sh
+            '
   live:
     runs-on: ubuntu-latest
     if: ${{ vars.LIVE_MODEL_RUNS == 'true' && inputs.live }}
