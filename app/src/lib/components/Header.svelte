@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { catalogHref, homeHref, logHref, policyHref } from '#lib/links.ts';
 	import Icon from './Icon.svelte';
+	import InstallButton from './InstallButton.svelte';
 	import PlaceholderLink from './PlaceholderLink.svelte';
 
 	const path = $derived(page.url.pathname);
@@ -36,7 +37,8 @@
 				</a>
 			{/each}
 		</nav>
-		<div class="ml-auto text-sm">
+		<div class="ml-auto flex items-center gap-4 text-sm">
+			<InstallButton />
 			<PlaceholderLink id="signin-google">Sign in</PlaceholderLink>
 		</div>
 	</div>

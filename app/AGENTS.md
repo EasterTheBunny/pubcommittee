@@ -12,6 +12,7 @@ Owns: pages, components, the service worker, the manifest, UI tests (`tests/`, i
 - The M0 demo and its mock data live in `demo/`; nothing in `app/` imports from there. No mock data in `app/`.
 - `READ_API_URL` (where the server reads) and `PUBLIC_API_URL` (what `rel="alternate"` and the 303 point at; defaults to the first) are read at runtime from `process.env` in `src/lib/server/api.ts`. The client there caches successful GETs for the API's `max-age` (capped at 5 minutes), because every reader shares the web host's one rate-limit allowance.
 - Page paths mirror API paths; `src/lib/addresses.ts` maps one to the other for `rel="alternate"` and `hooks.server.ts` (303 on `Accept: application/json`). Add a route there when you add a page that has an API twin.
+- Service worker rules live in `src/service-worker/policy.ts` (pure, unit-tested in `tests/sw-policy.spec.ts`); `index.ts` applies them. Version pages are cache-first and bounded to 50 versions; every other page is network-first with a saved copy that `OfflineLabel.svelte` labels. Caches are named per release (`$app/env` version). Offline and install tests (`tests/pwa.spec.ts`) need a secure context: reach the app as `localhost` (run Playwright with `--network container:<app container>`).
 - Parts the API does not serve yet (summary, changes, compare, citations) render their designed empty or unavailable state; never invent data.
 - Features that need accounts stay placeholders through `src/lib/placeholders.ts`.
 
