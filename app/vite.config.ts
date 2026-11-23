@@ -1,5 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
-import adapter from '@sveltejs/adapter-static';
+import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
@@ -12,14 +12,9 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter(),
-			prerender: {
-				// Line-range hashes (#s4-l12-13) are parsed in the browser, not element ids.
-				handleMissingId: ({ id, message }) => {
-					if (/^s\d+-l\d+(-\d+)?$/.test(id)) return;
-					throw new Error(message);
-				}
-			}
+			// Node server (any Node-capable host). Pages render on request from read-api, so nothing
+			// is prerendered at build time: the build needs no API.
+			adapter: adapter()
 		})
 	]
 });

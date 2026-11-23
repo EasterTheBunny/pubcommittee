@@ -83,7 +83,7 @@
 @utility btn-ghost {
 	@apply btn border-transparent bg-transparent text-support hover:bg-support-soft;
 }
-/* Dashed = not built in M0; opens a placeholder pop-up. */
+/* Dashed = not built yet; opens an inline placeholder note. */
 @utility btn-future {
 	@apply btn border-dashed border-faint bg-card text-ink-2 hover:bg-subtle;
 }

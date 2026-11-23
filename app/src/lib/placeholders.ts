@@ -1,5 +1,5 @@
-// Registry of features that are not built in M0. Every "future" button opens a
-// pop-up from this list, naming the milestone and the design doc (design/MILESTONES.md).
+// Registry of features that are not built yet. Every "future" control opens an inline note
+// from this list (PlaceholderLink.svelte), naming the milestone and the design doc (design/MILESTONES.md).
 
 export interface Placeholder {
 	title: string;
