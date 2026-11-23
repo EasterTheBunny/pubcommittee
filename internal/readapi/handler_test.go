@@ -3,15 +3,20 @@ package readapi_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	neturl "net/url"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/easterthebunny/pubcommittee/internal/adapters/memory"
 	"github.com/easterthebunny/pubcommittee/internal/contract"
+	"github.com/easterthebunny/pubcommittee/internal/data"
 	"github.com/easterthebunny/pubcommittee/internal/readapi"
 	"github.com/easterthebunny/pubcommittee/internal/readapi/seed"
 )
@@ -184,5 +189,53 @@ func TestLogsHoldNoClientData(t *testing.T) {
 		if strings.Contains(out, banned) {
 			t.Fatalf("log contains %q: %s", banned, out)
 		}
+	}
+}
+
+// TestModerationLogPagesNewestWrittenFirst: entries of different kinds on one
+// day come newest first across pages, whatever time of day they carried.
+func TestModerationLogPagesNewestWrittenFirst(t *testing.T) {
+	t.Parallel()
+	store := memory.New()
+	day := time.Date(2026, 3, 5, 0, 0, 0, 0, time.UTC)
+	for i, e := range []data.LogEntry{
+		{ID: "g1", At: day.Add(20 * time.Hour), Kind: "generation"},
+		{ID: "a1", At: day, Kind: "policy_published"},
+		{ID: "g2", At: day.Add(2 * time.Hour), Kind: "generation"},
+		{ID: "a2", At: day, Kind: "operator_added"},
+	} {
+		e.Meta = data.Meta{Version: 1, AsOf: day, Provenance: data.ProvenanceSource, ContentClass: data.ContentOfficial}
+		if err := store.Record(t.Context(), e); err != nil {
+			t.Fatalf("record %d: %v", i, err)
+		}
+	}
+	h, err := readapi.Handler(readapi.New(store.PublicReadPorts()), readapi.Options{Logger: slog.New(slog.DiscardHandler)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h)
+	t.Cleanup(srv.Close)
+	var got []string
+	url := srv.URL + "/v1/moderation-log?limit=3"
+	for url != "" {
+		var page struct {
+			Items []struct {
+				ID string `json:"id"`
+			} `json:"items"`
+			Next string `json:"next"`
+		}
+		if err := json.Unmarshal(do(t, http.MethodGet, url, nil).body, &page); err != nil {
+			t.Fatal(err)
+		}
+		for _, it := range page.Items {
+			got = append(got, it.ID)
+		}
+		url = ""
+		if page.Next != "" {
+			url = srv.URL + "/v1/moderation-log?limit=3&cursor=" + neturl.QueryEscape(page.Next)
+		}
+	}
+	if want := []string{"a2", "g2", "a1", "g1"}; !slices.Equal(got, want) {
+		t.Errorf("order = %v, want %v", got, want)
 	}
 }

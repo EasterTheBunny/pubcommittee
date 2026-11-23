@@ -329,11 +329,19 @@ const (
 
 // LogEntry is a public log entry (moderation or platform action).
 type LogEntry struct {
-	ID      string    `json:"id"`
-	At      time.Time `json:"at"`
-	Kind    string    `json:"kind"`
-	Subject string    `json:"subject"`
-	Reason  string    `json:"reason"`
+	ID string `json:"id"`
+	// At is the day of the entry (UTC midnight): public timestamps are
+	// coarsened to the day (design 10, 11). Adapters coarsen on write; entries
+	// stored before that may still hold a full time.
+	At time.Time `json:"at"`
+	// Seq is the write order, assigned by the adapter when the entry is stored
+	// (1, 2, 3 ... in write order, never reused). It orders entries within a
+	// day, newest first. Zero on entries stored before sequences and on
+	// entries not yet written; callers leave it zero.
+	Seq     int64  `json:"seq,omitempty"`
+	Kind    string `json:"kind"`
+	Subject string `json:"subject"`
+	Reason  string `json:"reason"`
 	// Actor is the named administrator of an administrator action (M1-12):
 	// operator id and public name, never a Google principal. Empty for
 	// entries no administrator made.

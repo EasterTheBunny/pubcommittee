@@ -19,8 +19,9 @@ const docDefaultLimit = 50
 // docLogCursor is the decoded form of a ListLog cursor: the sort key of the
 // last entry returned.
 type docLogCursor struct {
-	At time.Time `json:"at"`
-	ID string    `json:"id"`
+	At  time.Time `json:"at"`
+	Seq int64     `json:"seq"`
+	ID  string    `json:"id"`
 }
 
 var (
@@ -265,7 +266,7 @@ func (s *Store) PutIngestState(ctx context.Context, st data.IngestState) error {
 	return nil
 }
 
-// ListLog pages through the public log, newest first by At then ID.
+// ListLog pages through the public log, newest first (data.LogBefore).
 func (s *Store) ListLog(ctx context.Context, p data.Page) (data.Paged[data.LogEntry], error) {
 	if err := docCheck(ctx, "list log"); err != nil {
 		return data.Paged[data.LogEntry]{}, err
@@ -280,11 +281,11 @@ func (s *Store) ListLog(ctx context.Context, p data.Page) (data.Paged[data.LogEn
 		if err := docDecodeCursor(p.Cursor, &c); err != nil {
 			return data.Paged[data.LogEntry]{}, fmt.Errorf("list log: %w", err)
 		}
-		after = &data.LogEntry{At: c.At, ID: c.ID}
+		after = &data.LogEntry{At: c.At, Seq: c.Seq, ID: c.ID}
 	}
 	items := s.logAfter(after)
 	return docPage(items, limit, func(e data.LogEntry) (string, error) {
-		return docEncodeCursor(docLogCursor{At: e.At, ID: e.ID})
+		return docEncodeCursor(docLogCursor{At: e.At, Seq: e.Seq, ID: e.ID})
 	})
 }
 
@@ -313,6 +314,15 @@ func (s *Store) logAfter(after *data.LogEntry) []data.LogEntry {
 	return items
 }
 
+// putLogLocked stores e coarsened to the day with the next sequence number.
+// The caller holds s.mu.
+func (s *Store) putLogLocked(e data.LogEntry) {
+	e = data.CoarseLogEntry(e)
+	s.logSeq++
+	e.Seq = s.logSeq
+	s.log[e.ID] = e
+}
+
 // Record appends a log entry. The same ID with identical content is a no-op;
 // the same ID with different content is ErrConflict.
 func (s *Store) Record(ctx context.Context, e data.LogEntry) error {
@@ -328,7 +338,7 @@ func (s *Store) Record(ctx context.Context, e data.LogEntry) error {
 	if err != nil || same {
 		return err
 	}
-	s.log[e.ID] = e
+	s.putLogLocked(e)
 	return nil
 }
 
@@ -356,7 +366,7 @@ func (s *Store) ApplyLogged(ctx context.Context, c data.Change, e data.LogEntry)
 		}
 	}
 	s.applyChangeLocked(c)
-	s.log[e.ID] = e
+	s.putLogLocked(e)
 	return nil
 }
 
@@ -368,7 +378,7 @@ func (s *Store) checkLogLocked(e data.LogEntry) (bool, error) {
 	if !ok {
 		return false, nil
 	}
-	if reflect.DeepEqual(old, e) {
+	if reflect.DeepEqual(data.CoarseLogEntry(old), data.CoarseLogEntry(e)) {
 		return true, nil
 	}
 	return false, fmt.Errorf("log entry %q: %w", e.ID, data.ErrConflict)
@@ -455,14 +465,8 @@ func docBillLess(a, b data.BillRef) bool {
 	return a.Number < b.Number
 }
 
-// docLogBefore reports whether log entry a sorts before b: newer first by At,
-// then by ID descending.
-func docLogBefore(a, b data.LogEntry) bool {
-	if !a.At.Equal(b.At) {
-		return a.At.After(b.At)
-	}
-	return a.ID > b.ID
-}
+// docLogBefore reports whether log entry a sorts before b (data.LogBefore).
+func docLogBefore(a, b data.LogEntry) bool { return data.LogBefore(a, b) }
 
 // docCheck returns the context error, wrapped, when ctx is done.
 func docCheck(ctx context.Context, op string) error {

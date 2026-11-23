@@ -33,6 +33,7 @@ type Store struct {
 	generations  map[string]data.GenerationRecord
 	ingest       map[string]data.IngestState
 	log          map[string]data.LogEntry
+	logSeq       int64 // last sequence given to a log entry
 
 	// sources.go: seeded source data.
 	changed       []data.ChangedBill

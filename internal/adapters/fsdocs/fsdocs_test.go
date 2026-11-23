@@ -145,3 +145,32 @@ func TestCatalogScale(t *testing.T) {
 	}
 	t.Logf("first page of %d entries: %v", n, time.Since(start))
 }
+
+// TestLegacyLogEntries: entries stored before day-only times and sequences
+// still list, list after nothing newer than themselves is written, and an
+// identical replay (as the generate step makes) is a no-op, not a conflict.
+func TestLegacyLogEntries(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	s := newStore(t, root)
+	ctx := context.Background()
+	at := time.Date(2026, 3, 5, 14, 30, 0, 0, time.UTC)
+	legacy := data.LogEntry{ID: "gen-1", At: at, Kind: "generation", Subject: "s", Reason: "r"}
+	if err := s.write(colLog, legacy.ID, legacy); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Record(ctx, legacy); err != nil {
+		t.Fatalf("replay of a legacy entry: %v", err)
+	}
+	fresh := data.LogEntry{ID: "adm-1", At: at, Kind: "policy_published", Subject: "s", Reason: "r"}
+	if err := s.Record(ctx, fresh); err != nil {
+		t.Fatal(err)
+	}
+	page, err := s.ListLog(ctx, data.Page{})
+	if err != nil || len(page.Items) != 2 || page.Items[0].ID != "adm-1" || page.Items[1].ID != "gen-1" {
+		t.Fatalf("log = %+v, %v; want the new entry first, then the legacy one", page.Items, err)
+	}
+	if !page.Items[0].At.Equal(data.LogDay(at)) {
+		t.Errorf("new entry At = %v, want the day only", page.Items[0].At)
+	}
+}

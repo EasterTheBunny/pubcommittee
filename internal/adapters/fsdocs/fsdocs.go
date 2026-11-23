@@ -54,6 +54,7 @@ const (
 	colExplanations = "explanations"
 	colGenerations  = "generations"
 	colLog          = "moderation_log"
+	colLogSeq       = "moderation_log_seq" // one document: the last log sequence number
 	colIngest       = "ingest_state"
 )
 
@@ -450,10 +451,32 @@ func (s *Store) Record(ctx context.Context, e data.LogEntry) error {
 	if err != nil || exists {
 		return err
 	}
-	if err := s.write(colLog, e.ID, e); err != nil {
+	if err := s.putLog(e); err != nil {
 		return fmt.Errorf("record: %w", err)
 	}
 	return nil
+}
+
+// logSeqDoc is the stored counter that numbers log entries in write order.
+type logSeqDoc struct {
+	Last int64 `json:"last"`
+}
+
+// putLog stores e coarsened to the day with the next sequence number. The
+// caller holds the lock. A failed entry write leaves a gap in the numbers,
+// which is harmless: only the order matters.
+func (s *Store) putLog(e data.LogEntry) error {
+	var c logSeqDoc
+	if err := s.read(colLogSeq, "counter", &c); err != nil && !errors.Is(err, data.ErrNotFound) {
+		return err
+	}
+	c.Last++
+	if err := s.write(colLogSeq, "counter", c); err != nil {
+		return err
+	}
+	e = data.CoarseLogEntry(e)
+	e.Seq = c.Last
+	return s.write(colLog, e.ID, e)
 }
 
 // checkLog reports whether e is already stored identically; a different
@@ -467,7 +490,7 @@ func (s *Store) checkLog(e data.LogEntry) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if same(old, e) {
+	if same(data.CoarseLogEntry(old), data.CoarseLogEntry(e)) {
 		return true, nil
 	}
 	return false, fmt.Errorf("log entry %q: %w", e.ID, data.ErrConflict)
@@ -507,7 +530,7 @@ func (s *Store) ApplyLogged(ctx context.Context, c data.Change, e data.LogEntry)
 // logThenChange writes the entry, then the change, and removes the entry
 // when the change fails. The caller holds the lock.
 func (s *Store) logThenChange(c data.Change, e data.LogEntry) error {
-	if err := s.write(colLog, e.ID, e); err != nil {
+	if err := s.putLog(e); err != nil {
 		return fmt.Errorf("write log entry: %w", err)
 	}
 	err := s.applyLoggedChange(c)
@@ -641,17 +664,13 @@ func (s *Store) catalogRefsAfter(cursor string) ([]data.BillRef, error) {
 }
 
 type logCursor struct {
-	At time.Time `json:"at"`
-	ID string    `json:"id"`
+	At  time.Time `json:"at"`
+	Seq int64     `json:"seq"`
+	ID  string    `json:"id"`
 }
 
-// logBefore reports whether a sorts before b: newer first, then ID descending.
-func logBefore(a, b data.LogEntry) bool {
-	if !a.At.Equal(b.At) {
-		return a.At.After(b.At)
-	}
-	return a.ID > b.ID
-}
+// logBefore reports whether a sorts before b (data.LogBefore).
+func logBefore(a, b data.LogEntry) bool { return data.LogBefore(a, b) }
 
 // ListLog pages through the public log, newest first.
 func (s *Store) ListLog(ctx context.Context, p data.Page) (data.Paged[data.LogEntry], error) {
@@ -670,7 +689,7 @@ func (s *Store) ListLog(ctx context.Context, p data.Page) (data.Paged[data.LogEn
 	out := data.Paged[data.LogEntry]{Items: []data.LogEntry{}}
 	if len(items) > limit {
 		last := items[limit-1]
-		if out.Next, err = encodeCursor(logCursor{At: last.At, ID: last.ID}); err != nil {
+		if out.Next, err = encodeCursor(logCursor{At: last.At, Seq: last.Seq, ID: last.ID}); err != nil {
 			return empty, fmt.Errorf("list log: %w", err)
 		}
 		items = items[:limit]
@@ -687,7 +706,7 @@ func (s *Store) logAfter(cursor string) ([]data.LogEntry, error) {
 		if err := decodeCursor(cursor, &lc); err != nil {
 			return nil, err
 		}
-		after = &data.LogEntry{At: lc.At, ID: lc.ID}
+		after = &data.LogEntry{At: lc.At, Seq: lc.Seq, ID: lc.ID}
 	}
 	ids, err := s.list(colLog)
 	if err != nil {
