@@ -127,7 +127,7 @@ scripts/local.sh down     # stop and remove the stack (use after `up -d`, or to 
 - **In the background.** `scripts/local.sh up -d` returns once every service is healthy; stop it with `scripts/local.sh down`.
 - **Start over.** Your data stays in `.local-data/` (git-ignored) across runs. Delete that directory to start from the example data again.
 - **Settings.** `COMPOSE_PROJECT` names the Compose project (default `pubcommittee`). `RATE_LIMITS` overrides `read-api`'s limits, which the script raises for one local browser.
-- **One job at a time.** `docker compose --profile jobs run --rm job-ingest --bill <id> --track` (likewise `job-summarize`, `job-exports`; flags in each `cmd/<job>/README.md`).
+- **One job at a time.** `scripts/local.sh job job-ingest --bill <id> --track` (likewise `job-summarize`, `job-exports`; flags in each `cmd/<job>/README.md`). It runs as your user, so files in `.local-data/` stay yours, and works with the stack up or down.
 
 Front-end work with hot reload, against a running stack:
 

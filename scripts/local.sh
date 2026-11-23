@@ -7,6 +7,7 @@
 #   scripts/local.sh up -d        serve in the background; stop with `scripts/local.sh down`
 #   scripts/local.sh down         stop and remove every container and network of the stack
 #   scripts/local.sh seed         (re)fill .local-data from fixtures/ (also run by `up` when empty)
+#   scripts/local.sh job <job> [flags]   run one job (job-ingest, job-exports, job-summarize) as you
 #
 # Everything runs in Docker with the limits set in compose.yaml. No model calls: summaries come from
 # the fake generator. Data stays in .local-data/ (git-ignored); delete it to start over.
@@ -28,7 +29,7 @@ dc() { docker compose -p "$project" --profile app --profile jobs "$@"; }
 job() { dc run --rm --no-deps "$@"; }
 
 usage() {
-	sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -62,6 +63,25 @@ seed() {
 
 down() {
 	dc down --remove-orphans
+}
+
+# One job, files written as you. Starts the collector only when the stack is not already up,
+# and then removes what it started on exit, Ctrl+C included.
+run_job() {
+	case "${1:-}" in
+	job-ingest | job-exports | job-summarize) ;;
+	*)
+		echo "job: one of job-ingest, job-exports, job-summarize" >&2
+		exit 2
+		;;
+	esac
+	mkdir -p .local-data
+	if [ -z "$(dc ps -q --status running otel-collector)" ]; then
+		trap 'trap - EXIT INT TERM HUP; dc down --remove-orphans >/dev/null 2>&1 || true' EXIT
+		trap 'exit 130' INT TERM HUP
+		dc up -d --wait otel-collector >/dev/null
+	fi
+	job "$@"
 }
 
 # Runs once on any exit of `up` in the foreground: Ctrl+C, a failed service, or the shell closing.
@@ -98,6 +118,10 @@ down) down ;;
 seed)
 	seed
 	down >/dev/null 2>&1
+	;;
+job)
+	shift
+	run_job "$@"
 	;;
 -h | --help | help) usage ;;
 *) usage 2 ;;
