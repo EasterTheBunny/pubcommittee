@@ -49,7 +49,7 @@ Local phase
                               all local ─► 16 local gate
 
 Cloud phase
-00 ─► 03b ─► 15 ─► 17 ─► cloud-phase criteria of 05, 06, 09, 10, 11, 12, 13, 14 ─► 16 hosted gate
+start: next operator sample (M1-09) ─► 00 ─► 03b ─► 15 ─► 17 ─► cloud-phase criteria of 05, 06, 09, 10, 11, 12, 13, 14 ─► 16 hosted gate
 ```
 
 Parallel tracks once 01 lands: contract and read path (02, 10, 13, 14); ingest (03a, 04, 05, 06); law and generation (07, 08, 09); operations (12). Cloud-phase work may start early, as long as no local-phase task waits on it.
