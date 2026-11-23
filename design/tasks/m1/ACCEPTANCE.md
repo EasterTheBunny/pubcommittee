@@ -10,6 +10,8 @@ Generation accuracy: [test/accuracy/report.md](../../../test/accuracy/report.md)
 
 Pending operator steps and open questions, with owners, are listed in the evidence table.
 
+Operator feedback from using the local run: [FEEDBACK.md](FEEDBACK.md).
+
 ## Hosted gate
 
 Not started (cloud phase).
