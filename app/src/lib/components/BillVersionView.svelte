@@ -114,7 +114,7 @@
 			</ol>
 		</nav>
 
-		<div class="mt-6 flex flex-col gap-6" data-bill-text>
+		<div id="bill-text" class="mt-6 flex flex-col gap-6" data-bill-text>
 			{#each version.sections as s (s.id)}
 				{@const ex = explanationsBySection.get(s.id) ?? []}
 				<section id={s.id} aria-labelledby="{s.id}-h" class="section-block card p-4">

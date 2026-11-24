@@ -158,6 +158,7 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 - Anchors never change for a given version.
 - Line depth comes from the official text's own structure, so blocks are the legislature's structure, not ours.
 - Every change explanation shows its provenance (automatic, steward-checked, bill-only).
+- Every auto-generated summary and change explanation carries a one-line note in small text: "Auto-generated; tested accuracy 75–85%. Verify with the bill text.", where "bill text" links to the lines it describes (M1).
 - An as-amended preview is never presented as official law.
 - Steward corrections to explanations are attributed and logged (see [05](05-roles-and-stewardship.md)).
 - Only tracked bills enter review; the catalog is never reviewed.
@@ -178,6 +179,7 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 - What is the smallest line unit: the source document's own line numbering, sentence, or clause? Must be stable and meaningful for suggested edits.
   - **Decided (M1-04):** one line per source element that carries its own text. A level element's head line joins its enum, header, and first text with single spaces; its children nest one level deeper. Neither the source's own line numbering nor sentences are used.
 - How are explanations generated at scale (rules, templates, assisted drafting), and what accuracy bar must they meet before display without steward review?
+  - **Measured (M1-09):** tested accuracy of auto-generated summaries and explanations is 75–85% against the whole bill text, from operator grading of a hard sample: 20 of 30 statements were supported by the lines they cite (67%), and 3 to 6 more were correct but rested on lines of the bill they did not cite (77–87%) ([accuracy report](../test/accuracy/report.md)). Auto-generated text is shown with that range and a prompt to verify it against the bill text. The bar for display without steward review is still open.
 - How quickly must a new version appear after publication? The product doc marks speed as low priority at launch.
 - How are tables, formulas, and other non-prose bill content made addressable?
   - **Decided (M1-04):** tables, formulas, graphics, and tables of contents are one line each, with their kind, flattened text, and raw markup. Confirmed on real bills for tables; no real bill in the 119-1 House archive has a `<formula>`, so formulas are tested on constructed XML only.

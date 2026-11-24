@@ -343,21 +343,23 @@ func nonNil(s []string) []string {
 }
 
 // grade answers a grade request: a statement is supported when every number
-// in it appears in the cited text, contradicted otherwise. It is a harness
-// check, not a model.
+// in it appears in the cited text, unsupported otherwise (a number the lines
+// do not state). It quotes no conflict, so it never says contradicted. It is a
+// harness check, not a model.
 func grade(d reqDoc) string {
 	num := regexp.MustCompile(`\d[\d,.]*`)
 	type sg struct {
-		Index  int    `json:"index"`
-		Label  string `json:"label"`
-		Reason string `json:"reason"`
+		Index    int    `json:"index"`
+		Label    string `json:"label"`
+		Reason   string `json:"reason"`
+		Conflict string `json:"conflict"`
 	}
 	out := make([]sg, 0, len(d.Statements))
 	for _, s := range d.Statements {
 		label, reason := data.GradeSupported, "every number appears in the cited lines"
 		for _, n := range num.FindAllString(s.Text, -1) {
 			if !strings.Contains(s.Cited, strings.TrimRight(n, ".,")) {
-				label, reason = data.GradeContradicted, "number "+n+" is not in the cited lines"
+				label, reason = data.GradeUnsupported, "number "+n+" is not in the cited lines"
 				break
 			}
 		}

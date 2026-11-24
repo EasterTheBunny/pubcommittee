@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["label", "conflict", "bill_says", "statement_says", "difference"],
+  "properties": {
+    "label": {"type": "string", "enum": ["supported", "unsupported", "contradicted"]},
+    "conflict": {"type": "string"},
+    "bill_says": {"type": "string"},
+    "statement_says": {"type": "string"},
+    "difference": {"type": "string"}
+  }
+}

@@ -71,6 +71,7 @@ Move the SvelteKit app from a static site on mocked data to server-rendered page
 - An old-version link to changed words shows the notice and a one-tap link to the current version.
 - `npm run check`, lint, and Playwright UI tests ([architecture § Tooling](../../../architecture/README.md#tooling)) pass in CI against a `read-api` built with `memory` and fixtures.
 - No mock data appears in the M1 app.
+- Every auto-generated summary, change summary, and explanation shows the accuracy note in small text, "Auto-generated; tested accuracy 75–85%. Verify with the bill text.", linking to the lines it describes ([01 § Rules and invariants](../../01-bill-ingestion-and-display.md#rules-and-invariants)); readable without scripts. **Done** (`AccuracyNote.svelte`; `tests/explanation.spec.ts`, `tests/stub.spec.ts`; M1-16 `check.mjs` on the real bills).
 - The archived M0 demo builds from its new path and is available.
 - All of the above run locally against a `read-api` on the `local` target.
 - **Cloud phase:** the app is served from the web host for `dev` and `staging`.

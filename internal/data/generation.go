@@ -144,6 +144,10 @@ type StatementGrade struct {
 	Index  int    `json:"index"`
 	Label  string `json:"label"`
 	Reason string `json:"reason,omitempty"`
+	// Conflict is the exact cited text that a contradicted statement conflicts
+	// with, quoted by the grader; empty for other labels and in grades stored
+	// before the grader had to quote it.
+	Conflict string `json:"conflict,omitempty"`
 }
 
 // Grade is the grounding grader's verdict on one output, stored beside it.

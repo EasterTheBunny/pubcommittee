@@ -67,7 +67,7 @@ Generate bill summaries, change explanations, and version change summaries for t
 8. Deterministic validators (fact fidelity, amendment consistency) and their planted-error tests, in CI on `fakegen`.
 9. Grader prompt and output schema; CRS coverage check; `cmd/accuracy-report`.
 10. Local live run on the exit bills at stage L3, with the operator's key and approval: generate, grade, run planted errors through the grader.
-11. Operator sample: prepare about 30 statements with their cited lines for the operator to grade (an operator step), then report agreement. (Done in M1: 30/30 on grader-supported statements only. Operator decision 2026-11-22: the next sample includes grader-contradicted and validator-rejected statements, and is prepared at the start of the cloud phase, before the M1-00 run.)
+11. Operator sample: prepare about 30 statements with their cited lines for the operator to grade (an operator step), then report agreement. (Done in M1: 30/30 on grader-supported statements only. Operator decision 2026-11-22: the next sample includes grader-contradicted and validator-rejected statements, and is prepared at the start of the cloud phase, before the M1-00 run. Prepared 2026-11-23: `test/accuracy/operator-sample-2.md`, rebuilt by `test/accuracy/rebuild-operator-sample-2.sh`; 10 grader-contradicted, 10 validator-rejected, 10 grader-supported controls; awaits operator grading. Review of its 10 contradicted items found 6 grader reasons that conceded a match, 3 omissions or unstated qualifiers, and 1 real conflict; the grader prompt and `ParseGrade` now require a quoted conflict (`task/M1-09-grader`). Regrading the stored contradicted pool with the new prompt is a paid run that needs operator approval.)
 
 ## Acceptance criteria
 

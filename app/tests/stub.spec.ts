@@ -41,3 +41,18 @@ test('a very long bill renders every line, fast, without horizontal overflow', a
 	);
 	expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test('a generated summary carries the accuracy note with a link to the bill text', async ({
+	page
+}) => {
+	await page.goto('/bills/us-119-hr-1/v/2');
+	const summary = page.locator('section', {
+		has: page.getByRole('heading', { name: 'Bill summary' })
+	});
+	const note = summary.locator('[data-accuracy-note]');
+	await expect(note).toHaveText(
+		'Auto-generated; tested accuracy 75–85%. Verify with the bill text.'
+	);
+	await expect(note.getByRole('link', { name: 'bill text' })).toHaveAttribute('href', '#bill-text');
+	await expect(page.locator('#bill-text')).toHaveCount(1);
+});

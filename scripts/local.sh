@@ -10,6 +10,7 @@
 #   scripts/local.sh job <job> [flags]   run one job (job-ingest, job-exports, job-summarize) as you
 #   scripts/local.sh test [--with-admin] acceptance checks against the running app (`up` or `up -d`)
 #   scripts/local.sh data [fake|live]    show or switch the data set (restarts a running stack)
+#   scripts/local.sh data live --refresh copy the live-model outputs again, replacing the local live copy
 #
 # Everything runs in Docker with the limits set in compose.yaml. No model calls: by default summaries
 # come from the fake generator; `data live` switches to the stored outputs of the M1-09 live-model run.
@@ -32,7 +33,7 @@ dc() { docker compose -p "$project" --profile app --profile jobs "$@"; }
 job() { dc run --rm --no-deps "$@"; }
 
 usage() {
-	sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -47,11 +48,12 @@ build() {
 # created as root (a bind mount of a missing path, or an older run) makes that fail with
 # "permission denied"; hand everything in it back to you, through a container so no sudo is needed.
 ensure_data_dir() {
+	dir=${1:-.local-data}
 	# Created here, owned by you, so Docker does not create it as root.
-	mkdir -p .local-data
-	if [ ! -w .local-data ] || [ -n "$(find .local-data ! -user "$LOCAL_UID" -print -quit 2>/dev/null)" ]; then
-		echo "local data: .local-data/ has files you do not own (created by Docker as root); giving them back to $(id -un)"
-		docker run --rm -v "$PWD/.local-data:/data" alpine@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf \
+	mkdir -p "$dir"
+	if [ ! -w "$dir" ] || [ -n "$(find "$dir" ! -user "$LOCAL_UID" -print -quit 2>/dev/null)" ]; then
+		echo "local data: $dir/ has files you do not own (created by Docker as root); giving them back to $(id -un)"
+		docker run --rm -v "$PWD/$dir:/data" alpine@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf \
 			chown -R "$LOCAL_UID:$LOCAL_GID" /data
 	fi
 }
@@ -158,13 +160,37 @@ data_cmd() {
 	fake | live) want=$1 ;;
 	*) usage 2 ;;
 	esac
-	if [ "$cur" = "$want" ]; then
-		echo "data: already using $want"
+	refresh=""
+	case "${2:-}" in
+	"") ;;
+	--refresh)
+		[ "$want" = live ] || usage 2
+		refresh=1
+		;;
+	*) usage 2 ;;
+	esac
+	if [ "$cur" = "$want" ] && [ -z "$refresh" ]; then
+		echo "data: already using $want (scripts/local.sh data live --refresh copies the live outputs again)"
 		return
 	fi
-	if [ "$want" = live ] && [ ! -d ".local-data.live" ] && [ ! -d "$live_src/bills" ]; then
+	if [ "$want" = live ] && { [ -n "$refresh" ] || [ ! -d ".local-data.live" ]; } && [ ! -d "$live_src/bills" ]; then
 		echo "data: no live data: $live_src is missing" >&2
 		exit 1
+	fi
+	was_running=""
+	if [ -n "$refresh" ]; then
+		# The live set is a copy (exports and the change feed are rebuilt from it), so dropping it loses
+		# only local changes made while it was in use, such as pubctl track actions.
+		[ -n "$(dc ps -q --status running read-api)" ] && was_running=1
+		[ -z "$was_running" ] || dc down --remove-orphans >/dev/null 2>&1
+		if [ "$cur" = live ]; then
+			ensure_data_dir
+			rm -rf .local-data
+			cur=none
+		elif [ -d .local-data.live ]; then
+			ensure_data_dir .local-data.live
+			rm -rf .local-data.live
+		fi
 	fi
 	if [ "$cur" != none ] && [ -e ".local-data.$cur" ]; then
 		echo "data: .local-data.$cur/ already exists; move it aside before switching" >&2
@@ -172,6 +198,7 @@ data_cmd() {
 	fi
 	running=""
 	[ -n "$(dc ps -q --status running read-api)" ] && running=1
+	[ -z "$was_running" ] || running=1
 	[ -z "$running" ] || dc down --remove-orphans >/dev/null 2>&1
 	if [ "$cur" != none ]; then
 		ensure_data_dir
@@ -194,7 +221,11 @@ data_cmd() {
 		dc down --remove-orphans >/dev/null 2>&1
 	fi
 	printf '%s\n' "$want" >.local-data/.dataset
-	echo "data: now using $want (the other set is kept in .local-data.$cur/)"
+	if [ "$cur" = none ]; then
+		echo "data: now using $want"
+	else
+		echo "data: now using $want (the other set is kept in .local-data.$cur/)"
+	fi
 	if [ -n "$running" ]; then
 		dc up -d --wait --remove-orphans $serve >/dev/null
 		echo "serving again: app http://localhost:3000"

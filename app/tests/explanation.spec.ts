@@ -29,6 +29,12 @@ test('the explanation sits directly above the line it describes and names the pr
 	// provenance stays visible with every part closed
 	await expect(ex.getByText('Auto-generated').first()).toBeVisible();
 	await expect(ex.locator('details[open]')).toHaveCount(0);
+	// small-print accuracy note, linking to the first line it explains
+	const note = ex.locator('[data-accuracy-note]');
+	await expect(note).toHaveText(
+		'Auto-generated; tested accuracy 75–85%. Verify with the bill text.'
+	);
+	await expect(note.getByRole('link', { name: 'bill text' })).toHaveAttribute('href', '#s4-l4');
 });
 
 test('one control per part that has content, styled as text controls', async ({ page }) => {

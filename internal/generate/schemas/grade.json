@@ -8,11 +8,12 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["index", "label", "reason"],
+        "required": ["index", "label", "reason", "conflict"],
         "properties": {
           "index": {"type": "integer"},
           "label": {"type": "string", "enum": ["supported", "unsupported", "contradicted"]},
-          "reason": {"type": "string"}
+          "reason": {"type": "string"},
+          "conflict": {"type": "string"}
         }
       }
     },

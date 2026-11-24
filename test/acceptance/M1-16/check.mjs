@@ -241,12 +241,17 @@ for (const b of bills) {
 			tally('label', cj.provenance === 'auto' && cj.flags?.includes('auto'), `${b} v${n} change summary unlabelled`);
 			tally('label-page', /Auto-generated/.test(pg.body), `${b} v${n} changes page lacks the label`);
 		}
+		// Every generated part of the page (summary, change summary, each explanation) carries the accuracy note.
+		const count = (re) => (pg.body.match(re) ?? []).length;
+		const generated = count(/data-explanation/g) + (s.status === 200 ? 1 : 0) + (ch.status === 200 ? 1 : 0);
+		tally('accuracy-note', count(/data-accuracy-note/g) === generated && /tested accuracy 75–85%/.test(pg.body) === generated > 0, `${b} v${n} page has ${count(/data-accuracy-note/g)} accuracy notes for ${generated} generated parts`);
 	}
 }
 check('a summary is served for every version of the three exit bills', summaries === 12, `${summaries}/12`);
 check('at least one change summary is served', changeSummaries >= 2, `${changeSummaries}`, `${changeSummaries} served`);
 report('every served explanation, summary and change summary is labelled auto, content class platform', 'label');
 report('every page with an explanation shows the Auto-generated label', 'label-page');
+report('every summary, change summary and explanation on a page carries the accuracy note', 'accuracy-note');
 report('every explanation is pinned to valid lines of its section and its page shows it there', 'pinned');
 report('every explanation page carries the explanation pinned at the served lines', 'pinned-page');
 report('every explanation of a provision names it as "<title> U.S.C. <section>(<sub>)"', 'citation');

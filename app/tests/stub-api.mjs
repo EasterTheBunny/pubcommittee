@@ -1,5 +1,5 @@
 // A tiny read-api stand-in for UI tests that need data the fixture read-api does not serve yet:
-// a comparison between versions (M1-08) and a very long bill. Invented data only.
+// a comparison between versions (M1-08), a very long bill, and a bill summary. Invented data only.
 // Usage: node tests/stub-api.mjs [port]   (default 4010)
 import http from 'node:http';
 
@@ -137,6 +137,20 @@ http
 				});
 			}
 			if (rest === '/explanations' || rest === '/citations') return ok(res, { items: [] });
+			if (rest === '/summary' && k === 'stub' && n === 2) {
+				return ok(res, {
+					...meta,
+					provenance: 'auto',
+					content_class: 'platform',
+					flags: ['auto'],
+					bill: id(k),
+					n,
+					headline: 'Offices stay open an hour later.',
+					statements: [
+						{ text: 'Offices close at six.', anchors: ['s2-l2'], content_class: 'platform' }
+					]
+				});
+			}
 			if ((m = /^\/s\/([^/]+)(?:\/l\/(\d+)(?:-(\d+))?)?$/.exec(rest))) {
 				const s = secs.find((x) => x.id === m[1]);
 				if (!s) return problem(res, 404);
