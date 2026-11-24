@@ -92,8 +92,11 @@ Deliver every merged change on the public repository's `main` to `dev` with no m
 ## Open questions
 
 - Does the UI deploy through CD, or through Netlify's own build from `app/` with per-environment API base URLs ([M1-13](13-web-ui-real-data.md))? The archived demo stays on Netlify's own build from `demo/` either way.
+  - **Decided (operator, 2026-11-24):** Netlify's own build from `app/`, with per-environment API base URLs; CD does not deploy the UI.
 - Does a release tag start promotion automatically (still gated by approvals), or is every promotion started by hand?
+  - **Decided (operator, 2026-11-24):** automatically. A signed `vX.Y.Z` tag on a `main` commit with a `dev` record starts `promote.yml`: verify, leak check, then `staging` and `prod`, each behind its approval. Rollback is a manual promotion of an earlier tag. Module tags move to `modules/vX.Y.Z` so they never start a release.
 - Who approves `staging` and `prod` while there is one operator? GitHub can prevent self-review only once a second reviewer exists.
+  - **Decided (operator, 2026-11-24):** the operator alone, as the required reviewer of `staging` and `prod`, with self-review allowed; turn on "Prevent self-review" when a second operator joins.
 - Which project holds the shared Artifact Registry, and how do each environment's Cloud Run service agents get read access ([M1-15](15-infrastructure-and-deploy.md))? **Decided (operator, 2026-11-23):** the shared admin project, which also holds the state bucket and the workload identity pool and outlives the environments. The registry is created by the deployment repository's bootstrap root; only `deploy-dev` pushes, and each environment project's Cloud Run service agent gets `roles/artifactregistry.reader`.
 - In what order are Firestore indexes and images applied when a change needs both ([M1-03b](03b-cloud-storage-adapters.md))?
 - Is a post-deploy check of the public `read-api` contract ([M1-02](02-api-contract.md)) part of the smoke tests in `dev`?

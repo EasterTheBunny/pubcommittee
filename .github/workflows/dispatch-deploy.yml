@@ -10,7 +10,8 @@ on:
     types: [completed]
     branches: [main]
   push:
-    tags: ["v*"]
+    # Application releases only (vX.Y.Z). Module tags use modules/vX.Y.Z and never match.
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
 
 permissions: {}
 
@@ -30,7 +31,7 @@ jobs:
     # Secrets DEPLOY_APP_ID, DEPLOY_APP_KEY, DEPLOY_OWNER and DEPLOY_REPO: the App, and the
     # private repository's owner and name (secrets so they are masked in logs). The App is
     # owned by and installed on that owner, which may differ from this repository's.
-    # Deployment branches limited to main and v* tags.
+    # Deployment branches and tags limited to main and v* (release tags).
     environment: deploy-trigger
     steps:
       - id: what
