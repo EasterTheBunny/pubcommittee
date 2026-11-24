@@ -69,6 +69,7 @@ paths:
         '304': { $ref: '#/components/responses/NotModified' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
+        '500': { $ref: '#/components/responses/Unavailable' } # testing no deploy
   /v1/openapi.yaml:
     get:
       tags: [discovery]
