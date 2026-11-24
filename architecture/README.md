@@ -430,7 +430,7 @@ Open: whether a local pre-commit secret scanner is wanted beside CI scanning.
 
 ### HTTP services (`read-api`, `write-api`, `worker`)
 - Listen on `0.0.0.0:$PORT`, defaulting to `8080`.
-- `GET /healthz` reports the process is alive. `GET /readyz` reports its adapters are configured and reachable.
+- `GET /healthz` reports the process is alive. `GET /readyz` reports its adapters are configured and reachable. On Cloud Run the front end reserves some paths ending in `z` and answers them 404 itself, so these two are reached only from inside (probes, local runs); deploy smoke tests use an API route such as `/v1/bills?scope=catalog` (M1-17).
 - `GET /metrics` on a separate port (`$METRICS_PORT`, default `9464`) serves metrics for scraping ([Observability](#observability)). The metrics port is never routed publicly.
 - On `SIGTERM`, stop accepting requests, finish in-flight ones, and exit within 10 seconds.
 - `read-api` reads `RATE_LIMITS` (form `text=600,live=300,bulk=120,discovery=600`, per minute per route class), `CLIENT_IP_HEADER`, and, on the `memory` target only, `SEED_FIXTURES=1` to load invented test fixtures.
@@ -1004,7 +1004,7 @@ Infrastructure code is split between two repositories:
 - **Why public modules.** A new unit and its Cloud Run service or job, schedule, service account, and IAM bindings are reviewed in one change with the code. Anyone can check least-privilege claims (for example, that `read-api`'s service account has no SQL or key access) from the modules themselves.
 - **Vendor-specific by name.** Modules are per vendor, while services stay vendor-neutral through adapters. Another vendor means new modules under `infra/modules/<vendor>/`, not changes to services.
 - **Module rules.** No defaults that are real values; every name, project, region, and domain is an input. No network specifics or defense tuning (rate-limit values, detection thresholds) hard-coded; those are inputs set privately. No sensitive outputs. CI runs `validate` and a plan of `infra/examples/` against fake values (`.github/workflows/infra.yml`, `test/acceptance/M1-15/run.sh`). Modules (M1-15) in `infra/modules/gcp/`: `service_account` (refuses SQL, KMS, owner, and editor roles), `bucket`, `firestore`, `cloud_run_service` (minimum instances fixed at 0, image by digest, optional metrics sidecar), `cloud_run_job` (optional Cloud Scheduler trigger, none by default), `firebase_hosting_edge`, `admin_api_access` (operator and deploy-account invokers, no public principals). The registry, state bucket, workload identity, and deploy service accounts are not modules: the private bootstrap creates them.
-- **Pinning.** The deployment repository pins modules by tag (`?ref=vX.Y.Z`). Changing a module is a tagged release here, then a pin bump there. The application commit and image digests running in each environment are recorded by each deploy ([Continuous delivery](#continuous-delivery)).
+- **Pinning.** The deployment repository pins modules by tag (`?ref=modules/vX.Y.Z`; the first release, `v0.1.0`, predates the prefix). Changing a module is a tagged release here, then a pin bump there. Module tags never start a deploy: only application release tags (`vX.Y.Z`) do. The application commit and image digests running in each environment are recorded by each deploy ([Continuous delivery](#continuous-delivery)).
 - **Where images are built and deployed.** This repository's CI builds and tests images but never pushes or deploys, because its logs are public and would show project ids and service URLs. The deployment repository's CI builds, pushes, and deploys ([Continuous delivery](#continuous-delivery)).
 - **Local layout.** The deployment repository may be checked out at `deploy/` inside this repository; that path is ignored here ([`.gitignore`](../.gitignore)). Local module development can point a module `source` at `../infra/modules/...` instead of a tag, never committed that way.
 - **State** lives in a remote bucket created by the deployment repository's bootstrap root, with restricted access.
@@ -1020,10 +1020,12 @@ merge to main ─► CI green
   └─► dispatch-deploy ── repository_dispatch ─► deploy-dev
       (GitHub App token,     {sha, kind}          verify sha is on public main
        one permission)                            leak check
-release tag v* ─► dispatch-deploy ──────────────►  build changed units, push to shared registry
+release tag vX.Y.Z ─► dispatch-deploy ─────────►  build changed units, push to shared registry
                                                   apply dev by digest, smoke test
                                                   record dev.json on the deployed branch
-                                                promote (release or manual)
+                                                  record history/dev/<sha>.json
+                                                promote (release tag, or manual with a tag)
+                                                  verify tag, commit on main, dev record
                                                   staging: same digests, approval
                                                   prod:    same digests, approval
 ```
@@ -1031,7 +1033,8 @@ release tag v* ─► dispatch-deploy ──────────────
 - **Trigger.** A GitHub App installed on the deployment repository only, with `Contents: write` (needed for `repository_dispatch`) and nothing else. Its id and key are secrets of a `deploy-trigger` environment in this repository, limited to `main` and release tags. The dispatch job runs on `workflow_run` of a successful `push` CI run on `main`, or on a release tag, and prints only the commit and kind.
 - **Untrusted payload.** The deployment repository refuses a commit that is not on this repository's `main`, or a release whose tag does not point at it. The dispatch says *which* commit; it never decides *whether* to deploy.
 - **Same bytes everywhere.** Images are built once, pushed to one shared Artifact Registry, and applied by digest. `staging` and `prod` receive exactly the digests `dev` ran; nothing is rebuilt per environment.
-- **Approvals.** `dev` deploys on every merge. `staging` and `prod` are GitHub environments with required reviewers.
+- **Releases.** A release is a signed tag `vX.Y.Z` on a `main` commit that already ran in `dev`; pushing it starts promotion automatically. Promotion refuses a commit with no `dev` record (`history/dev/<sha>.json` on the deployed branch). Rollback is a manual promotion of an earlier release tag, again without a rebuild. Module tags use the separate `modules/` prefix, so they never match.
+- **Approvals.** `dev` deploys on every merge. `staging` and `prod` are GitHub environments with required reviewers; while there is one operator, that operator approves alone (self-review allowed).
 - **Roster first.** When a deploy changes the operator roster, CD writes the roster log entries through `admin-api` before applying IAM ([Roster log](#roster-log)).
 - **Deploy records.** Each deploy writes `<env>.json` (commit, kind, tag, per-unit digests, time, run id) to a `deployed` branch of the deployment repository. That branch says what each environment runs; rollback re-applies an earlier record without rebuilding.
 - **Independent units.** Only units whose inputs changed are rebuilt and redeployed.
