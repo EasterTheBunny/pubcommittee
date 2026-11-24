@@ -87,6 +87,10 @@ module "firestore" {
   location      = var.firestore_location
   database_name = "(default)"
 
+  exempt_fields = {
+    bills_body = { collection = "bills", field = "body" }
+  }
+
   indexes = {
     bills_example = {
       collection = "bills"
