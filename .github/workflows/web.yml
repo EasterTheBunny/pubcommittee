@@ -12,7 +12,7 @@ jobs:
     # The archived M0 demo: type-checked and built with its own dependencies.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check and build demo/
         run: |
           docker run --rm --cpus 2 --memory 3g -v "$PWD":/src -w /src/demo \
@@ -22,7 +22,7 @@ jobs:
     # The M1 app against a read-api built with the memory target and invented fixtures.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build and start read-api (memory target, fixtures)
         run: |
           docker build -f docker/Dockerfile --build-arg SERVICE=read-api --build-arg TARGET=memory -t pc-read-api:ci .
@@ -53,7 +53,7 @@ jobs:
     # an offline load of a version page that was opened before. Fails if either breaks.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build and start read-api (memory target, fixtures)
         run: |
           docker build -f docker/Dockerfile --build-arg SERVICE=read-api --build-arg TARGET=memory -t pc-read-api:ci .

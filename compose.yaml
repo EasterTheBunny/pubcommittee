@@ -1,6 +1,6 @@
 # Local stack on the shared data volume. M1-01 shipped the placeholder
-# read-api on the memory target; M1-03a runs it on the local target. No emulators
-# and no Postgres in M1; the emulator profile arrives with M1-03b.
+# read-api on the memory target; M1-03a runs it on the local target. No Postgres in M1. The emulator profile (M1-03b) starts the Cloud Storage
+# stand-in and the Firestore emulator for the cloud adapters' conformance runs.
 # The full local app (web, admin-api, and the jobs that fill .local-data) is driven by
 # scripts/local.sh: build, up (Ctrl+C stops and removes everything), down. See README § Run the app.
 name: pubcommittee
@@ -190,6 +190,41 @@ services:
     read_only: true
     deploy: *job-limits
     mem_reservation: 128M
+
+  # Emulators (profile emulator, M1-03b): what the emulator build target and the cloud
+  # adapters' conformance tests talk to. Clients set STORAGE_EMULATOR_HOST=gcs-emulator:4443
+  # and FIRESTORE_EMULATOR_HOST=firestore-emulator:8080. Neither checks IAM.
+  # fake-gcs-server 1.56.1 (BSD-2-Clause), pinned by digest (M1-00); the host and URL flags
+  # are needed for resumable uploads from another container.
+  gcs-emulator:
+    profiles: ["emulator"]
+    image: fsouza/fake-gcs-server@sha256:797ce226d62f947c009dc40246b30cfb456b8473d8241407f9d6f2c04e4d69ef
+    command: ["-scheme", "http", "-port", "4443", "-public-host", "gcs-emulator:4443",
+              "-external-url", "http://gcs-emulator:4443", "-backend", "memory"]
+    ports:
+      - "127.0.0.1:4443:4443"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    mem_reservation: 128M
+
+  # Firestore emulator from Google's official Cloud SDK emulators image (JVM), pinned by
+  # digest (google/cloud-sdk:emulators, built 2026-11-22; operator decision 2026-11-24).
+  # It runs locally only and accepts any project id.
+  firestore-emulator:
+    profiles: ["emulator"]
+    image: google/cloud-sdk@sha256:7238e47ca03f43296f380010193eedd7ce7cac69efcae36ff7b0a75e0cd879e8
+    command: ["gcloud", "emulators", "firestore", "start", "--host-port=0.0.0.0:8080"]
+    ports:
+      - "127.0.0.1:8085:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1536M
+    mem_reservation: 768M
 
   otel-collector:
     image: otel/opentelemetry-collector@sha256:34b24b740c3c88d3467740e8642a397c13898ef76d7295c5425164c482ed1b73

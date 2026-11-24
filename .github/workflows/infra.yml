@@ -13,8 +13,8 @@ jobs:
   modules:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: opentofu/setup-opentofu@v1
+      - uses: actions/checkout@v5
+      - uses: opentofu/setup-opentofu@v2
         with:
           tofu_version: "1.8.x"
       - name: Check the modules and the example root

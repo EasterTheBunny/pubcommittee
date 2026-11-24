@@ -3,15 +3,22 @@
 package main
 
 import (
-	"errors"
+	"context"
+	"fmt"
+	"os"
 
+	"github.com/easterthebunny/pubcommittee/internal/cloudports"
 	"github.com/easterthebunny/pubcommittee/internal/data"
 	"github.com/easterthebunny/pubcommittee/internal/telemetry"
 )
 
-var errNoCloud = errors.New("emulator adapters arrive with M1-03b")
-
-// wire is a placeholder until M1-03b adds the emulator-backed cloud adapters.
-func wire(_ *telemetry.Telemetry) (data.PublicReadPorts, error) {
-	return data.PublicReadPorts{}, errNoCloud
+// wire builds the public read ports on the cloud adapters (Firestore and Cloud
+// Storage; their emulators on the emulator target). It never imports a
+// local-only adapter (depguard, test/ci/deps.sh).
+func wire(tel *telemetry.Telemetry) (data.PublicReadPorts, error) {
+	p, err := cloudports.Open(context.Background(), cloudports.Emulator, os.Getenv)
+	if err != nil {
+		return data.PublicReadPorts{}, fmt.Errorf("cloud ports: %w", err)
+	}
+	return tel.WrapPublicRead("emulator", p.Public()), nil
 }

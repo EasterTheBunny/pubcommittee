@@ -5,19 +5,27 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/easterthebunny/pubcommittee/internal/adapters/claude"
+	"github.com/easterthebunny/pubcommittee/internal/cloudports"
 	"github.com/easterthebunny/pubcommittee/internal/data"
 	"github.com/easterthebunny/pubcommittee/internal/telemetry"
 )
 
-// wire is a placeholder until M1-03b adds the cloud storage adapters. The
-// generator side is real: Claude Models on Google Cloud with the job's
-// service account (Application Default Credentials), no API key. It must
-// never import a local-only adapter (depguard, test/ci/deps.sh).
-func wire(_ *telemetry.Telemetry, _ config) (data.PlatformPorts, data.Generator, error) {
-	if _, err := claude.NewGoogleCloud(context.Background(), claude.GoogleCloudConfig{}); err != nil {
+// wire builds the platform ports on the cloud adapters and the generator:
+// Claude Models on Google Cloud with the job's service account (Application
+// Default Credentials), no API key. It never imports a local-only adapter
+// (depguard, test/ci/deps.sh).
+func wire(tel *telemetry.Telemetry, cfg config) (data.PlatformPorts, data.Generator, error) {
+	ctx := context.Background()
+	gen, err := claude.NewGoogleCloud(ctx, claude.GoogleCloudConfig{Model: cfg.Model})
+	if err != nil {
 		return data.PlatformPorts{}, nil, fmt.Errorf("claude: %w", err)
 	}
-	return data.PlatformPorts{}, nil, errNoCloud
+	p, err := cloudports.Open(ctx, cloudports.GCP, os.Getenv)
+	if err != nil {
+		return data.PlatformPorts{}, nil, fmt.Errorf("cloud ports: %w", err)
+	}
+	return tel.WrapPlatform("gcp", p.Platform()), tel.WrapGenerator(cfg.Generator, gen), nil
 }

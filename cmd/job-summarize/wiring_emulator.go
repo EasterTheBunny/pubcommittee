@@ -3,12 +3,23 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/easterthebunny/pubcommittee/internal/adapters/fakegen"
+	"github.com/easterthebunny/pubcommittee/internal/cloudports"
 	"github.com/easterthebunny/pubcommittee/internal/data"
 	"github.com/easterthebunny/pubcommittee/internal/telemetry"
 )
 
-// wire is a placeholder until M1-03b adds the cloud adapters. It must never
-// import a local-only adapter (depguard, test/ci/deps.sh).
-func wire(_ *telemetry.Telemetry, _ config) (data.PlatformPorts, data.Generator, error) {
-	return data.PlatformPorts{}, nil, errNoCloud
+// wire builds the platform ports on the emulators and the offline generator:
+// no model runs on the emulator target.
+func wire(tel *telemetry.Telemetry, cfg config) (data.PlatformPorts, data.Generator, error) {
+	p, err := cloudports.Open(context.Background(), cloudports.Emulator, os.Getenv)
+	if err != nil {
+		return data.PlatformPorts{}, nil, fmt.Errorf("cloud ports: %w", err)
+	}
+	gen := fakegen.New(fakegen.Config{Files: p.Objects})
+	return tel.WrapPlatform("emulator", p.Platform()), tel.WrapGenerator(cfg.Generator, gen), nil
 }
