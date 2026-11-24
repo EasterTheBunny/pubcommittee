@@ -8,6 +8,19 @@ resource "google_firestore_database" "this" {
   delete_protection_state = var.deletion_protection ? "DELETE_PROTECTION_ENABLED" : "DELETE_PROTECTION_DISABLED"
 }
 
+# Fields exempt from automatic single-field indexing (an empty index_config), such
+# as large JSON bodies that are never queried. The Firestore adapter owns the list.
+resource "google_firestore_field" "exempt" {
+  for_each = var.exempt_fields
+
+  project    = var.project
+  database   = google_firestore_database.this.name
+  collection = each.value.collection
+  field      = each.value.field
+
+  index_config {}
+}
+
 resource "google_firestore_index" "this" {
   for_each = var.indexes
 

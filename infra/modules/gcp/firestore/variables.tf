@@ -32,3 +32,12 @@ variable "indexes" {
   }))
   default = {}
 }
+
+variable "exempt_fields" {
+  description = "Fields exempt from single-field indexing, keyed by a stable name. The Firestore adapter (M1-03b) owns the list (fieldOverrides with no indexes)."
+  type = map(object({
+    collection = string
+    field      = string
+  }))
+  default = {}
+}

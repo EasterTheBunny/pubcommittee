@@ -75,6 +75,11 @@ resource "google_cloud_run_v2_service" "this" {
 
   lifecycle {
     # Deploys (M1-17) change the image by passing a new digest as input.
+    # Scaling is set per revision in template.scaling. The service-level scaling
+    # block is never set here, but Cloud Run reports its defaults (0) back, which
+    # would show as a change on every plan.
+    ignore_changes = [scaling]
+
     precondition {
       condition     = !(var.allow_unauthenticated && length(var.invokers) > 0)
       error_message = "Set either allow_unauthenticated or invokers, not both."
