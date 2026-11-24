@@ -84,7 +84,7 @@ func gradedBad(
 	if res.Outcome != "ok" {
 		return false, nil
 	}
-	g, err := generate.ParseGrade(res.Text, len(o.Statements))
+	g, err := generate.ParseGrade(res.Text, generate.GradeCited(o, gc))
 	return caughtBy(g, err == nil), nil
 }
 

@@ -48,6 +48,12 @@ type SampleItem struct {
 	Cited         []string `json:"cited"` // "anchor: text" rows, and provision text
 	OperatorLabel string   `json:"operator_label"`
 	GraderLabel   string   `json:"grader_label,omitempty"`
+	// Stratum, ValidatorStatus and ValidatorFindings are set only in the hard
+	// sample (BuildHardSample): why the statement was picked, the status of its
+	// output, and the deterministic validators' findings on the whole output.
+	Stratum           string   `json:"stratum,omitempty"`
+	ValidatorStatus   string   `json:"validator_status,omitempty"`
+	ValidatorFindings []string `json:"validator_findings,omitempty"`
 }
 
 // CRSRow is the coverage of one bill summary against the CRS summary.

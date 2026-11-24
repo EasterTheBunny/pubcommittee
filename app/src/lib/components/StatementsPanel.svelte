@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { ExplanationFlag, Statement } from '#lib/types.ts';
+	import AccuracyNote from './AccuracyNote.svelte';
 
 	// Platform-written summary of a bill or a version change. Blue-tinted, never shown as bill text.
 	let {
 		title,
 		doc,
-		emptyText
+		emptyText,
+		textHref = '#bill-text'
 	}: {
 		title: string;
 		doc: {
@@ -16,6 +18,8 @@
 			content_class: 'official' | 'platform';
 		} | null;
 		emptyText: string;
+		/** The bill text the summary describes. */
+		textHref?: string;
 	} = $props();
 
 	const flagLabels: Record<ExplanationFlag, string> = {
@@ -63,6 +67,7 @@
 		</ul>
 
 		<p class="mt-3 text-xs text-muted">As of {doc.as_of.slice(0, 10)}</p>
+		<AccuracyNote href={textHref} />
 	</section>
 {:else}
 	<section class="card p-4">

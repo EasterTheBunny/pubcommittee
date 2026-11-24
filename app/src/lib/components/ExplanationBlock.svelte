@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Explanation, ExplanationFlag } from '#lib/types.ts';
+	import AccuracyNote from './AccuracyNote.svelte';
 
 	// Platform-written explanation pinned above the line it describes: a row of controls styled like the
 	// line's "block" control, and one block below it that holds the open part. The parts are native
@@ -39,6 +40,10 @@
 	);
 	// What the explanation refers to, in words: the provision of existing law it changes, when it has one.
 	const target = $derived(e.provision_citation ?? e.provision_id);
+	// The lines it explains, for the accuracy note's link; the section when it explains all of it.
+	const textHref = $derived(
+		whole || from === undefined ? `#${e.section_id}` : `#${e.section_id}-l${from}`
+	);
 
 	// Each part shows only when the explanation has it (design/tasks/m1/FEEDBACK.md item 1).
 	const parts = $derived(
@@ -93,4 +98,5 @@
 			{/each}
 		</div>
 	{/if}
+	<AccuracyNote href={textHref} />
 </aside>

@@ -119,3 +119,6 @@ $RECYCLE.BIN/
 tmp/
 *.tmp
 *.bak
+
+# M1-15: the example root's fake values are tracked on purpose.
+!infra/examples/fake.tfvars

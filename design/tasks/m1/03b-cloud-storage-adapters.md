@@ -48,7 +48,7 @@
 3. Firestore collection schemas and document mappers for M1 collections.
 4. Catalog queries: filters, `search_terms` matching, opaque cursors.
 5. Transactional "change plus log entry" operation.
-6. Emulator setup in `compose.yaml` and CI; conformance runs.
+6. Emulator setup in `compose.yaml` and CI; conformance runs. Start from the M1-00 spike tests in `test/spike/storage-emulator/storage_test.go`: move them into `adapters/gcs` tests under the strict lint config, replace the testbench fault test (14) with an injected-transport unit test, then delete `test/spike/`. No test may rely on stand-in ETag values.
 7. Wiring files for `emulator` and `gcp`.
 8. At C1, the real-bucket tests listed by M1-00.
 
@@ -66,4 +66,4 @@
 
 - Do the final object paths and document shapes match [architecture § Data placement](../../../architecture/README.md#data-placement)? Record any difference there.
 - Is keyword matching on `search_terms` enough for M1 catalog search (open decision "Catalog search")?
-- Which Cloud Storage stand-in runs locally and in CI? Google publishes no Cloud Storage emulator, although [architecture § Local run](../../../architecture/README.md#local-run) assumes one. Does `adapters/gcs` pass conformance against it? Answered by [M1-00](00-storage-emulator-exploration.md), which also lists the tests that need a real bucket.
+- Which Cloud Storage stand-in runs locally and in CI? Google publishes no Cloud Storage emulator, although [architecture § Local run](../../../architecture/README.md#local-run) assumes one. Does `adapters/gcs` pass conformance against it? Answered by [M1-00](00-storage-emulator-exploration.md), which also lists the tests that need a real bucket. **Answered (M1-00, operator 2026-11-23):** `fake-gcs-server` only ([architecture § Conformance tests](../../../architecture/README.md#conformance-tests)); transient errors through an injected `http.RoundTripper`; real-bucket tests in a `dev` test bucket.

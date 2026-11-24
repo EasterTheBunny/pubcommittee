@@ -74,6 +74,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 - Stable anchors on real text; line-level deep links ([06](06-sharing.md), without social cards).
 - Citation resolution against the US Code; unresolved citations listed.
 - Change explanations for a target set of bills; quality measured.
+- Accuracy note in small text on every auto-generated summary and explanation: tested accuracy 75–85%, verify with the linked bill text ([01](01-bill-ingestion-and-display.md#rules-and-invariants)).
 - Version history and stale classification computed between real versions ([02](02-versions-and-review-lifecycle.md)).
 - Read access for machines ([10](10-machine-access.md)):
   - server-resolvable canonical address for every anchor, pinned to a version;

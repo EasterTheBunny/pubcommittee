@@ -15,6 +15,11 @@ var files embed.FS
 // TaskCRS is the CRS coverage comparison, run by the accuracy report only.
 const TaskCRS = "crs"
 
+// TaskPanel is the panel check of one sampled statement by another model,
+// with plain-language notes for the operator. Run by the accuracy report only;
+// its verdicts are never stored as grades.
+const TaskPanel = "panel"
+
 // Default models. The grader must differ from the generator; both are
 // recorded with every stored output and grade.
 const (
@@ -42,6 +47,8 @@ func taskFiles(task string) (prompt, schema string, ok bool) {
 		return "prompts/grade.md", "schemas/grade.json", true
 	case TaskCRS:
 		return "prompts/crs.md", "schemas/crs.json", true
+	case TaskPanel:
+		return "prompts/panel.md", "schemas/panel.json", true
 	}
 	return "", "", false
 }
@@ -82,7 +89,7 @@ func LoadPrompt(task string) (Prompt, error) {
 		Instructions: string(common), Task: string(text), Schema: schema,
 		Version: "v1-" + hex.EncodeToString(h.Sum(nil))[:8],
 	}
-	if task == data.TaskGrade || task == TaskCRS {
+	if task == data.TaskGrade || task == TaskCRS || task == TaskPanel {
 		// The grader and the coverage check are not writers: their task text
 		// is their whole instructions.
 		pr.Instructions, pr.Task = string(text), ""

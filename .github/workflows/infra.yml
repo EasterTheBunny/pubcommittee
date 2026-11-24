@@ -1,0 +1,21 @@
+name: infra
+on:
+  push:
+    paths: ["infra/**", "test/acceptance/M1-15/**", ".github/workflows/infra.yml"]
+  pull_request:
+    paths: ["infra/**", "test/acceptance/M1-15/**", ".github/workflows/infra.yml"]
+
+permissions:
+  contents: read
+
+# No cloud credentials: fmt, validate, and a refresh-free plan with fake values.
+jobs:
+  modules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: "1.8.x"
+      - name: Check the modules and the example root
+        run: sh test/acceptance/M1-15/run.sh

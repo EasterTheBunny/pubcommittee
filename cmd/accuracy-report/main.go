@@ -42,9 +42,15 @@ type config struct {
 	Model        string
 	GraderModel  string
 	Grade        bool
+	Regrade      bool     // regrade outputs whose stored grade has a contradicted verdict
+	ReportOnly   bool     // write report.md only, never the operator sample files
+	PanelFile    string   // sample JSON to run the model panel on ("" = none)
+	PanelModels  []string // panel models, besides the stored grader
 	GradePlanted bool
 	CRS          bool
 	SampleSize   int
+	HardSample   string // output name of the hard sample ("" = none)
+	ExcludeFile  string // earlier sample whose statements the hard sample skips
 	Agreement    string
 	OutDir       string
 	FixturesDir  string
@@ -80,16 +86,26 @@ func parseArgs(args []string, getenv func(string) string) (config, error) {
 	fs.StringVar(&cfg.Model, "model", generate.DefaultModel, "generating model whose outputs are reported")
 	fs.StringVar(&cfg.GraderModel, "grader-model", generate.DefaultGraderModel, "grader model (must differ from --model)")
 	fs.BoolVar(&cfg.Grade, "grade", false, "run the grounding grader on stored outputs without a grade (live with claude)")
+	fs.BoolVar(&cfg.Regrade, "regrade-contradicted", false,
+		"run the grader again on outputs whose stored grade has a contradicted verdict (live with claude)")
 	fs.BoolVar(&cfg.GradePlanted, "grade-planted", false, "run the grader on planted-error outputs (live with claude)")
 	fs.BoolVar(&cfg.CRS, "crs", false, "compare bill summaries with the CRS summaries (live with claude)")
 	fs.IntVar(&cfg.SampleSize, "sample", defaultSampleSize, "statements in the operator sample")
+	fs.StringVar(&cfg.HardSample, "hard-sample", "", "write only the hard operator sample as <name>.md and .json")
+	fs.StringVar(&cfg.ExcludeFile, "exclude-sample", "", "earlier sample JSON whose statements --hard-sample skips")
 	fs.StringVar(&cfg.Agreement, "agreement", "", "operator-graded sample JSON to compute grader agreement from")
+	fs.BoolVar(&cfg.ReportOnly, "report-only", false,
+		"write only report.md; leave the operator sample files in --out untouched")
+	fs.StringVar(&cfg.PanelFile, "panel", "",
+		"sample JSON to check with the --panel-models; writes only <sample>.panel.md and .json (live with claude)")
+	panelModels := fs.String("panel-models", "claude-fable-5-2,claude-opus-5-5", "comma-separated panel models")
 	fs.StringVar(&cfg.OutDir, "out", "test/accuracy", "directory for report.md and the operator sample")
 	fs.StringVar(&cfg.FixturesDir, "fixtures-dir", "fixtures", "directory of the example data (BILLSTATUS files)")
 	if err := fs.Parse(args); err != nil {
 		return cfg, fmt.Errorf("flags: %w", err)
 	}
 	cfg.Bills = bills
+	cfg.PanelModels = strings.Split(*panelModels, ",")
 	if len(cfg.Bills) == 0 {
 		cfg.Bills = []string{"us-119-hr-4313", "us-119-hr-3062", "us-119-hr-3427"}
 	}
@@ -116,7 +132,14 @@ func run(args []string, getenv func(string) string) error {
 	gc := generate.DefaultConfig()
 	gc.Model = cfg.Model
 	d := generate.Deps{Ports: ports, Gen: gen, Cfg: gc, Now: time.Now, Log: slog.New(slog.NewJSONHandler(os.Stderr, nil))}
-	return (&tool{cfg: cfg, d: d, gen: gen}).report(context.Background())
+	t := &tool{cfg: cfg, d: d, gen: gen}
+	if cfg.HardSample != "" {
+		return t.hardSampleRun(context.Background())
+	}
+	if cfg.PanelFile != "" {
+		return t.panelRun(context.Background())
+	}
+	return t.report(context.Background())
 }
 
 // refs parses the bill flags.

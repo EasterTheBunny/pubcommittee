@@ -10,7 +10,7 @@ How the development environment grows as M1 tasks complete: what runs on a local
 | **L1 — Local, filesystem stores** | Local machine, `compose.yaml` | `local`; `fsobject`, `fsdocs`, `localkeys`, `localauth`, OpenTelemetry Collector | L0 plus Docker. No emulators |
 | **L2 — Local, live public sources** | Local machine with internet | `local`; `govinfo`, `uscode` | L1 plus outbound HTTPS. No account or key: govinfo and the Law Revision Counsel are public |
 | **L3 — Local, live model** | Local machine | `local` with `adapters/claude` | An operator-supplied Anthropic API key for the first-party client, on the local machine only; never in CI. Costs money. Switch: `PUBCOMMITTEE_LIVE_MODEL_RUNS=1` plus `ANTHROPIC_API_KEY`; the CI repository variable `LIVE_MODEL_RUNS` is off by default (M1-09) |
-| **E1 — Emulated cloud stores** (cloud phase) | Local machine and CI | `emulator`; `gcs` and `firestore` against the Firestore emulator and the Cloud Storage stand-in from [M1-00](00-storage-emulator-exploration.md) | L1 plus emulator images |
+| **E1 — Emulated cloud stores** (cloud phase) | Local machine and CI | `emulator`; `gcs` and `firestore` against the Firestore emulator and `fake-gcs-server`, the Cloud Storage stand-in chosen in [M1-00](00-storage-emulator-exploration.md) | L1 plus emulator images |
 | **C1 — Cloud `dev`** | Google Cloud `dev` project and a web host | `gcp` | Projects, billing, IaC state, shared registry, federated credentials for the private repository, the deploy trigger App, units deployed by [M1-17](17-continuous-delivery.md) |
 | **C2 — Cloud `staging` and `prod`** | Same, per environment | `gcp` | C1 repeated from the same modules, plus promotion by digest behind approvals ([M1-17](17-continuous-delivery.md)) |
 
@@ -83,7 +83,7 @@ How the development environment grows as M1 tasks complete: what runs on a local
 
 ## Open questions
 
-- **Cloud Storage stand-in** (cloud phase, E1): Google publishes no Cloud Storage emulator. Which stand-in does `adapters/gcs` test against? Answered by [M1-00](00-storage-emulator-exploration.md).
+- **Cloud Storage stand-in** (cloud phase, E1): Google publishes no Cloud Storage emulator. Which stand-in does `adapters/gcs` test against? **Answered (M1-00, operator 2026-11-23):** `fake-gcs-server` only; real-bucket-only tests in a `dev` test bucket ([architecture § Conformance tests](../../../architecture/README.md#conformance-tests)).
 - **Firestore emulator** (cloud phase, E1): run in a container so CI and other machines match.
 - **Tool choices** are recorded in [architecture § Tooling](../../../architecture/README.md#tooling): Go 1.27, Go tools through the `tool` directive, `openapi-typescript` in `app/`, cross-compiled multi-arch images, BuildKit SBOMs, GitHub Actions, OpenTofu, Playwright, the Firestore emulator in a container (cloud phase), the Firebase CLI in the deployment repository's CI only, and no Postgres until M2.
 - **Answered:** the OpenAPI linter is Redocly CLI ([M1-02](02-api-contract.md)).

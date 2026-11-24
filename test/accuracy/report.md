@@ -6,35 +6,65 @@ Generated 2026-11-23 by `cmd/accuracy-report`.
 - Grader: `claude-sonnet-5-5` (must differ from the generator)
 - Bills: us-119-hr-4313, us-119-hr-3062, us-119-hr-3427
 - Prompt versions: bill-explanation=v1-f2a32231, bill-summary=v1-58de141b, change-explanation=v1-c8de06df, version-changes=v1-0adc248d
-- Reproduce: `accuracy-report --generator claude --grade` after `job-summarize --revalidate` and `job-summarize --submit --retry --generator claude` (live runs, operator-approved); the earlier live run: `accuracy-report --generator claude --grade-planted --crs --out test/accuracy`
+- Reproduce: `accuracy-report --generator claude --regrade-contradicted --report-only --agreement test/accuracy/operator-sample.json --out test/accuracy` (live, operator-approved, 2026-11-23); earlier: `accuracy-report --generator claude --grade` after `job-summarize --revalidate` and `job-summarize --submit --retry --generator claude`, and `accuracy-report --generator claude --grade-planted --crs --out test/accuracy`
+- Counted outputs: those the current plan asks for. Short-title sections no longer get a bill explanation (design/tasks/m1/FEEDBACK.md item 2), so the 12 stored `s1` bill explanations drop out: bill-explanation shows 4 outputs and 16 statements (16 and 28 before), and the planted sets hold 63 outputs (75 before).
 
 ## Per task
 
 | Task | Outputs | Ready | Unverified | Withheld | Refused/truncated/invalid | Supported | Contradicted | Fidelity fail | Amendment fail | Neutral-wording fail | Answered by fallback |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| bill-explanation | 16 | 16 | 0 | 0 | 0 | 100.0% (28/28) | 0.0% (0/28) | 0.0% (0/16) | 0.0% (0/16) | 0.0% (0/16) | 0 |
+| bill-explanation | 4 | 4 | 0 | 0 | 0 | 100.0% (16/16) | 0.0% (0/16) | 0.0% (0/4) | 0.0% (0/4) | 0.0% (0/4) | 0 |
 | bill-summary | 12 | 12 | 0 | 0 | 0 | 100.0% (92/92) | 0.0% (0/92) | 0.0% (0/12) | 0.0% (0/12) | 0.0% (0/12) | 0 |
-| change-explanation | 54 | 45 | 9 | 0 | 0 | 88.4% (199/225) | 4.4% (10/225) | 1.9% (1/54) | 7.4% (4/54) | 0.0% (0/54) | 0 |
+| change-explanation | 54 | 45 | 9 | 0 | 0 | 90.7% (204/225) | 0.0% (0/225) | 1.9% (1/54) | 7.4% (4/54) | 0.0% (0/54) | 0 |
 | version-changes | 4 | 2 | 2 | 0 | 0 | 100.0% (3/3) | 0.0% (0/3) | 50.0% (2/4) | 0.0% (0/4) | 0.0% (0/4) | 0 |
 
 Validator failure rates are shares of outputs with at least one finding. Supported and contradicted shares are shares of graded statements, reported separately. Answered by fallback counts outputs a fallback model produced instead of the generator.
 
 ## Planted errors: catch rate per check
 
-Known errors injected into good outputs. The deterministic checks run in CI on any outputs, so these rates are measured now; the grader column is from the earlier live run of 2026-11-22 (56 ready outputs) and was not re-run on the 75 now ready; the deterministic columns are measured on the 75 now ready outputs.
+Known errors injected into good outputs. The deterministic columns are measured now, on the 63 ready outputs of the current plan. The grader column is from the earlier live run of 2026-11-22 (56 ready outputs, including short-title bill explanations) and was not re-run.
 
 | Planted error | Planted | Meant for | Caught by that check | Caught by the grader |
 | --- | --- | --- | --- | --- |
 | changed-number | 63 | fact-fidelity | 96.8% (61/63) | 80.0% (36/45) (earlier run, 56 ready outputs) |
 | swapped-section | 14 | grader only | n/a | 100.0% (8/8) (earlier run, 56 ready outputs) |
 | reversed-effect | 3 | amendment-consistency | 66.7% (2/3) | 100.0% (3/3) (earlier run, 56 ready outputs) |
-| evaluative-wording | 75 | neutral-wording | 100.0% (75/75) | 96.4% (54/56) (earlier run, 56 ready outputs) |
-| invented-number | 75 | fact-fidelity | 100.0% (75/75) | 98.2% (55/56) (earlier run, 56 ready outputs) |
-| nonexistent-anchor | 75 | anchors | 100.0% (75/75) | 26.8% (15/56) (earlier run, 56 ready outputs) |
+| evaluative-wording | 63 | neutral-wording | 100.0% (63/63) | 96.4% (54/56) (earlier run, 56 ready outputs) |
+| invented-number | 63 | fact-fidelity | 100.0% (63/63) | 98.2% (55/56) (earlier run, 56 ready outputs) |
+| nonexistent-anchor | 63 | anchors | 100.0% (63/63) | 26.8% (15/56) (earlier run, 56 ready outputs) |
 
 ## Operator sample and grader agreement
 
-Sample unchanged from the earlier run: no statement in it changed status (`test/accuracy/operator-sample.md` and `.json`; 30 statements, labels blank). Grader-to-operator agreement (operator graded 2026-11-22; hand-written section): **30/30 (100%)**. By task: bill-explanation 9/9, bill-summary 9/9, change-explanation 9/9, version-changes 3/3. The grader also labelled all 30 `supported`, because the sample was drawn from served (ready) outputs only, so it holds none of the 10 grader-contradicted statements. It therefore shows that the grader's `supported` label held for every sampled statement (no false approvals found), but it does not measure whether the grader catches errors; the planted-error grader columns above are the evidence for that. A later sample should include grader-contradicted and unverified statements.
+Sample unchanged (`test/accuracy/operator-sample.md` and `.json`; 30 statements, operator graded 2026-11-22). Grader-to-operator agreement on the 30 (hand-written): **30/30 (100%)**; by task: bill-explanation 9/9, bill-summary 9/9, change-explanation 9/9, version-changes 3/3. Computed by this run on the sampled statements still in the current plan: 100.0% (17/17); contradicted statements the grader missed: 0; false alarms: 0. The sample was drawn from served (ready) outputs only, so it holds none of the formerly contradicted statements and does not measure whether the grader catches errors; the planted-error grader column is the evidence for that.
+
+### Second sample (hard sample, operator graded 2026-11-23; hand-written)
+
+`test/accuracy/operator-sample-2.md` and `.json`: 30 statements, 10 per stratum: the 10 formerly grader-contradicted, 10 from validator-rejected outputs, and 10 grader-supported controls. The operator read 17 with the help of a model panel (`operator-sample-2.panel.md`: `claude-fable-5-2` and `claude-opus-5-5`, high effort, one statement per request with plain-language notes) and accepted as supported the 13 that the stored grade and both panel models all found supported, without reading them.
+
+Operator labels: 20 supported, 10 unsupported, 0 contradicted.
+
+| Stratum | Supported | Unsupported | Contradicted |
+| --- | --- | --- | --- |
+| Formerly grader-contradicted | 6 | 4 | 0 |
+| Validator-rejected outputs | 6 | 4 | 0 |
+| Grader-supported controls | 8 | 2 | 0 |
+
+Agreement with the operator:
+
+| Model | All labelled | Read by the operator |
+| --- | --- | --- |
+| `claude-sonnet-5-5` (stored grade, after the regrade) | 80% (16/20) | 64% (7/11) |
+| `claude-fable-5-2` (panel) | 83% (25/30) | 71% (12/17) |
+| `claude-opus-5-5` (panel; also the generator) | 87% (26/30) | 76% (13/17) |
+
+The 10 statements of withheld outputs have no stored grade. The accepted 13 agree by construction, so the "read" column is the honest measure.
+
+Findings:
+- None of the 10 formerly contradicted statements is contradicted: the first grader's contradicted label was wrong in all 10 (6 supported, 4 unsupported). The fixed grader's labels for them agree with the operator in 8 of 10.
+- The stored grader is lenient on omissions and scope: 3 statements it calls supported are unsupported for the operator (`09ad#5`, `2aaf#0`, `7af8#3`), and 1 it calls unsupported is supported (`37f2#3`). So a `supported` grade does not prove a statement is fully supported.
+- The validators withheld outputs in which 6 of the 10 sampled statements are supported: the rejection is per output, so supported statements are withheld together with the failing ones.
+- Against the whole bill text rather than the cited lines, 3 of the 10 unsupported statements are fully correct and 3 more are correct apart from a loose word ("new" for the exceptions) or a broad effective date: 77–87% accurate, against 67% by cited lines. The accuracy note shown with generated text says 75–85% (operator decision, 2026-11-23).
+- `d8d6#2` (H.R. 4313, 42 U.S.C. 1395iii(b)(1)) explains an amendment that strikes "$1,403,000,000", but the stored provision says $2,041,000,000: the struck text is not in the current law, and the explanation presents the change as lowering the amount anyway. No check flags an amendment whose struck text is missing from the law.
 
 ## CRS summary coverage (bill summaries)
 
@@ -47,7 +77,28 @@ Sample unchanged from the earlier run: no statement in it changed status (`test/
 
 ## Proposed M3 target
 
-Proposed shape, from the live numbers, for operator review: zero published statements graded contradicted; contradicted share of graded statements at or below 1% for every task (live: change-explanation 5.2% (9/172), already withheld from publication); nonexistent-anchor catch rate 100% by the deterministic check (live: 100%); the grader is not an anchor check (26.8%). Not final until the operator grades the sample.
+Proposed shape, from the live numbers, for operator review: zero published statements graded contradicted; contradicted share of graded statements at or below 1% for every task (live after the regrade: 0.0% for every task, 0/336); nonexistent-anchor catch rate 100% by the deterministic check (live: 100%); the grader is not an anchor check (26.8%); grader-to-operator agreement on a hard sample at or above 90% (second sample: 80%, 16/20, all disagreements on omissions or scope). For operator decision.
+
+## Grader fix and regrade of the contradicted pool (hand-written, 2026-11-23)
+
+The 10 change-explanation statements graded contradicted (4.4%, 10/225) were reviewed by hand: 6 had reasons that found the statement consistent with its lines, 3 were omissions or qualifiers (unsupported, not contradicted), and 1 was a real error (`2675#4`, a scope the lines do not give).
+
+Fixes: the grade prompt states the label rules (a missing claim or an added qualifier is `unsupported`; `contradicted` needs a conflicting fact); a contradicted verdict must quote, in `conflict`, words that appear in the statement's cited text, and its reason must not concede a match, or the grade is refused (`ParseGrade`); the request asks for one verdict per statement, by index; each cited provision is sent once; and when a reply still has the wrong verdict count, each statement is graded in a request of its own.
+
+The 8 outputs holding the 10 statements were regraded (`--regrade-contradicted`, four paid runs). One output (`usc/16/796`, 4 statements) returned one verdict for its 4 statements three times and was graded statement by statement in the last run.
+
+| Statement | Before | After |
+| --- | --- | --- |
+| `09ad#5`, `2675#2`, `c315#4`, `0b49#2`, `2496#4` | contradicted | supported |
+| `2675#4` | contradicted | supported (likely a grader miss: should be unsupported for scope) |
+| `6e01#3`, `37f2#2`, `37f2#3`, `8a70#2` | contradicted | unsupported |
+| `c315#5` (not in the pool) | unsupported | supported |
+| `37f2#1` (not in the pool) | supported | unsupported |
+| `8a70#3` (not in the pool) | supported | unsupported (the cited text of 16 U.S.C. 796 is truncated and lacks the definitions it names) |
+
+All stored grades: 348 statements, 327 supported, 21 unsupported, 0 contradicted (336 counted above for the current plan). Grade prompt versions are mixed: the 8 regraded outputs used three successive versions of the fixed prompt; the rest keep the original version.
+
+Open: in the per-statement grade of `8a70`, two reasons hold stray markup (`</br>` and a trailing `"}]}`), a sign the grader wrote JSON inside a reason string; that may be why it answered one verdict for four statements.
 
 ## Validator fixes and the follow-up run (hand-written, 2026-11-22)
 
