@@ -65,5 +65,7 @@
 ## Open questions
 
 - Do the final object paths and document shapes match [architecture § Data placement](../../../architecture/README.md#data-placement)? Record any difference there.
+  - **Answered (M1-03b):** object paths match `fsobject`; the Firestore document shape (`body` plus query fields), ids and extra M1 collections are recorded in architecture § Data placement. A mid-page cursor can be invalidated only by a deleted catalog document, and M1 has no delete.
 - Is keyword matching on `search_terms` enough for M1 catalog search (open decision "Catalog search")?
+  - **Answered (M1-03b):** yes for M1: lowercased words, all must match; no stemming, prefix match or ranking. The query is `firestore.QueryCatalog`, not yet a port operation.
 - Which Cloud Storage stand-in runs locally and in CI? Google publishes no Cloud Storage emulator, although [architecture § Local run](../../../architecture/README.md#local-run) assumes one. Does `adapters/gcs` pass conformance against it? Answered by [M1-00](00-storage-emulator-exploration.md), which also lists the tests that need a real bucket. **Answered (M1-00, operator 2026-11-23):** `fake-gcs-server` only ([architecture § Conformance tests](../../../architecture/README.md#conformance-tests)); transient errors through an injected `http.RoundTripper`; real-bucket tests in a `dev` test bucket.

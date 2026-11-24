@@ -1,0 +1,66 @@
+name: dispatch-deploy
+
+# Sends one signed trigger to the private deployment repository naming the commit
+# to deploy (M1-17). No cloud credential, plan output or environment value is
+# here: the deploy itself runs and logs only in the private repository, which
+# verifies the commit against this repository's main before building anything.
+on:
+  workflow_run:
+    workflows: [backend]
+    types: [completed]
+    branches: [main]
+  push:
+    tags: ["v*"]
+
+permissions: {}
+
+concurrency:
+  group: dispatch-deploy-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    # A main deploy only after a successful backend CI run on a push to main.
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    # Secrets DEPLOY_APP_ID, DEPLOY_APP_KEY, DEPLOY_OWNER and DEPLOY_REPO: the App, and the
+    # private repository's owner and name (secrets so they are masked in logs). The App is
+    # owned by and installed on that owner, which may differ from this repository's.
+    # Deployment branches limited to main and v* tags.
+    environment: deploy-trigger
+    steps:
+      - id: what
+        env:
+          EVENT: ${{ github.event_name }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          TAG_SHA: ${{ github.sha }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT" = push ]; then
+            sha=$TAG_SHA kind=release tag=$REF_NAME
+          else
+            sha=$RUN_SHA kind=main tag=
+          fi
+          { echo "sha=$sha"; echo "kind=$kind"; echo "tag=$tag"; } >> "$GITHUB_OUTPUT"
+      - id: token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.DEPLOY_APP_ID }}
+          private-key: ${{ secrets.DEPLOY_APP_KEY }}
+          owner: ${{ secrets.DEPLOY_OWNER }}
+          repositories: ${{ secrets.DEPLOY_REPO }}
+      - env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          REPO: ${{ secrets.DEPLOY_OWNER }}/${{ secrets.DEPLOY_REPO }}
+          SHA: ${{ steps.what.outputs.sha }}
+          KIND: ${{ steps.what.outputs.kind }}
+          TAG: ${{ steps.what.outputs.tag }}
+        run: |
+          jq -n --arg sha "$SHA" --arg kind "$KIND" --arg tag "$TAG" \
+            '{event_type: "deploy", client_payload: {sha: $sha, kind: $kind, tag: $tag}}' |
+            gh api --silent "repos/$REPO/dispatches" --input -
+          echo "dispatched $KIND $SHA"

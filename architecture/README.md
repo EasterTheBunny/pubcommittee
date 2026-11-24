@@ -118,6 +118,8 @@ The UI is a **progressive web app** and must be installable ([08](../design/08-o
 - Bulk exports and the change feed ([10](../design/10-machine-access.md)).
 - Rendered brief documents for delivery and export ([07](../design/07-legislator-brief-and-responses.md)).
 
+In Cloud Storage (`adapters/gcs`, M1-03b) object paths are the same as on the filesystem. Each object carries metadata `sha256`, `immutable`, `source-url` and `retrieved-at`; the `ETag` is the content SHA-256. Line-range reads fetch the whole `text.json` (at most about 2 MB) and slice it in memory.
+
 Bill text lives here rather than in the document store because large bills exceed per-document size limits, and because immutable files cache perfectly. `read-api` serves these files with long-lived cache headers, so the API edge answers most requests without waking it.
 
 ### Document store (public, mutable)
@@ -139,6 +141,8 @@ Bill text lives here rather than in the document store because large bills excee
 | `generations` | task/bill/version/target/prompt/model | Status, pointer to the stored output, review state, steward edits ([AI-generated content](#ai-generated-content)) |
 | `sessions` | random id | Session record with expiry (time-to-live deletion) |
 | `rate_limits` | hashed key + window | Short-lived counters (time-to-live deletion) |
+
+In Firestore (`adapters/firestore`, M1-03b) every document stores `body`, the JSON of the domain record, plus the fields queries need: catalog `tracked`, `chamber`, `status`, `policy_area`, `markup_status`, `search_terms`; explanations `version_key`; selection policy `version`; moderation log `order_key`. M1 also uses `catalog`, `generations`, `moderation_log`, `moderation_log_seq` (one counter document) and `ingest_state`. Bill and catalog document ids are the escaped bill key with the number zero-padded to 10 digits, so id order is bill order. `search_terms` are lowercased and split into words; a keyword query uses one `array-contains` on the longest word and checks the other words in the adapter (no stemming, prefix match or ranking; enough for M1). The catalog filter and keyword query is `QueryCatalog` on the adapter until a port operation is added. Indexes are owned by the adapter in `internal/adapters/firestore/indexes/firestore.indexes.json` (`firestore.IndexesJSON()`), deployed by M1-15; whether they cover every query is confirmed against `dev` (stage C1).
 
 Documents never store an account id. Authorship is stored two ways:
 - `author_pseudonym`: the public display string, per bill ([11](../design/11-ai-security.md)).
@@ -300,6 +304,7 @@ Build: `CGO_ENABLED=0 go build -tags gcp -trimpath -ldflags="-s -w" ./cmd/write-
 | `internal/adapters/webpush` | `Notifier` | Web Push protocol (RFC 8030) with message encryption (RFC 8291) and VAPID (RFC 8292) |
 | `internal/adapters/fakenotify` | `Notifier` | Records messages in memory for tests and local runs |
 | `internal/adapters/fixturesrc` | `BillSource`, `LawSource` | Example data committed under `fixtures/`: real bills, a catalog sample, and cited US Code provisions ([tasks § Example data](../design/tasks/README.md#example-data-and-local-triggers)); no network |
+| `internal/cloudports` | Builds the ports for the `gcp` and `emulator` targets | `adapters/gcs` and `adapters/firestore` from environment: `GCP_PROJECT`, `GCS_BUCKET`, `FIRESTORE_DATABASE`, and on `emulator` `STORAGE_EMULATOR_HOST` and `FIRESTORE_EMULATOR_HOST` (both required). `gcp` refuses to start when an emulator host is set |
 
 Adding a backend means adding a package that implements one or more ports and passes their conformance tests. Candidates later: DynamoDB, S3-compatible storage, AWS KMS, Postgres-backed documents, SQLite.
 
@@ -455,7 +460,7 @@ A target only includes the adapters a given service's wiring imports, so a `read
 A fully self-hosted durable deployment with no Google services needs production-grade adapters for the document and object stores outside Google Cloud; the filesystem adapters are for local use only. These fit the adapter model and are listed as candidates.
 
 ### Local run
-`compose.yaml` starts every backend HTTP service and an OpenTelemetry Collector on the `local` target, with one shared data volume (for example `./.local-data`, ignored by git) that every service and job mounts. From M2 it also starts Postgres. The Firestore emulator and Cloud Storage stand-in run only under the `emulator` profile (`docker compose --profile emulator`). The stand-in is `fsouza/fake-gcs-server` 1.56.1 (BSD-2-Clause), image `fsouza/fake-gcs-server@sha256:797ce226d62f947c009dc40246b30cfb456b8473d8241407f9d6f2c04e4d69ef`, started with `-scheme http -port 4443 -public-host <host>:4443 -external-url http://<host>:4443 -backend memory`; clients set `STORAGE_EMULATOR_HOST=<host>:4443`, and `adapters/gcs` has no code that differs from the `gcp` target. Without the host and URL flags, resumable uploads from another container fail. The UI runs with `npm run dev` in `app/`, pointed at the local `read-api` and `write-api`. Jobs run on demand:
+`compose.yaml` starts every backend HTTP service and an OpenTelemetry Collector on the `local` target, with one shared data volume (for example `./.local-data`, ignored by git) that every service and job mounts. From M2 it also starts Postgres. The Firestore emulator and Cloud Storage stand-in run only under the `emulator` profile (`docker compose --profile emulator`). The stand-in is `fsouza/fake-gcs-server` 1.56.1 (BSD-2-Clause), image `fsouza/fake-gcs-server@sha256:797ce226d62f947c009dc40246b30cfb456b8473d8241407f9d6f2c04e4d69ef`, started with `-scheme http -port 4443 -public-host <host>:4443 -external-url http://<host>:4443 -backend memory`; clients set `STORAGE_EMULATOR_HOST=<host>:4443`, and `adapters/gcs` has no code that differs from the `gcp` target. Without the host and URL flags, resumable uploads from another container fail. The Firestore emulator in that profile is Google's `google/cloud-sdk:emulators` image pinned as `google/cloud-sdk@sha256:7238e47ca03f43296f380010193eedd7ce7cac69efcae36ff7b0a75e0cd879e8` (operator decision 2026-11-24), started with `gcloud emulators firestore start --host-port=0.0.0.0:8080`; container port 8080, host port 8085, `FIRESTORE_EMULATOR_HOST=<host>:8080`. Under contention it aborts transactions after a lock timeout, which `ApplyLogged` reports as `ErrConflict`. The UI runs with `npm run dev` in `app/`, pointed at the local `read-api` and `write-api`. Jobs run on demand:
 
 ```sh
 docker compose up read-api write-api worker

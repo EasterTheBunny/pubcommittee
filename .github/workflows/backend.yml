@@ -11,7 +11,7 @@ jobs:
   go:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build the development image
         run: docker build -f docker/dev.Dockerfile -t pc-dev:ci .
       - name: Run checks in the development image
@@ -37,12 +37,35 @@ jobs:
               sh test/ci/size.sh
               sh test/ci/deps_test.sh
             '
+  emulators:
+    # Conformance of the cloud adapters (M1-03b) against the Cloud Storage stand-in and the
+    # Firestore emulator, from the emulator profile of compose.yaml.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build the development image
+        run: docker build -f docker/dev.Dockerfile -t pc-dev:ci .
+      - name: Start the emulators
+        run: docker compose --profile emulator up -d gcs-emulator firestore-emulator
+      - name: Run the cloud adapter tests
+        run: |
+          docker run --rm --cpus 2 --memory 3g --network pubcommittee_default -v "$PWD":/src -w /src \
+            -v pc-gomod:/go/pkg/mod -v pc-gocache:/root/.cache/go-build \
+            -e STORAGE_EMULATOR_HOST=gcs-emulator:4443 -e FIRESTORE_EMULATOR_HOST=firestore-emulator:8080 \
+            -e PC_REQUIRE_EMULATORS=1 pc-dev:ci sh -c '
+              set -eu
+              until wget -qO- http://firestore-emulator:8080/ >/dev/null 2>&1; do sleep 2; done
+              go test -tags memory -race -count=1 ./internal/adapters/gcs/... ./internal/adapters/firestore/... ./internal/cloudports/...
+            '
+      - name: Stop the emulators
+        if: always()
+        run: docker compose --profile emulator down -v
   image:
     runs-on: ubuntu-latest
     needs: go
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v4
       - name: Build read-api for both architectures with an SBOM
         run: |
           docker buildx build -f docker/Dockerfile \

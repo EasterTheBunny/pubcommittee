@@ -1,0 +1,53 @@
+{
+  "indexes": [
+    {"collectionGroup": "catalog", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "tracked", "order": "ASCENDING"},
+      {"fieldPath": "search_terms", "arrayConfig": "CONTAINS"},
+      {"fieldPath": "__name__", "order": "ASCENDING"}]},
+    {"collectionGroup": "catalog", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "chamber", "order": "ASCENDING"},
+      {"fieldPath": "search_terms", "arrayConfig": "CONTAINS"},
+      {"fieldPath": "__name__", "order": "ASCENDING"}]},
+    {"collectionGroup": "catalog", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "status", "order": "ASCENDING"},
+      {"fieldPath": "search_terms", "arrayConfig": "CONTAINS"},
+      {"fieldPath": "__name__", "order": "ASCENDING"}]},
+    {"collectionGroup": "catalog", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "policy_area", "order": "ASCENDING"},
+      {"fieldPath": "search_terms", "arrayConfig": "CONTAINS"},
+      {"fieldPath": "__name__", "order": "ASCENDING"}]},
+    {"collectionGroup": "catalog", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "markup_status", "order": "ASCENDING"},
+      {"fieldPath": "search_terms", "arrayConfig": "CONTAINS"},
+      {"fieldPath": "__name__", "order": "ASCENDING"}]},
+    {"collectionGroup": "catalog", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "tracked", "order": "ASCENDING"},
+      {"fieldPath": "chamber", "order": "ASCENDING"},
+      {"fieldPath": "search_terms", "arrayConfig": "CONTAINS"},
+      {"fieldPath": "__name__", "order": "ASCENDING"}]},
+    {"collectionGroup": "catalog", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "tracked", "order": "ASCENDING"},
+      {"fieldPath": "status", "order": "ASCENDING"},
+      {"fieldPath": "search_terms", "arrayConfig": "CONTAINS"},
+      {"fieldPath": "__name__", "order": "ASCENDING"}]},
+    {"collectionGroup": "catalog", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "tracked", "order": "ASCENDING"},
+      {"fieldPath": "policy_area", "order": "ASCENDING"},
+      {"fieldPath": "search_terms", "arrayConfig": "CONTAINS"},
+      {"fieldPath": "__name__", "order": "ASCENDING"}]},
+    {"collectionGroup": "catalog", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "tracked", "order": "ASCENDING"},
+      {"fieldPath": "markup_status", "order": "ASCENDING"},
+      {"fieldPath": "search_terms", "arrayConfig": "CONTAINS"},
+      {"fieldPath": "__name__", "order": "ASCENDING"}]}
+  ],
+  "fieldOverrides": [
+    {"collectionGroup": "bills", "fieldPath": "body", "indexes": []},
+    {"collectionGroup": "catalog", "fieldPath": "body", "indexes": []},
+    {"collectionGroup": "selection_policy", "fieldPath": "body", "indexes": []},
+    {"collectionGroup": "explanations", "fieldPath": "body", "indexes": []},
+    {"collectionGroup": "generations", "fieldPath": "body", "indexes": []},
+    {"collectionGroup": "moderation_log", "fieldPath": "body", "indexes": []},
+    {"collectionGroup": "ingest_state", "fieldPath": "body", "indexes": []}
+  ]
+}

@@ -18,3 +18,5 @@ Owns: adapter packages. Does not own: port definitions or suites (`internal/data
 
 ## Gotchas
 - `memory` is one `Store` behind every port, so text written through `Publisher` reads back through `BillText`; other adapters must keep that same visibility.
+- `gcs` and `firestore` tests need the emulators (`docker compose --profile emulator up -d`, then `STORAGE_EMULATOR_HOST`, `FIRESTORE_EMULATOR_HOST`); without them tests skip, and `PC_REQUIRE_EMULATORS=1` turns the skip into a failure (CI sets it). Real-bucket tests run only with `PC_GCS_TEST_BUCKET`.
+- Never assert stand-in ETag values; the adapters' ETag is the content SHA-256. Under heavy contention the Firestore emulator aborts some transactions ("Transaction lock timeout"); `ApplyLogged` then returns `ErrConflict` and applies nothing, so tests assert that, not that every writer succeeds.

@@ -20,7 +20,7 @@ jobs:
   fakegen:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build the development image
         run: docker build -f docker/dev.Dockerfile -t pc-dev:ci .
       - name: Generation tests and planted errors on fakegen
