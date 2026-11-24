@@ -14,7 +14,7 @@ variable "rewrites" {
     service_id = string
     region     = string
   }))
-  description = "Path globs rewritten to Cloud Run services. Only public services (read-api) belong here; admin-api is never routed through the edge."
+  description = "Path globs rewritten to Cloud Run services. Only public services (read-api, or the web UI on its own site) belong here; admin-api is never routed through the edge."
 }
 
 variable "headers" {
@@ -28,6 +28,6 @@ variable "headers" {
 
 variable "custom_domain" {
   type        = string
-  description = "Custom domain for the site (api.<domain>). Null runs on the provider domain."
+  description = "Custom domain for the site (api.<domain>, or <domain> for the web UI). Null runs on the provider domain."
   default     = null
 }

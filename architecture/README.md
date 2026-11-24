@@ -33,8 +33,8 @@ Provider prices and limits named here must be re-checked before commitment.
         │                                   │
         ▼                                   ▼
 ┌───────────────────────────┐   ┌───────────────────────────────────────────┐
-│ Web host  <domain>        │   │ Firebase Hosting  api.<domain>            │
-│ SvelteKit UI              │   │ CDN for GET responses (cache by headers)  │
+│ Firebase Hosting <domain> │   │ Firebase Hosting  api.<domain>            │
+│ SvelteKit UI on Cloud Run │   │ CDN for GET responses (cache by headers)  │
 │ server rendering + CDN    │   └──────┬──────────────────────────┬─────────┘
 │ no credentials, no cookies│          │ GET /v1/... (public)      │ /v1/... writes, /auth
 └────────────┬──────────────┘          ▼                           ▼
@@ -67,7 +67,7 @@ Four rules hold the shape together:
 
 | Component | Role | Scales to zero | Notes |
 | --- | --- | --- | --- |
-| Web UI | Renders every page; serves static assets | Host-dependent | SvelteKit on any Node host, using that host's adapter. Pages render fully without scripts. Immutable version pages cache long at the host's CDN |
+| Web UI | Renders every page; serves static assets | Yes | SvelteKit (`adapter-node`) as the Cloud Run service `app`, behind its own Firebase Hosting site. Pages render fully without scripts. Immutable version pages cache long at the site's CDN |
 | API edge (Firebase Hosting) | Custom domain, TLS, and CDN in front of the Cloud Run APIs | Yes | No fixed-cost load balancer. Caches public GETs by `Cache-Control`; never caches credentialed responses |
 | `read-api` | Public, read-only JSON: bills, versions, lines by anchor, explanations, threads, suggestions, issues, snapshots, exports, feed | Yes | Read ports only. Every response carries version, as-of time, provenance, and content class ([10](../design/10-machine-access.md)) |
 | `write-api` | Sign-in, sessions, comments, suggestions, signals, flags, office responses | Yes | Only service the browser sends credentials to |
@@ -84,7 +84,8 @@ Every backend unit is a standalone container image ([Service packaging](#service
 
 ## Web tier
 
-- **Hosting:** any web host that runs Node and SvelteKit, deployed from `app/`. The host is not part of the architecture; swapping it means changing the SvelteKit adapter and the API base URLs.
+- **Hosting (operator, 2026-11-24):** the `app` image (`docker/app.Dockerfile`, `adapter-node`) runs as the Cloud Run service `app`, minimum 0 instances in every environment, behind a Firebase Hosting site of its own that rewrites every path to it. The site gives the UI its CDN, TLS, and `<domain>`, with no fixed-cost load balancer, the same way the API edge does for `api.<domain>`. CD builds and promotes the `app` image by digest like every backend unit, so a release carries the UI and the APIs together ([Continuous delivery](#continuous-delivery)). No branch or preview deploys in M1. The UI still depends on nothing but the API: moving it to another Node host means changing the SvelteKit adapter and the API base URLs.
+- **Runtime account:** `app` runs as its own service account with no roles, and is public (`allUsers` invoker), which Firebase Hosting rewrites require.
 - **The contract is the API.** The UI depends on nothing in the backend except the `read-api` and `write-api` HTTP interfaces ([API contract](#api-contract)). The backend does not know or care which host serves the UI.
 - **Rendering:** SvelteKit server rendering on the host, plus prerendering for pages that never change (official version text by canonical address). Pages are complete HTML without scripts. In M1 nothing is prerendered: `adapter-node` renders every page on request from `read-api`, so the build needs no API.
 - **Configuration (M1-13):** `READ_API_URL` (server-side calls) and `PUBLIC_API_URL` (links and `303` redirects for `Accept: application/json`), read from `process.env`. The server keeps a short in-memory cache of `GET` responses, because every reader's requests reach `read-api` from the web host's one address and share its rate-limit allowance; each environment sets `RATE_LIMITS` for that address.
@@ -94,6 +95,20 @@ Every backend unit is a standalone container image ([Service packaging](#service
 - **Domains:** the UI at `<domain>` and the APIs at `api.<domain>`, under one registrable domain. That keeps the session cookie same-site, which browsers that block third-party cookies require.
 - **Cross-origin rules:** `write-api` allows credentialed CORS only from `https://<domain>` and checks `Origin` on every write. `read-api` allows any origin without credentials.
 - **What the web host never sees:** session cookies (they are host-only on `api.<domain>`), sign-in redirects, signals, or any backend credential.
+
+### Rendering option: static page structure (proposed, not scheduled)
+An option for a later milestone, recorded 2026-11-24 (operator). M1 keeps full server rendering. The goal: a reader sees the page structure at once, from the CDN, and only the bill data waits on cold starts.
+
+- **Script readers get a static shell.** One prerendered shell per route type (catalog, bill, version, section, line range, log, policy). It holds the layout, navigation, headings, and placeholders, and no API data, so the build still needs no API. Firebase Hosting serves the shells as static files, so a view wakes no Cloud Run service. The browser then fetches the data and renders the page in place.
+- **Same-origin data.** The web site also rewrites `/v1/**` to `read-api`, so the browser fetches from its own origin. No CORS, and no per-environment value in the shells. Those reads are cached at the CDN like any public `GET`.
+- **No-script readers keep complete pages.** Each shell carries `<noscript><meta http-equiv="refresh" content="0; url=<full render>"></noscript>` in its head. The full render is today's server-rendered page from the Cloud Run `app` service. It has no click, but it waits on both cold starts plus one redirect. The global principle "pages are complete without scripts" holds, through the fallback.
+- **Addresses.** Hosting rewrites cannot match query strings, so the full render needs its own path prefix (for example `/r/...`). Each shell and each full render names the canonical line address with `rel="canonical"`. Shared links and the citation addresses from [M1-13](../design/tasks/m1/13-web-ui-real-data.md) stay as they are.
+- **One artifact.** The `app` image also holds the shells and the immutable assets. The deploy extracts them from the promoted digest and uploads them to each environment's Hosting site, so `staging` and `prod` still get exactly what `dev` ran. The upload uses the Hosting API or CLI in the deployment repository's workflow, because OpenTofu sets only Hosting rewrites and headers, not files.
+- **Costs:** two code paths for every page (client rendering and server rendering of the same data), kept equal by the existing no-script and structured-form parity tests. A second Hosting site per environment. More client JavaScript.
+- **Open before choosing it:**
+  - Non-browser clients that ignore `<meta refresh>` receive an empty shell. Hosting cannot branch on headers, so the shell needs `rel="alternate"` links to the JSON form and to the full render, checked against [10 § Machine-readable forms](../design/10-machine-access.md#machine-readable-forms).
+  - Whether the shell's pending state reads as complete enough for screen readers.
+  - Whether the measured cache-miss rate justifies the second path. Run the M4 load test of the CDN-first read path first, then decide.
 
 ### Progressive web app
 The UI is a **progressive web app** and must be installable ([08](../design/08-onboarding-and-verification.md#installable-app)).
@@ -339,10 +354,11 @@ internal/
   telemetry/           OpenTelemetry setup, standard instruments, attribute allowlist
   httpx/               server bootstrap: health, readiness, metrics port, shutdown
   ...                  domain packages (auth, review, signals, ingest, briefs), each used by few binaries
-app/                   SvelteKit UI, deployed to any Node web host
+app/                   SvelteKit UI; image built by docker/app.Dockerfile, the Cloud Run service app
 demo/                  archived M0 demo (static, mock data), served from its Netlify site
 docker/
   Dockerfile           one multi-stage file; SERVICE and TARGET build arguments
+  app.Dockerfile       the SvelteKit UI as a Node server image
 compose.yaml           every backend service on a shared local data volume; emulators behind a profile
 infra/
   modules/gcp/         public, reusable infrastructure modules; every name, project, region, and domain is an input
@@ -359,6 +375,7 @@ Every backend unit is a **standalone container image** that runs on any containe
 | Image | Kind | Runs as on Google Cloud | Runs as elsewhere |
 | --- | --- | --- | --- |
 | `read-api` | HTTP | Cloud Run service behind Firebase Hosting | Any container with a published port |
+| `app` | HTTP (Node) | Cloud Run service behind its own Firebase Hosting site; public | Any Node host or container |
 | `write-api` | HTTP | Cloud Run service behind Firebase Hosting | Same |
 | `worker` | HTTP | Cloud Run service, pushed to by Cloud Tasks, not publicly routed | Same; the local `Queue` adapter delivers tasks by HTTP |
 | `admin-api` | HTTP | Cloud Run service requiring IAM authentication; not behind the API edge | Same, behind whatever authentication the host provides |
@@ -966,7 +983,7 @@ The caller is the environment's deploy service account. It is `admin-api`'s only
 
 | Need | Chosen | Alternative (future adapters) |
 | --- | --- | --- |
-| Web UI | Any Node web host (SvelteKit, server rendering + CDN) | Not a backend choice; the host is interchangeable |
+| Web UI | Cloud Run service `app` behind a Firebase Hosting site (server rendering + CDN) | Any Node host, with that host's SvelteKit adapter |
 | API edge | Firebase Hosting rewrites to Cloud Run | CloudFront |
 | APIs and worker | Cloud Run services | Lambda running the same images through an HTTP adapter (ECS on Fargate also runs them, but does not scale to zero) |
 | Jobs | Cloud Run jobs + Cloud Scheduler | ECS scheduled tasks via EventBridge Scheduler |
@@ -987,10 +1004,11 @@ Firestore's query model fits nested, per-bill documents; Cloud Run runs ordinary
 ### Cold starts
 - Readers hit the web host's CDN and the API edge, so backend cold starts are mostly felt on cache misses and writes.
 - Go services start in tens of milliseconds; image pull and container start dominate.
+- The Node `app` starts in under a second. A page the CDN has not cached can wait on two cold starts, `app` then `read-api`; see the [rendering option](#rendering-option-static-page-structure-proposed-not-scheduled) for a later way around that.
 - A paused serverless Postgres takes from under a second to several seconds to resume, depending on vendor. Acceptable for writes and jobs; one more reason the read path never uses SQL.
 
 ## Environments and delivery
-- Separate Google Cloud projects for `dev`, `staging`, `prod`, and matching web-host environments. No shared credentials.
+- Separate Google Cloud projects for `dev`, `staging`, `prod`, each with its own `app` service and web site. No shared credentials.
 - Deploys from CI with short-lived federated credentials, never stored keys.
 
 ### Public modules, private deployment
@@ -1040,7 +1058,7 @@ release tag vX.Y.Z ─► dispatch-deploy ─────────►  build 
 - **Independent units.** Only units whose inputs changed are rebuilt and redeployed.
 - **Secrets.** Google Cloud access is federated per environment; no keys are stored. Infrastructure creates Secret Manager secrets without values; values are added outside the IaC tool, so they never reach state or logs.
 - Each backend unit deploys separately with its own service account; `read-api` never receives SQL or key permissions.
-- The UI deploys from `app/` to its host and needs only the API base URLs.
+- The UI is the unit `app`: built from `app/` with `docker/app.Dockerfile`, rebuilt only when `app/` or that file changes, and promoted by digest with the backend units. Its configuration is the API base URLs (`READ_API_URL`, `PUBLIC_API_URL`) and its own origin.
 
 ## What stays private
 
@@ -1072,7 +1090,7 @@ Rules:
 | M1 read-only | Local phase first, then cloud phase ([M1 phases](../design/tasks/README.md#phases)). Go module; `internal/data`, `adapters/memory`, `adapters/fsobject`, `adapters/fsdocs`, `adapters/localauth`, `adapters/gcs`, `adapters/firestore` (read ports), `adapters/claude`, `adapters/fakegen`, `telemetry`, `httpx`; `adapters/govinfo`, `adapters/uscode`, `adapters/fixturesrc`; `admin-api` and `pubctl` (privileged: direct selection, re-ingest, re-parse, regenerate, policy versions); `read-api` (including the public catalog with official links and markup status), `job-ingest` (catalog backfill of the current Congress; tracked set in pilot mode), `job-summarize` (bill summaries and change explanations; no evaluation set or steward review until stewards exist), `job-exports`; API edge; UI reading `read-api`. No SQL, no sign-in |
 | M2 interactive | `adapters/postgres`, `adapters/kmsgcp`, write ports; `write-api`, sign-in, SQL (`accounts`, `identities`, `signals`, `my_signals`, `request_reasons`, `push_subscriptions`, `notify_state`), sessions, rate limits, markup requests, `job-batcher`, `job-notify` and `adapters/webpush` (inbox and device notifications), moderation log; custom domain so cookies are same-site |
 | M3 pilot | `job-briefs` and delivery queue, `worker`, roles, `job-detector`; `markup_queue`, steward decision routes with two-party sign-off, `markup_decisions`, promotion of accepted bills |
-| M4 launch | Audit export, log hardening review, load test of the CDN-first read path |
+| M4 launch | Audit export, log hardening review, load test of the CDN-first read path; from its cache-miss rate, decide on the [static page structure option](#rendering-option-static-page-structure-proposed-not-scheduled) |
 | M5 verification | Tier records, district fields, complementary suppression across breakdowns |
 
 ## Open decisions
@@ -1080,6 +1098,7 @@ Rules:
 - **Serverless Postgres vendor**, and whether its resume latency is acceptable for sign-in.
 - **Sessions in the document store or SQL:** the document store avoids a SQL resume on every signed-in request.
 - **Batch interval**, shared with [11](../design/11-ai-security.md).
+- **Static page structure for script readers** ([option](#rendering-option-static-page-structure-proposed-not-scheduled)): decide after the M4 load test.
 - **Review-item freshness on the UI:** CDN TTL for pages showing comments and suggestions.
 - **Email notifications:** deferred. Revisit only if device notifications and the inbox leave too many people unreachable; it would need verified, encrypted addresses and a mail provider under a data processing agreement.
 - **CI workflows** (GitHub Actions, [Tooling](#tooling)) for the Go module and `app/`, including the dependency checks, binary size budgets, and contract checks.

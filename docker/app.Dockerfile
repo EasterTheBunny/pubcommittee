@@ -1,10 +1,14 @@
 # syntax=docker/dockerfile:1
-# The SvelteKit web app (app/) as a Node server image for local runs.
+# The SvelteKit web app (app/) as a Node server image, for local runs and for the
+# Cloud Run service app (CD builds it; Cloud Run sets PORT).
 #   docker build -f docker/app.Dockerfile app
 # The build context is app/ only (see app/.dockerignore), so no backend code,
 # private file, or local data can reach the image.
 
-FROM node:24-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS build
+# The build stage runs on the builder's own platform: its output is JavaScript, and
+# app/package.json has no runtime dependencies (adapter-node bundles them), so a
+# multi-platform build needs no emulation.
+FROM --platform=$BUILDPLATFORM node:24-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
@@ -15,7 +19,7 @@ FROM node:24-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00
 LABEL org.opencontainers.image.source="https://github.com/easterthebunny/pubcommittee" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later" \
       org.opencontainers.image.title="app" \
-      org.opencontainers.image.description="PubCommittee web app (local run)"
+      org.opencontainers.image.description="PubCommittee web app"
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000
 COPY --from=build /app/package.json ./

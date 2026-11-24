@@ -93,6 +93,7 @@ Deliver every merged change on the public repository's `main` to `dev` with no m
 
 - Does the UI deploy through CD, or through Netlify's own build from `app/` with per-environment API base URLs ([M1-13](13-web-ui-real-data.md))? The archived demo stays on Netlify's own build from `demo/` either way.
   - **Decided (operator, 2026-11-24):** Netlify's own build from `app/`, with per-environment API base URLs; CD does not deploy the UI.
+  - **Changed (operator, 2026-11-24):** through CD. Netlify builds `main` on its own, so the UI in `staging` and `prod` was not tied to a release. The UI is now the unit `app`: a Cloud Run service (minimum 0 instances everywhere) behind its own Firebase Hosting site, built by `deploy-dev` and promoted by digest with the backend units. No branch or preview deploys in M1. Netlify keeps only the archived demo.
 - Does a release tag start promotion automatically (still gated by approvals), or is every promotion started by hand?
   - **Decided (operator, 2026-11-24):** automatically. A signed `vX.Y.Z` tag on a `main` commit with a `dev` record starts `promote.yml`: verify, leak check, then `staging` and `prod`, each behind its approval. Rollback is a manual promotion of an earlier tag. Module tags move to `modules/vX.Y.Z` so they never start a release.
 - Who approves `staging` and `prod` while there is one operator? GitHub can prevent self-review only once a second reviewer exists.
