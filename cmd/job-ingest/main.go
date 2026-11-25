@@ -185,7 +185,7 @@ func pullAll(
 	ctx context.Context, refs []data.BillRef, d ingest.Deps, cfg config, opts ingest.Options, out io.Writer,
 ) (int, error) {
 	enc := json.NewEncoder(out)
-	enc.SetIndent("", "  ")
+	// One line per report: Cloud Logging stores it as one structured entry.
 	failed, items := false, 0
 	steps, policy, err := ingest.PullSteps(ctx, d)
 	if err != nil {

@@ -24,8 +24,8 @@ ji() { "$bin" --source fixtures --fixtures-dir fixtures "$@" 2>/dev/null; }
 check "go tests: evaluator, ingest integration (memory)" go test -tags memory -count=1 ./internal/selection/... ./internal/ingest/... ./internal/billstatus/...
 check "evaluator input has no sponsor or party field" go test -tags memory -count=1 -run TestInputHasNoSponsorFields ./internal/selection/...
 
-check "publish policy version 1 to the local store" sh -c "'$bin' --publish-policy v1 2>/dev/null | grep -q '\"published_policy_version\": 1'"
-check "publishing the same version again is a no-op" sh -c "'$bin' --publish-policy v1 2>/dev/null | grep -q '\"published_policy_version\": 1'"
+check "publish policy version 1 to the local store" sh -c "'$bin' --publish-policy v1 2>/dev/null | grep -q '\"published_policy_version\": *1'"
+check "publishing the same version again is a no-op" sh -c "'$bin' --publish-policy v1 2>/dev/null | grep -q '\"published_policy_version\": *1'"
 
 # Pull the 200-entry catalog sample. A pull of a bill the policy tracks fails to find its text in
 # the catalog-only fixtures and exits non-zero; the catalog entry is still written.
@@ -56,7 +56,7 @@ cat >"$root/v2.json" <<'J'
  "committee_activity":["hearing","markup","reported","discharged","floor","calendar"],
  "follow_companions":true,"topics":{"deficit_reduction":{"subjects":["Budget process"]}}}
 J
-check "publish policy version 2 (narrower topics)" sh -c "'$bin' --publish-policy '$root/v2.json' --reason 'narrower topics' 2>/dev/null | grep -q '\"published_policy_version\": 2'"
+check "publish policy version 2 (narrower topics)" sh -c "'$bin' --publish-policy '$root/v2.json' --reason 'narrower topics' 2>/dev/null | grep -q '\"published_policy_version\": *2'"
 ji --evaluate >/dev/null
 grep -l '"tracked":true' "$root"/catalog/*.json | sort >"$root/tracked-after.txt"
 [ -s "$root/tracked-before.txt" ] && [ -z "$(comm -23 "$root/tracked-before.txt" "$root/tracked-after.txt")" ] && echo "pass: version 2 leaves every tracked bill tracked" || { echo "FAIL: a tracked bill was untracked"; fail=1; }

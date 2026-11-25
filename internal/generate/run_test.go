@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -421,5 +422,35 @@ func TestRevalidateRevisesStoredOutputWithoutAModel(t *testing.T) {
 	}
 	if again, err := generate.Revalidate(t.Context(), d, hr(4313)); err != nil || len(again.Changed) != 0 {
 		t.Fatalf("second Revalidate = %+v, %v; want no change", again, err)
+	}
+}
+
+// TestSubmitRefusesBillWithoutCitations: with no existing-law release stored,
+// the bill has no citation set. A dry run says a submit would refuse it; a
+// submit refuses it and starts no batch.
+func TestSubmitRefusesBillWithoutCitations(t *testing.T) {
+	t.Parallel()
+	store := memory.New()
+	src, err := fixturesrc.New(fixturesrc.Config{FS: os.DirFS("../../fixtures"), Now: fixedNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := ingest.Deps{
+		Ports: store.PlatformPorts(), Fetcher: src, Source: "fixtures/119",
+		Log: slog.New(slog.DiscardHandler), Now: fixedNow,
+	}
+	if rep, err := ingest.Pull(t.Context(), d, ingest.Options{Track: true}, ingest.DefaultSteps(), hr(4313)); err != nil || rep.Failed() {
+		t.Fatalf("pull: %v %+v", err, rep.Failures)
+	}
+	gd := deps(store, fakegen.New(fakegen.Config{Files: store}))
+	dry, err := generate.Submit(t.Context(), gd, hr(4313), true)
+	if err != nil || dry.Planned == 0 || !slices.ContainsFunc(dry.Notes, func(n string) bool {
+		return strings.HasPrefix(n, "a submit would refuse")
+	}) {
+		t.Fatalf("dry run = %+v, %v; want planned tasks and the refusal note", dry, err)
+	}
+	rep, err := generate.Submit(t.Context(), gd, hr(4313), false)
+	if !errors.Is(err, generate.ErrNoCitations) || rep.Submitted != 0 || rep.BatchID != "" {
+		t.Fatalf("submit = %+v, %v; want ErrNoCitations and no batch", rep, err)
 	}
 }

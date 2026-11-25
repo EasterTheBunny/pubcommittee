@@ -41,7 +41,7 @@ go build -tags local -o /tmp/m111-api ./cmd/read-api
 /tmp/m111-exports >/tmp/m111-run1.json 2>/dev/null || fail "job-exports run"
 ok "pull, then job-exports"
 /tmp/m111-exports >/tmp/m111-run2.json 2>/dev/null || fail "job-exports second run"
-has /tmp/m111-run2.json '"feed_new": 0'
+has /tmp/m111-run2.json '"feed_new": *0'
 ok "second run adds no feed entries (idempotent per window)"
 
 PORT=$port METRICS_PORT=$((port + 1)) OTEL_SERVICE_NAME=read-api RATE_LIMITS="text=0,live=0,bulk=0,discovery=0" \

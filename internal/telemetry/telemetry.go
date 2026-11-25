@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -81,6 +82,11 @@ type Options struct {
 	// http://otel-collector:4318. Empty means OTEL_EXPORTER_OTLP_ENDPOINT is
 	// read by the exporter itself.
 	OTLPEndpoint string
+	// Getenv reads the OTLP endpoint variables; nil means os.Getenv. A job
+	// with no endpoint at all (none here, neither OTLP variable set) records
+	// metrics but never exports them: there is no collector to push to (Cloud
+	// Run jobs in M1), and the exporter's localhost default would only fail.
+	Getenv func(string) string
 	// Reader overrides the exporter; tests pass a metric.ManualReader.
 	Reader sdkmetric.Reader
 }
@@ -172,6 +178,9 @@ func newReader(opts Options) (sdkmetric.Reader, http.Handler, error) {
 		}
 		return exp, promhttp.HandlerFor(reg, promhttp.HandlerOpts{}), nil
 	case KindJob:
+		if !hasOTLPEndpoint(opts) {
+			return sdkmetric.NewManualReader(), nil, nil
+		}
 		var oo []otlpmetrichttp.Option
 		if opts.OTLPEndpoint != "" {
 			oo = append(oo, otlpmetrichttp.WithEndpointURL(opts.OTLPEndpoint+"/v1/metrics"))
@@ -185,4 +194,15 @@ func newReader(opts Options) (sdkmetric.Reader, http.Handler, error) {
 	default:
 		return nil, nil, fmt.Errorf("%w: %d", ErrUnknownKind, opts.Kind)
 	}
+}
+
+// hasOTLPEndpoint reports whether a job has somewhere to push metrics.
+func hasOTLPEndpoint(opts Options) bool {
+	getenv := opts.Getenv
+	if getenv == nil {
+		getenv = os.Getenv
+	}
+	return opts.OTLPEndpoint != "" ||
+		getenv("OTEL_EXPORTER_OTLP_ENDPOINT") != "" ||
+		getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT") != ""
 }

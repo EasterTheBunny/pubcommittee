@@ -48,7 +48,7 @@ stored() {
 check "every original (byte for byte, with provenance) and parsed version stored" stored
 
 before=$(tree_sum)
-check "second pull stores nothing" sh -c "for b in $bills; do '$bin' --source fixtures --fixtures-dir fixtures --bill \$b | grep -q '\"stored\": \[\]' || exit 1; done"
+check "second pull stores nothing" sh -c "for b in $bills; do '$bin' --source fixtures --fixtures-dir fixtures --bill \$b | grep -q '\"stored\": *\[\]' || exit 1; done"
 [ "$(tree_sum)" = "$before" ] && echo "pass: second pull changes no file" || { echo "FAIL: second pull changed files"; fail=1; }
 
 # Untracked bill (a catalog-only record): catalog entry only, no text.
@@ -57,7 +57,7 @@ check "untracked bill has a catalog entry, not tracked" sh -c "grep -q '\"tracke
 
 # Dry run writes nothing.
 before=$(tree_sum)
-check "dry run reports" sh -c "'$bin' --source fixtures --fixtures-dir fixtures --bill us-119-hr-3115 --track --dry-run | grep -q '\"dry_run\": true'"
+check "dry run reports" sh -c "'$bin' --source fixtures --fixtures-dir fixtures --bill us-119-hr-3115 --track --dry-run | grep -q '\"dry_run\": *true'"
 [ "$(tree_sum)" = "$before" ] && echo "pass: dry run writes nothing" || { echo "FAIL: dry run wrote files"; fail=1; }
 
 # Forced SHA-256 mismatch is reported and does not overwrite (in-process test).

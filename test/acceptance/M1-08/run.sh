@@ -39,7 +39,7 @@ check "job-ingest: comparisons stored for every exit-bill pair, rebuilt over sto
 	"$d.ji" --law >/dev/null 2>&1
 	"$d.ji" --track --bill us-119-hr-4313,us-119-hr-3062,us-119-hr-3427 2>/dev/null >"$d.out"
 	# 4 versions each: 3 consecutive pairs plus 2 older-versus-latest pairs
-	[ "$(grep -c "\"comparisons\": 5" "$d.out")" = 3 ]
+	[ "$(grep -c "\"comparisons\": *5" "$d.out")" = 3 ]
 	count() { find "$d/bills" -path "*/compare/*" -name "*.json" ! -name "*.meta.json" | wc -l; }
 	[ "$(count)" = 15 ]
 	find "$d/bills" -type d -name compare -exec rm -rf {} +

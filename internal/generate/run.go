@@ -45,10 +45,37 @@ type SubmitReport struct {
 func Submit(ctx context.Context, d Deps, bill data.BillRef, dryRun bool) (SubmitReport, error) {
 	rep := SubmitReport{Bill: bill.String()}
 	todo, err := d.plan(ctx, &rep, bill)
-	if err != nil || len(todo) == 0 || dryRun {
+	if err != nil {
 		return rep, err
 	}
+	if note, missing := missingCitations(rep.Notes); missing {
+		if dryRun {
+			rep.Notes = append(rep.Notes, refuseNote)
+			return rep, nil
+		}
+		return rep, fmt.Errorf("%s: %w: %s", bill, ErrNoCitations, note)
+	}
+	if len(todo) == 0 || dryRun {
+		return rep, nil
+	}
 	return rep, d.submit(ctx, &rep, todo)
+}
+
+// ErrNoCitations means a version of the bill has no citation set, so its summary
+// would fail the provision check and its explanations would not be planned.
+var ErrNoCitations = errors.New("no citation set: run job-ingest --law, then --analyze, before submitting")
+
+// refuseNote is the dry-run report's note for a bill Submit would refuse.
+const refuseNote = "a submit would refuse this bill: no citation set (run job-ingest --law, then --analyze)"
+
+// missingCitations returns the first note of a version planned without its citation set.
+func missingCitations(notes []string) (string, bool) {
+	for _, n := range notes {
+		if strings.HasPrefix(n, noteNoCitations) {
+			return n, true
+		}
+	}
+	return "", false
 }
 
 // PlanAll returns every task of every stored version of the bill, stored or

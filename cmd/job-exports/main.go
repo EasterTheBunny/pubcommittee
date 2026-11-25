@@ -75,7 +75,7 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 
 func encodeReport(out io.Writer, rep exports.Report) error {
 	enc := json.NewEncoder(out)
-	enc.SetIndent("", "  ")
+	// One line per report: Cloud Logging stores it as one structured entry.
 	if err := enc.Encode(rep); err != nil {
 		return fmt.Errorf("report: %w", err)
 	}

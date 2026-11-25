@@ -1,0 +1,7 @@
+{"task":null,"status":null,"findings":null}
+{"task":"bill-summary","status":"unverified","findings":["statement 2: provision \"42 U.S.C. 1395cc–7(a)(1)\" is not in the input","statement 3: provision \"42 U.S.C. 1395cc–7\" is not in the input","statement 4: provision \"42 U.S.C. 1395cc–7\" is not in the input","statement 5: provision \"42 U.S.C. 1395cc–7\" is not in the input","statement 6: provision \"42 U.S.C. 1395cc–7\" is not in the input","statement 7: provision \"42 U.S.C. 1395cc–7\" is not in the input","statement 8: provision \"42 U.S.C. 1395iii(b)(1)\" is not in the input"]}
+{"task":"bill-summary","status":"unverified","findings":["statement 2: provision \"42 U.S.C. 1395cc–7(a)(1)\" is not in the input","statement 3: provision \"42 U.S.C. 1395cc–7\" is not in the input"]}
+{"task":"bill-summary","status":"unverified","findings":["statement 2: provision \"42 U.S.C. 1395cc–7(a)(1)\" is not in the input","statement 3: provision \"42 U.S.C. 1395cc–7\" is not in the input","statement 4: provision \"42 U.S.C. 1395cc–7\" is not in the input","statement 8: provision \"42 U.S.C. 1395iii(b)(1)\" is not in the input"]}
+{"task":"bill-summary","status":"unverified","findings":["statement 2: provision \"42 U.S.C. 1395cc–7(a)(1)\" is not in the input","statement 3: provision \"42 U.S.C. 1395cc–7\" is not in the input","statement 4: provision \"42 U.S.C. 1395cc–7\" is not in the input"]}
+{"task":"version-changes","status":"ready","findings":null}
+{"task":"version-changes","status":"unverified","findings":["statement 1: fact not in cited lines: number 1866"]}
