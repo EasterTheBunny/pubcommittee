@@ -27,7 +27,7 @@ Without `PUBCTL_TOKEN`, pubctl reads the active login with `gcloud config get-va
 
 The decision is automatic; there is no flag. To force a token, set `PUBCTL_TOKEN`.
 
-The token is sent as `Authorization: Bearer`. The caller must hold the invoker role on `admin-api` and be on the operator list. Any other caller is refused (see Refusals).
+The token is sent as `Authorization: Bearer` and again as `X-Serverless-Authorization: Bearer`. Cloud Run checks the second and passes the first on with its signature, so admin-api can verify it in full. The caller must hold the invoker role on `admin-api` and be on the operator list. Any other caller is refused (see Refusals).
 
 ## Commands
 

@@ -22,6 +22,7 @@ type recorded struct {
 	path   string
 	query  string
 	body   []byte
+	header http.Header
 }
 
 // fake is a fake admin-api that records requests and answers with a fixed status and body.
@@ -53,7 +54,7 @@ func newFake(t *testing.T, status int, answer string) (*httptest.Server, *fake) 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		f.mu.Lock()
-		f.reqs = append(f.reqs, recorded{method: r.Method, path: r.URL.Path, query: r.URL.RawQuery, body: body})
+		f.reqs = append(f.reqs, recorded{method: r.Method, path: r.URL.Path, query: r.URL.RawQuery, body: body, header: r.Header.Clone()})
 		f.mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
@@ -341,4 +342,27 @@ func keys(m map[string]json.RawMessage) []string {
 		out = append(out, k)
 	}
 	return out
+}
+
+// TestTokenSentInBothHeaders: Cloud Run checks X-Serverless-Authorization and
+// passes Authorization on with its signature, for admin-api to verify.
+func TestTokenSentInBothHeaders(t *testing.T) {
+	t.Parallel()
+	srv, f := newFake(t, http.StatusOK, `{"sources":[]}`)
+	env := func(k string) string {
+		if k == envToken {
+			return "tok"
+		}
+		return ""
+	}
+	var out, errOut bytes.Buffer
+	if err := run(context.Background(), []string{"--url", srv.URL, "jobs"}, env, &out, &errOut); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	h := f.last(t).header
+	for _, k := range []string{"Authorization", "X-Serverless-Authorization"} {
+		if got := h.Get(k); got != "Bearer tok" {
+			t.Errorf("%s = %q, want %q", k, got, "Bearer tok")
+		}
+	}
 }

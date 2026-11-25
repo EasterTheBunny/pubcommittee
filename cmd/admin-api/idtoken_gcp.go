@@ -39,6 +39,15 @@ const (
 	reasonAudience   = "wrong audience"
 	reasonNoEmail    = "no email"
 	reasonUnverified = "unverified email"
+	reasonMismatch   = "subject mismatch"
+)
+
+// Header shape classes, logged with a no-bearer refusal so the operator can
+// see what reached the container. Never the header value.
+const (
+	shapeAbsent = "absent"
+	shapeBearer = "bearer"
+	shapeOther  = "other scheme"
 )
 
 var (
@@ -78,6 +87,10 @@ type idTokenAuth struct {
 	validate  tokenValidator
 	// cloudRun reads X-Serverless-Authorization first.
 	cloudRun bool
+	// full, in cloud-run mode, verifies an Authorization token that still has
+	// its signature (Cloud Run passes Authorization on unchanged when the
+	// caller also sends X-Serverless-Authorization). May be nil.
+	full tokenValidator
 	// log receives one warning per refusal, with the reason class only. May be nil.
 	log *slog.Logger
 }
@@ -96,6 +109,13 @@ func newIDTokenAuth(audience string, clientAudiences []string, v tokenValidator)
 
 // newCloudRunAuth trusts Cloud Run's signature check.
 //
+// Token selection, in order:
+//  1. Authorization, if full (when not nil) verifies its signature. If
+//     X-Serverless-Authorization is also present, its subject must match.
+//  2. X-Serverless-Authorization, decoded without the signature.
+//  3. Authorization, decoded without the signature, only when
+//     X-Serverless-Authorization is absent.
+//
 // TRUST BOUNDARY: Cloud Run verifies the Google ID token (the IAM invoker
 // check) and then removes the signature before the request reaches the
 // container, so idtoken.Validate can never succeed there. This mode is safe
@@ -107,9 +127,12 @@ func newIDTokenAuth(audience string, clientAudiences []string, v tokenValidator)
 // mode on a host that does not do this check. The token payload is decoded
 // without verifying the signature; issuer, expiry (with a small skew),
 // audience, and email claims are still checked.
-func newCloudRunAuth(audience string, clientAudiences []string, now func() time.Time, log *slog.Logger) idTokenAuth {
+func newCloudRunAuth(
+	audience string, clientAudiences []string, full tokenValidator, now func() time.Time, log *slog.Logger,
+) idTokenAuth {
 	a := newIDTokenAuth(audience, clientAudiences, unverifiedValidator(now))
 	a.cloudRun = true
+	a.full = full
 	a.log = log
 	return a
 }
@@ -173,15 +196,85 @@ func (a idTokenAuth) refuse(ctx context.Context, reason string) error {
 	return fmt.Errorf("%s: %w", reason, errAuth)
 }
 
-// header returns the request header the token is read from. In cloud-run mode
-// X-Serverless-Authorization wins and Authorization is then never read.
-func (a idTokenAuth) header(r *http.Request) string {
+// bearer returns the token of a "Bearer" header (scheme case-insensitive,
+// RFC 9110) and the header's shape class.
+func bearer(h string) (string, string) {
+	if h == "" {
+		return "", shapeAbsent
+	}
+	if len(h) < len(bearerPrefix) || !strings.EqualFold(h[:len(bearerPrefix)], bearerPrefix) {
+		return "", shapeOther
+	}
+	return strings.TrimSpace(h[len(bearerPrefix):]), shapeBearer
+}
+
+// refuseNoBearer logs which headers arrived, by shape class only.
+func (a idTokenAuth) refuseNoBearer(ctx context.Context, authz, serverless string) error {
+	if a.log != nil {
+		a.log.WarnContext(ctx, "authentication refused", "reason", reasonNoBearer,
+			"authorization", authz, "serverless", serverless)
+	}
+	return fmt.Errorf("%s: %w", reasonNoBearer, errAuth)
+}
+
+// payload picks and validates the token. See newCloudRunAuth for the order in
+// cloud-run mode; full mode reads Authorization only.
+func (a idTokenAuth) payload(r *http.Request) (*idtoken.Payload, error) {
+	ctx := r.Context()
+	az, azShape := bearer(r.Header.Get("Authorization"))
+	slTok, slShape := "", shapeAbsent
 	if a.cloudRun {
-		if h := r.Header.Get(serverlessHeader); h != "" {
-			return h
+		slTok, slShape = bearer(r.Header.Get(serverlessHeader))
+		if p, ok := a.fullyVerified(ctx, az); ok {
+			return a.matchSubject(ctx, p, slTok, slShape)
 		}
 	}
-	return r.Header.Get("Authorization")
+	tok, shape := az, azShape
+	if slShape != shapeAbsent {
+		// Cloud Run checked this header, not Authorization.
+		tok, shape = slTok, slShape
+	}
+	if shape != shapeBearer {
+		return nil, a.refuseNoBearer(ctx, azShape, slShape)
+	}
+	if tok == "" {
+		return nil, a.refuse(ctx, reasonEmpty)
+	}
+	p, err := a.validate(ctx, tok)
+	if err != nil || p == nil {
+		return nil, a.refuse(ctx, validationReason(err))
+	}
+	return p, nil
+}
+
+// fullyVerified reports whether full (if set) verifies tok's signature.
+func (a idTokenAuth) fullyVerified(ctx context.Context, tok string) (*idtoken.Payload, bool) {
+	if tok == "" || a.full == nil {
+		return nil, false
+	}
+	p, err := a.full(ctx, tok)
+	return p, err == nil && p != nil
+}
+
+// matchSubject requires a fully verified Authorization token to name the same
+// subject as the X-Serverless-Authorization token Cloud Run checked, if any.
+func (a idTokenAuth) matchSubject(
+	ctx context.Context, p *idtoken.Payload, slTok, slShape string,
+) (*idtoken.Payload, error) {
+	if slShape == shapeAbsent {
+		return p, nil
+	}
+	if slShape != shapeBearer || slTok == "" {
+		return nil, a.refuse(ctx, reasonMismatch)
+	}
+	q, err := a.validate(ctx, slTok)
+	if err != nil || q == nil {
+		return nil, a.refuse(ctx, validationReason(err))
+	}
+	if q.Subject == "" || q.Subject != p.Subject {
+		return nil, a.refuse(ctx, reasonMismatch)
+	}
+	return p, nil
 }
 
 // Authenticate returns the caller as an IAM member: "serviceAccount:<email>"
@@ -189,17 +282,9 @@ func (a idTokenAuth) header(r *http.Request) string {
 // or email. Each refusal logs its reason class only.
 func (a idTokenAuth) Authenticate(r *http.Request) (string, error) {
 	ctx := r.Context()
-	h := a.header(r)
-	if !strings.HasPrefix(h, bearerPrefix) {
-		return "", a.refuse(ctx, reasonNoBearer)
-	}
-	tok := strings.TrimSpace(strings.TrimPrefix(h, bearerPrefix))
-	if tok == "" {
-		return "", a.refuse(ctx, reasonEmpty)
-	}
-	p, err := a.validate(ctx, tok)
-	if err != nil || p == nil {
-		return "", a.refuse(ctx, validationReason(err))
+	p, err := a.payload(r)
+	if err != nil {
+		return "", err
 	}
 	if _, ok := a.audiences[p.Audience]; !ok {
 		return "", a.refuse(ctx, reasonAudience)

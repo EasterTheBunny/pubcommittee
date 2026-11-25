@@ -140,7 +140,10 @@ func (c *client) newRequest(ctx context.Context, method, path string, in any) (*
 		return nil, err
 	}
 	if tok != "" {
+		// Cloud Run checks X-Serverless-Authorization in precedence and passes
+		// Authorization on unchanged, so admin-api can verify its signature.
 		req.Header.Set("Authorization", "Bearer "+tok)
+		req.Header.Set("X-Serverless-Authorization", "Bearer "+tok)
 	}
 	return req, nil
 }

@@ -105,7 +105,7 @@ func gcpAuth(audience string, getenv func(string) string) (idTokenAuth, error) {
 		a.log = log
 		return a, nil
 	case verifiedByCloudRun:
-		return newCloudRunAuth(audience, clients, time.Now, log), nil
+		return newCloudRunAuth(audience, clients, googleValidator, time.Now, log), nil
 	default:
 		return idTokenAuth{}, fmt.Errorf("%s: unknown value: %w", envVerifiedBy, errEnv)
 	}
