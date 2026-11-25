@@ -81,7 +81,7 @@ func publishPolicy(ctx context.Context, d ingest.Deps, cfg config, out io.Writer
 
 func encode(out io.Writer, v any) error {
 	enc := json.NewEncoder(out)
-	enc.SetIndent("", "  ")
+	// One line per report: Cloud Logging stores it as one structured entry.
 	if err := enc.Encode(v); err != nil {
 		return fmt.Errorf("report: %w", err)
 	}

@@ -39,12 +39,12 @@ check "job-summarize on the exit bills (fakegen): submit, collect, re-run" sh -c
 	"$d.ji" --track --bill us-119-hr-4313,us-119-hr-3062,us-119-hr-3427 >/dev/null 2>&1
 	bills=us-119-hr-4313,us-119-hr-3062,us-119-hr-3427
 	"$d.js" --submit --bill $bills 2>/dev/null >"$d.out"
-	grep -q "\"submitted\": [1-9]" "$d.out"
+	grep -q "\"submitted\": *[1-9]" "$d.out"
 	"$d.js" --collect 2>/dev/null >"$d.out"
-	grep -q "\"ready\": " "$d.out"
+	grep -q "\"ready\": *" "$d.out"
 	! grep -q "unverified\|invalid\|refusal" "$d.out"
 	"$d.js" --submit --bill $bills 2>/dev/null >"$d.out"
-	[ "$(grep -c "\"submitted\": 0" "$d.out")" = 3 ]
+	[ "$(grep -c "\"submitted\": *0" "$d.out")" = 3 ]
 	# the live generator is refused without the switch
 	! "$d.js" --generator claude --collect >/dev/null 2>&1
 	go build -tags local -o "$d.ar" ./cmd/accuracy-report

@@ -183,7 +183,7 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 
 func submitAll(ctx context.Context, d generate.Deps, refs []data.BillRef, dry bool, out io.Writer) (int, error) {
 	enc := json.NewEncoder(out)
-	enc.SetIndent("", "  ")
+	// One line per report: Cloud Logging stores it as one structured entry.
 	items, failed := 0, false
 	for _, ref := range refs {
 		rep, err := generate.Submit(ctx, d, ref, dry)
@@ -204,7 +204,7 @@ func submitAll(ctx context.Context, d generate.Deps, refs []data.BillRef, dry bo
 
 func revalidateAll(ctx context.Context, d generate.Deps, refs []data.BillRef, out io.Writer) (int, error) {
 	enc := json.NewEncoder(out)
-	enc.SetIndent("", "  ")
+	// One line per report: Cloud Logging stores it as one structured entry.
 	items, failed := 0, false
 	for _, ref := range refs {
 		rep, err := generate.Revalidate(ctx, d, ref)
@@ -226,7 +226,7 @@ func revalidateAll(ctx context.Context, d generate.Deps, refs []data.BillRef, ou
 func collect(ctx context.Context, d generate.Deps, out io.Writer) (int, error) {
 	rep, err := generate.Collect(ctx, d)
 	enc := json.NewEncoder(out)
-	enc.SetIndent("", "  ")
+	// One line per report: Cloud Logging stores it as one structured entry.
 	if encErr := enc.Encode(rep); encErr != nil {
 		return 0, fmt.Errorf("report: %w", encErr)
 	}

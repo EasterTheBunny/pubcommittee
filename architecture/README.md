@@ -492,7 +492,7 @@ All backend services use **OpenTelemetry** for metrics through the shared `inter
 ### Model
 - **SDK:** OpenTelemetry Go SDK, initialised by `internal/telemetry` before anything else in each service.
 - **Exporter (HTTP services):** OpenTelemetry Prometheus exporter serving `GET /metrics` on `$METRICS_PORT`.
-- **Exporter (jobs):** OTLP push to `$OTEL_EXPORTER_OTLP_ENDPOINT`, flushed before exit.
+- **Exporter (jobs):** OTLP push to `$OTEL_EXPORTER_OTLP_ENDPOINT`, flushed before exit. With no endpoint set (the Cloud Run jobs in M1 have no collector), a job records metrics but exports none, so it logs no push failure. Sending job metrics to Cloud Monitoring is an open decision.
 - **Resource attributes** on every metric: `service.name` (`read-api`, `write-api`, `worker`, `job-batcher`, …), `service.version` (commit), `deployment.environment.name` (`dev`, `staging`, `prod`), plus detected cloud attributes.
 - **Naming:** OpenTelemetry semantic conventions where one exists; project metrics under the `pubcommittee.` prefix.
 

@@ -209,3 +209,34 @@ func TestJobSetupNoNetwork(t *testing.T) {
 	}
 	_ = tel
 }
+
+// TestJobWithoutEndpointNeverExports: no endpoint anywhere means no push, so
+// Shutdown succeeds with no collector; with an endpoint the push is tried.
+func TestJobWithoutEndpointNeverExports(t *testing.T) {
+	t.Parallel()
+	none := func(string) string { return "" }
+	tel, err := telemetry.Setup(telemetry.Options{ServiceName: "job-test", Kind: telemetry.KindJob, Getenv: none})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tel.Instruments.RecordJob(t.Context(), "job-test", time.Now(), 1, nil)
+	if err := tel.Shutdown(t.Context()); err != nil {
+		t.Fatalf("shutdown without an endpoint: %v", err)
+	}
+	refused := func(k string) string {
+		if k == "OTEL_EXPORTER_OTLP_ENDPOINT" {
+			return "http://127.0.0.1:1"
+		}
+		return ""
+	}
+	tel, err = telemetry.Setup(telemetry.Options{ServiceName: "job-test", Kind: telemetry.KindJob, Getenv: refused})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tel.Instruments.RecordJob(t.Context(), "job-test", time.Now(), 1, nil)
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+	defer cancel()
+	if err := tel.Shutdown(ctx); err == nil {
+		t.Fatal("shutdown with an unreachable endpoint: want the push error")
+	}
+}

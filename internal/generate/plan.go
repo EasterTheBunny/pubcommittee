@@ -265,13 +265,18 @@ func (b builder) freestanding(cited map[string]bool) ([]Task, error) {
 
 // citationSet loads the stored citation set of a version; a non-empty note
 // says why there is none (not an error).
+// noteNoCitations starts every note of a version planned without its citation
+// set. Submit refuses such a bill: the summary's provision check and the
+// explanations both need the set.
+const noteNoCitations = "explanations skipped: "
+
 func citationSet(ctx context.Context, p data.PlatformPorts, v data.VersionRef) (data.CitationSet, string, error) {
 	if p.Citations == nil || p.Law == nil {
-		return data.CitationSet{}, "explanations skipped: no citation store", nil
+		return data.CitationSet{}, noteNoCitations + "no citation store", nil
 	}
 	rel, err := p.Law.CurrentRelease(ctx)
 	if errors.Is(err, data.ErrNotFound) {
-		return data.CitationSet{}, "explanations skipped: no existing-law release stored", nil
+		return data.CitationSet{}, noteNoCitations + "no existing-law release stored", nil
 	}
 	if err != nil {
 		return data.CitationSet{}, "", fmt.Errorf("current release: %w", err)
@@ -280,7 +285,7 @@ func citationSet(ctx context.Context, p data.PlatformPorts, v data.VersionRef) (
 		Version: v, Method: citations.Method(billxml.ParserVersion, rel.ID),
 	})
 	if errors.Is(err, data.ErrNotFound) {
-		return data.CitationSet{}, "explanations skipped: no citation set for " + v.String(), nil
+		return data.CitationSet{}, noteNoCitations + "no citation set for " + v.String(), nil
 	}
 	if err != nil {
 		return data.CitationSet{}, "", fmt.Errorf("get citations: %w", err)

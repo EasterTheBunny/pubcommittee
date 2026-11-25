@@ -32,6 +32,10 @@ job-ingest --law --titles all                 # store a new US Code release poin
 job-ingest --analyze                          # citations and comparisons over stored versions
 ```
 
+To give another environment the same release point without downloading it again, the operator copies it between the environments' buckets with their own login, then runs `--analyze` there: `scripts/law-copy.sh <src-bucket> <dst-bucket>`. It copies the source's current release (sections first, `release.json` last), never overwrites a stored object, and moves the destination's `current.json` only when the destination has no release or an older one. Its test runs against a fake `gcloud`: `sh scripts/law-copy_test.sh`.
+
+`job-summarize --submit` refuses a bill whose versions have no citation set, so run `--law` (or the copy) and `--analyze` first.
+
 Environment: `DATA_DIR` (local target). Output: one JSON report per bill on stdout (`stored`, `present`, `would_store`, `failures`); logs on stderr. Exit non-zero when any pull failed.
 
 Stored, as in [architecture § Data recorded per ingest](../../architecture/README.md#data-recorded-per-ingest):
