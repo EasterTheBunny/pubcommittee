@@ -13,7 +13,7 @@
 		doc: {
 			headline: string;
 			statements: Statement[];
-			flags?: ExplanationFlag[];
+			flags?: (ExplanationFlag | 'no-differences')[];
 			as_of: string;
 			content_class: 'official' | 'platform';
 		} | null;
@@ -22,16 +22,21 @@
 		textHref?: string;
 	} = $props();
 
-	const flagLabels: Record<ExplanationFlag, string> = {
+	const flagLabels: Record<ExplanationFlag | 'no-differences', string> = {
 		auto: 'Auto-generated',
 		'steward-checked': 'Checked by a steward',
-		'bill-only': 'Bill-only (drawn from the bill text alone)'
+		'bill-only': 'Bill-only (drawn from the bill text alone)',
+		'no-differences': 'From the version comparison'
 	};
 
 	// Provenance label per flag; a summary with no flags is auto-generated.
-	function provenance(flags: ExplanationFlag[] | undefined): string[] {
+	function provenance(flags: (ExplanationFlag | 'no-differences')[] | undefined): string[] {
 		return flags && flags.length > 0 ? flags.map((f) => flagLabels[f]) : ['Auto-generated'];
 	}
+
+	// A no-differences answer is built from the comparison, not generated, so it
+	// carries no accuracy note.
+	const generated = $derived(!doc?.flags?.includes('no-differences'));
 </script>
 
 {#if doc}
@@ -67,7 +72,9 @@
 		</ul>
 
 		<p class="mt-3 text-xs text-muted">As of {doc.as_of.slice(0, 10)}</p>
-		<AccuracyNote href={textHref} />
+		{#if generated}
+			<AccuracyNote href={textHref} />
+		{/if}
 	</section>
 {:else}
 	<section class="card p-4">

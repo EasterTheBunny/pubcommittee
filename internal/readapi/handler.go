@@ -51,7 +51,8 @@ func Handler(s *Server, opts Options) (http.Handler, error) {
 	apiv1.HandlerWithOptions(s, apiv1.StdHTTPServerOptions{BaseRouter: mux, ErrorHandlerFunc: bindError})
 	mux.HandleFunc("GET /robots.txt", robots)
 	mux.HandleFunc("/", fallback)
-	return logRequests(opts.Logger, cors(lim.middleware(mux))), nil
+	// Gzip: the edge passes responses through unencoded (M1-16 page weight).
+	return logRequests(opts.Logger, httpx.Gzip(cors(lim.middleware(mux)))), nil
 }
 
 // fallback answers every request no spec route matched.

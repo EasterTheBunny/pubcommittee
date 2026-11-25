@@ -1,5 +1,6 @@
 // A tiny read-api stand-in for UI tests that need data the fixture read-api does not serve yet:
-// a comparison between versions (M1-08), a very long bill, and a bill summary. Invented data only.
+// a comparison between versions (M1-08), a very long bill, a bill summary, and a bill whose second version
+// repeats the first (no-differences change summary). Invented data only.
 // Usage: node tests/stub-api.mjs [port]   (default 4010)
 import http from 'node:http';
 
@@ -57,20 +58,21 @@ const big = Array.from({ length: 400 }, (_, i) =>
 	)
 );
 
-const versions = { stub: [v1, v2], big: [big] };
+const versions = { stub: [v1, v2], big: [big], same: [v1, v1] };
 const bills = {
 	stub: 'Stub Hours Act',
-	big: 'Very Long Appropriations Act'
+	big: 'Very Long Appropriations Act',
+	same: 'Same Hours Act'
 };
-const id = (k) => `us-119-hr-${k === 'stub' ? '1' : '2'}`;
-const key = (billId) =>
-	billId === 'us-119-hr-1' ? 'stub' : billId === 'us-119-hr-2' ? 'big' : null;
+const numbers = { stub: 1, big: 2, same: 3 };
+const id = (k) => `us-119-hr-${numbers[k]}`;
+const key = (billId) => Object.keys(numbers).find((k) => id(k) === billId) ?? null;
 
 function billDoc(k) {
 	return {
 		...meta,
 		id: id(k),
-		ref: { jurisdiction: 'us', session: '119', type: 'hr', number: k === 'stub' ? 1 : 2 },
+		ref: { jurisdiction: 'us', session: '119', type: 'hr', number: numbers[k] },
 		title: bills[k],
 		status: 'reported',
 		sponsor: 'Rep. Stub',
@@ -149,6 +151,19 @@ http
 					statements: [
 						{ text: 'Offices close at six.', anchors: ['s2-l2'], content_class: 'platform' }
 					]
+				});
+			}
+			if (rest === '/changes' && k === 'same' && n === 2) {
+				return ok(res, {
+					...meta,
+					provenance: 'source',
+					content_class: 'platform',
+					flags: ['no-differences'],
+					bill: id(k),
+					from_n: 1,
+					to_n: 2,
+					headline: 'No text changes from version 1.',
+					statements: []
 				});
 			}
 			if ((m = /^\/s\/([^/]+)(?:\/l\/(\d+)(?:-(\d+))?)?$/.exec(rest))) {

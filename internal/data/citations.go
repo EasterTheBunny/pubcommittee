@@ -154,6 +154,11 @@ func (r CitationRef) ObjectPath() string {
 		strings.ReplaceAll(r.Method, "/", "_") + ".json"
 }
 
+// FreshnessPath is the object path of the set's FreshnessDoc, beside the set.
+func (r CitationRef) FreshnessPath() string {
+	return strings.TrimSuffix(r.ObjectPath(), ".json") + ".freshness.json"
+}
+
 // CitationEntry is a CitationLink with the reasoning kept for the public
 // list: what kind of reference it is, what it was normalised to, and why it
 // is not resolved.
@@ -184,6 +189,17 @@ type FreshnessFlag struct {
 	EnactedAt   time.Time `json:"enacted_at"`
 }
 
+// FreshnessDoc holds the current freshness flags of one citation set. The set
+// is write-once; this document is replaceable: every citation step recomputes
+// it from the later laws stored at that time, so a law enacted after the set
+// was first written is still flagged (design/01 § Existing law freshness).
+type FreshnessDoc struct {
+	Ref   CitationRef     `json:"ref"`
+	Flags []FreshnessFlag `json:"flags"`
+	// Laws lists the later public laws the flags were computed from.
+	Laws []string `json:"laws"`
+}
+
 // CitationSet is everything the citation step stores for one version.
 type CitationSet struct {
 	Ref         CitationRef      `json:"ref"`
@@ -191,8 +207,11 @@ type CitationSet struct {
 	ReleaseDate time.Time        `json:"release_date"`
 	Links       []CitationEntry  `json:"links"`
 	Provisions  []CitedProvision `json:"provisions"`
-	Freshness   []FreshnessFlag  `json:"freshness"`
-	Meta        Meta             `json:"meta"`
+	// Freshness is empty in sets the step writes: the current flags are in the
+	// set's FreshnessDoc. Sets written before it existed keep the flags of
+	// their first write.
+	Freshness []FreshnessFlag `json:"freshness"`
+	Meta      Meta            `json:"meta"`
 }
 
 // Unresolved returns the entries whose state is unresolved or ambiguous.
@@ -210,6 +229,8 @@ func (s CitationSet) Unresolved() []CitationEntry {
 type CitationReader interface {
 	// GetCitations returns the set with exactly this ref.
 	GetCitations(ctx context.Context, ref CitationRef) (CitationSet, error)
+	// GetFreshness returns the current freshness flags of the set with this ref.
+	GetFreshness(ctx context.Context, ref CitationRef) (FreshnessDoc, error)
 }
 
 // CitationWriter stores citation sets.
@@ -217,6 +238,9 @@ type CitationWriter interface {
 	// PutCitations stores a set at a write-once ref. Identical content is a
 	// no-op; different content is ErrConflict; an invalid ref is ErrInvalid.
 	PutCitations(ctx context.Context, s CitationSet) error
+	// PutFreshness stores or replaces the freshness flags of a set; an invalid
+	// ref is ErrInvalid.
+	PutFreshness(ctx context.Context, d FreshnessDoc) error
 }
 
 // LawReader reads stored US Code release points and sections. Not found:

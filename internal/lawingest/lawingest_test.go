@@ -1,8 +1,11 @@
 package lawingest_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"log/slog"
 	"os"
 	"testing"
 	"time"
@@ -78,5 +81,57 @@ func checkRepeat(ctx context.Context, t *testing.T, src *fakeSource, s *memory.S
 	}
 	if _, err := lawingest.Step(ctx, src, s, s, []int{4}); !errors.Is(err, data.ErrNotFound) {
 		t.Fatalf("missing title: err = %v, want ErrNotFound", err)
+	}
+}
+
+// progressLine is one progress log line of Step.
+type progressLine struct {
+	Msg      string `json:"msg"`
+	Release  string `json:"release"`
+	Mode     string `json:"mode"`
+	Title    int    `json:"title"`
+	Method   string `json:"method"`
+	Source   string `json:"source"`
+	Sections int    `json:"sections"`
+	Done     int    `json:"done"`
+	Total    int    `json:"total"`
+	Elapsed  int    `json:"elapsed_s"`
+}
+
+func TestStepLogsEachTitle(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	b, err := os.ReadFile("../uslm/testdata/title3-sample.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := &fakeSource{rps: []data.ReleasePoint{{ID: "119-142", Date: time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)}}, title3: b}
+	var buf bytes.Buffer
+	log := slog.New(slog.NewJSONHandler(&buf, nil))
+	tick := time.Date(2026, 11, 25, 12, 0, 0, 0, time.UTC)
+	clock := func() time.Time { tick = tick.Add(30 * time.Second); return tick }
+	s := memory.New()
+	if _, err := lawingest.Step(ctx, src, s, s, []int{3}, lawingest.WithLogger(log), lawingest.WithClock(clock), lawingest.WithSource("uscode")); err != nil {
+		t.Fatal(err)
+	}
+	want := []progressLine{
+		{Msg: "law ingest started", Release: "119-142", Mode: lawingest.ModeSubset, Source: "uscode", Total: 1},
+		{
+			Msg: "law title stored", Release: "119-142", Title: 3, Method: lawingest.MethodFetch, Source: "uscode",
+			Sections: 2, Done: 1, Total: 1, Elapsed: 30,
+		},
+	}
+	dec := json.NewDecoder(&buf)
+	for i, w := range want {
+		var line progressLine
+		if err := dec.Decode(&line); err != nil {
+			t.Fatalf("log line %d: %v", i, err)
+		}
+		if line != w {
+			t.Errorf("log line %d = %+v, want %+v", i, line, w)
+		}
+	}
+	if dec.More() {
+		t.Errorf("more log lines than %d", len(want))
 	}
 }

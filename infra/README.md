@@ -23,6 +23,7 @@ gcloud run jobs execute <job> --project <project> --region <region> --wait --arg
 - `--task-timeout=4h` raises the task timeout for one execution. The deployed default (1 hour) is too short for a full US Code download.
 - A job prints its report to stdout as one JSON line, so Cloud Logging stores it as one structured entry.
 - Check a running job: `gcloud run jobs executions list --job <job> --project <project> --region <region> --limit 3`.
+- A law download logs `law ingest started` (its `mode` and `source`), then one `law title stored` line per title (`method`, `done` of `total`, `elapsed_s`), so its logs show how far it is.
 - Paid model runs need `--update-env-vars=PUBCOMMITTEE_LIVE_MODEL_RUNS=1` on that execution, after a dry run, a cost estimate, and the operator's approval. Without it, every model call is refused.
 
 Flags for each job: [`cmd/job-ingest`](../cmd/job-ingest/README.md), [`cmd/job-summarize`](../cmd/job-summarize/README.md), [`cmd/job-exports`](../cmd/job-exports/README.md).
@@ -53,7 +54,7 @@ Once a release is stored, a new bill needs steps 2, 4, 5 and 6 only. `--track` s
 2. **Download**, in one environment: `job-ingest --law --titles all`, with `--task-timeout=4h`. Every release point is stored as a full copy under `law/usc/<release>/`, so every title is fetched again ([M1-07b](../design/tasks/m1/07b-incremental-law-release.md) makes this incremental).
 3. **Copy** to every other environment: `scripts/law-copy.sh <src-bucket> <dst-bucket>`. The destination's `current.json` moves only when its own release is older.
 4. **Re-analyze**, in each environment: `job-ingest --analyze` stores new citation sets for every tracked bill against the new release.
-5. **Recheck**: `job-summarize --revalidate --bill <id>` for each summarized bill. It makes no model call. Generation keys do not include the release, so a dry run does not plan stored explanations again.
+5. **Recheck**: `job-summarize --revalidate --bill <id>` for each summarized bill. It makes no model call. Generation keys do not include the release, so a dry run does not plan stored explanations again. Until [M1-09b](../design/tasks/m1/09b-law-aware-replanning.md), an explanation written against a changed provision stays as it is.
 6. **Publish**: `job-exports`.
 
 Never pass a subset of titles (`--titles 42`) for a new release: the run stores only those titles, then writes the release record and moves `current.json` to it, and every citation into another title stops resolving.

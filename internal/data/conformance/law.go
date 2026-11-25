@@ -206,6 +206,8 @@ func Citations(t *testing.T, factory func(t *testing.T) (data.CitationReader, da
 		{"write once", checkCitationsWriteOnce},
 		{"invalid", checkCitationsInvalid},
 		{"keys differ", checkCitationsKeys},
+		{"freshness replaceable", checkFreshnessReplaceable},
+		{"freshness invalid", checkFreshnessInvalid},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -293,5 +295,47 @@ func checkCitationsKeys(t *testing.T, r data.CitationReader, w data.CitationWrit
 		if err != nil || got.Ref != x.Ref {
 			t.Errorf("GetCitations(%s) = %v, %v", x.Ref, got.Ref, err)
 		}
+	}
+}
+
+// checkFreshnessReplaceable: a missing doc is not found, a put reads back, and
+// a second put replaces it (unlike the write-once set beside it).
+func checkFreshnessReplaceable(t *testing.T, r data.CitationReader, w data.CitationWriter) {
+	t.Helper()
+	ctx := context.Background()
+	set := SampleCitationSet(1, "m/1")
+	if _, err := r.GetFreshness(ctx, set.Ref); !errors.Is(err, data.ErrNotFound) {
+		t.Errorf("GetFreshness unknown: err = %v, want ErrNotFound", err)
+	}
+	first := data.FreshnessDoc{Ref: set.Ref, Flags: []data.FreshnessFlag{}, Laws: []string{}}
+	second := data.FreshnessDoc{
+		Ref: set.Ref, Laws: []string{"119-150"},
+		Flags: []data.FreshnessFlag{{
+			ProvisionID: "usc/42/1395", PublicLaw: "119-150", EnactedAt: time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC),
+		}},
+	}
+	for _, d := range []data.FreshnessDoc{first, second} {
+		if err := w.PutFreshness(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+		got, err := r.GetFreshness(ctx, set.Ref)
+		if err != nil || !reflect.DeepEqual(got, d) {
+			t.Errorf("GetFreshness = %+v, %v; want %+v", got, err, d)
+		}
+	}
+	if _, err := r.GetCitations(ctx, set.Ref); !errors.Is(err, data.ErrNotFound) {
+		t.Errorf("a freshness doc is not a citation set: err = %v, want ErrNotFound", err)
+	}
+	if err := w.PutCitations(ctx, set); err != nil {
+		t.Errorf("set beside its freshness doc: %v", err)
+	}
+}
+
+func checkFreshnessInvalid(t *testing.T, _ data.CitationReader, w data.CitationWriter) {
+	t.Helper()
+	d := data.FreshnessDoc{Ref: SampleCitationSet(1, "m/1").Ref}
+	d.Ref.Method = ""
+	if err := w.PutFreshness(context.Background(), d); !errors.Is(err, data.ErrInvalid) {
+		t.Errorf("empty method: err = %v, want ErrInvalid", err)
 	}
 }

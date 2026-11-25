@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -163,28 +164,79 @@ func TestStepIdempotentAndFreshness(t *testing.T) {
 	s := memory.New()
 	rel := loadLaw(t, s)
 	v, _ := loadBill(t, s, "hr-4313", "ih")
-	later := []citations.LaterLaw{{
-		PublicLaw: "119-150", EnactedAt: releaseDate().AddDate(0, 0, 20), Sections: []string{"usc/42/1395cc-7"},
-	}, {
+	ref := data.CitationRef{Version: v.Ref, Method: citations.Method(billxml.ParserVersion, rel.ID)}
+	earlier := citations.LaterLaw{
 		PublicLaw: "119-100", EnactedAt: releaseDate().AddDate(0, 0, -20), Sections: []string{"usc/42/1395cc-7"},
-	}}
+	}
+	later := citations.LaterLaw{
+		PublicLaw: "119-150", EnactedAt: releaseDate().AddDate(0, 0, 20), Sections: []string{"usc/42/1395cc-7"},
+	}
+	// First pull: only a law from before the release is stored, so nothing is flagged.
+	if n, err := citations.Step(ctx, s, s, s, v.Ref.Bill, billxml.ParserVersion, []citations.LaterLaw{earlier}); err != nil || n != 1 {
+		t.Fatalf("first Step = %d, %v", n, err)
+	}
+	if doc, err := s.GetFreshness(ctx, ref); err != nil || len(doc.Flags) != 0 {
+		t.Fatalf("first freshness = %+v, %v; want no flags", doc, err)
+	}
+	// A law enacted after the release is stored later: the next run flags it,
+	// although the set itself is write-once. Repeating changes nothing.
 	for range 2 {
-		n, err := citations.Step(ctx, s, s, s, v.Ref.Bill, billxml.ParserVersion, later)
+		n, err := citations.Step(ctx, s, s, s, v.Ref.Bill, billxml.ParserVersion, []citations.LaterLaw{later, earlier})
 		if err != nil || n != 1 {
 			t.Fatalf("Step = %d, %v", n, err)
 		}
 	}
-	set, err := s.GetCitations(ctx, data.CitationRef{Version: v.Ref, Method: citations.Method(billxml.ParserVersion, rel.ID)})
+	checkFlags(t, s, ref)
+	set, err := s.GetCitations(ctx, ref)
+	if err != nil || len(set.Freshness) != 0 {
+		t.Fatalf("set freshness = %+v, %v; want none in the set", set.Freshness, err)
+	}
+}
+
+// checkFlags asserts the two flags the later law gives section 1395cc-7.
+func checkFlags(t *testing.T, s *memory.Store, ref data.CitationRef) {
+	t.Helper()
+	doc, err := s.GetFreshness(context.Background(), ref)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(set.Freshness) != 2 { // two cited provisions in section 1395cc-7; only the law after the release flags
-		t.Fatalf("freshness = %+v", set.Freshness)
+	if len(doc.Flags) != 2 { // two cited provisions in section 1395cc-7; only the law after the release flags
+		t.Fatalf("freshness = %+v", doc.Flags)
 	}
-	for _, f := range set.Freshness {
+	for _, f := range doc.Flags {
 		if f.PublicLaw != "119-150" {
 			t.Errorf("flag from %s, want only the later law", f.PublicLaw)
 		}
+	}
+	if !slices.Equal(doc.Laws, []string{"119-100", "119-150"}) {
+		t.Errorf("laws = %v", doc.Laws)
+	}
+}
+
+// A set written before freshness had its own document carries its flags; the
+// step keeps it and still writes the current flags beside it.
+func TestStepKeepsSetWithOldFlags(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	s := memory.New()
+	rel := loadLaw(t, s)
+	v, src := loadBill(t, s, "hr-4313", "ih")
+	later := []citations.LaterLaw{{
+		PublicLaw: "119-150", EnactedAt: releaseDate().AddDate(0, 0, 20), Sections: []string{"usc/42/1395cc-7"},
+	}}
+	old, err := citations.Build(ctx, s, rel, v, src, billxml.ParserVersion, later)
+	if err != nil || len(old.Freshness) == 0 {
+		t.Fatalf("Build = %d flags, %v", len(old.Freshness), err)
+	}
+	if err := s.PutCitations(ctx, old); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := citations.Step(ctx, s, s, s, v.Ref.Bill, billxml.ParserVersion, later); err != nil {
+		t.Fatalf("Step over an old set: %v", err)
+	}
+	doc, err := s.GetFreshness(ctx, old.Ref)
+	if err != nil || len(doc.Flags) != 2 {
+		t.Fatalf("freshness = %+v, %v", doc, err)
 	}
 }
 

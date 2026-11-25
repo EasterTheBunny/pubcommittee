@@ -36,8 +36,9 @@ const (
 const liveSwitch = "PUBCOMMITTEE_LIVE_MODEL_RUNS"
 
 var (
-	errMode      = errors.New("exactly one of --submit, --collect or --revalidate is required")
-	errNoBill    = errors.New("--submit and --revalidate need at least one --bill <id>, for example --bill us-119-hr-4313")
+	errMode   = errors.New("exactly one of --submit, --collect or --revalidate is required")
+	errNoBill = errors.New(
+		"--submit (without --dry-run) and --revalidate need at least one --bill <id>, for example --bill us-119-hr-4313")
 	errGenerator = errors.New("--generator must be fake or claude")
 	errLive      = errors.New("--generator claude is a live model run: set " + liveSwitch + "=1 (operator approved)")
 	errFailed    = errors.New("one or more bills failed")
@@ -100,7 +101,9 @@ func (c config) validate(bills int) error {
 		return errGenerator
 	case c.Generator == generatorClaude && !c.Live:
 		return errLive
-	case (c.Submit || c.Revalidate) && bills == 0:
+	case c.Revalidate && bills == 0, c.Submit && !c.DryRun && bills == 0:
+		// A dry run with no bill plans nothing: it checks the job starts and
+		// reaches its stores (the deploy smoke test).
 		return errNoBill
 	}
 	return nil
@@ -181,9 +184,26 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 	return runErr
 }
 
+// noteNoBill is the note of a dry run given no bill.
+const noteNoBill = "no --bill: wiring check only, nothing planned"
+
+// wiringReport is the report of a dry run with no bill.
+type wiringReport struct {
+	DryRun  bool     `json:"dry_run"`
+	Planned int      `json:"planned"`
+	Notes   []string `json:"notes"`
+}
+
 func submitAll(ctx context.Context, d generate.Deps, refs []data.BillRef, dry bool, out io.Writer) (int, error) {
 	enc := json.NewEncoder(out)
 	// One line per report: Cloud Logging stores it as one structured entry.
+	if len(refs) == 0 {
+		// Only a dry run gets here (validate): a wiring check with nothing to plan.
+		if err := enc.Encode(wiringReport{DryRun: true, Notes: []string{noteNoBill}}); err != nil {
+			return 0, fmt.Errorf("report: %w", err)
+		}
+		return 0, nil
+	}
 	items, failed := 0, false
 	for _, ref := range refs {
 		rep, err := generate.Submit(ctx, d, ref, dry)

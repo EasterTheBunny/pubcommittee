@@ -20,6 +20,7 @@ Deliver every merged change on the public repository's `main` to `dev` with no m
 - **Trigger identity.** A GitHub App installed on the private deployment repository only, with the single permission `Contents: write` that `repository_dispatch` requires. Its id and private key are secrets of a `deploy-trigger` environment in the public repository, limited to `main` and release tags.
 - **Public dispatch workflow** (`.github/workflows/dispatch-deploy.yml` in this repository):
   - runs on `workflow_run` of the backend CI workflow, only when that run succeeded, was a `push`, and was on `main`; and on push of a release tag (`v*`);
+  - **Changed (2026-11-25):** runs on `workflow_run` of each CI workflow (`backend`, `web`, `infra`), so a commit that changes only `app/` also deploys; a `gate` job dispatches only when every CI workflow that ran for that push succeeded, and waits quietly while one is still running. CI push triggers are limited to branches, so a release tag starts no CI run;
   - mints a short-lived installation token with `actions/create-github-app-token`, scoped to the private repository;
   - sends `repository_dispatch` with event type `deploy` and payload `{ "sha": "<commit>", "kind": "main" | "release", "tag": "<tag or empty>" }`;
   - prints nothing but the commit and kind.

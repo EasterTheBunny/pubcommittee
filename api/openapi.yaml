@@ -19,7 +19,9 @@ info:
     are `{ "items": [...], "next": "<cursor>" }` with opaque cursors passed as
     `?cursor=`; every `GET` returns a strong `ETag` and honours `If-None-Match`
     with `304`; errors are RFC 9457 `application/problem+json`; `429` carries
-    `Retry-After`. No route lists or filters by author.
+    `Retry-After`. A response of 1 KB or more is gzip-encoded when the request
+    accepts gzip, and its `ETag` then ends in `-gzip`. No route lists or
+    filters by author.
 
     **Addresses.** Paths mirror page addresses. A bill id is
     `<jurisdiction>-<session>-<type>-<number>` (for example `us-119-hr-4127`).
@@ -323,7 +325,10 @@ paths:
       tags: [derived]
       operationId: getVersionChangeSummary
       summary: Summary of what changed from the previous version (M1-09)
-      description: Not found for the first version of a bill.
+      description: >-
+        Not found for the first version of a bill. A version whose text equals the previous one gets a fixed
+        answer built from the stored comparison, with no model call: flag `no-differences`, no statements,
+        content class `platform`. Otherwise not found until a generated summary is published.
       x-cache: short
       parameters:
         - $ref: '#/components/parameters/BillPath'
@@ -1014,7 +1019,10 @@ components:
               items: { $ref: '#/components/schemas/Statement' }
             flags:
               type: array
-              items: { type: string, enum: [auto, steward-checked, bill-only] }
+              description: >-
+                `no-differences`: the text equals the previous version's; the answer is built from the stored
+                comparison, not generated.
+              items: { type: string, enum: [auto, steward-checked, bill-only, no-differences] }
     CitationState:
       type: string
       enum: [resolved, ambiguous, unresolved, steward-confirmed]

@@ -1,6 +1,8 @@
 name: infra
 on:
   push:
+    # Branches only: a release tag points at a main commit that already passed CI.
+    branches: ["**"]
     paths: ["infra/**", "test/acceptance/M1-15/**", ".github/workflows/infra.yml"]
   pull_request:
     paths: ["infra/**", "test/acceptance/M1-15/**", ".github/workflows/infra.yml"]

@@ -349,6 +349,11 @@ func (w timedCitationReader) GetCitations(ctx context.Context, ref data.Citation
 	return w.n.GetCitations(ctx, ref)
 }
 
+func (w timedCitationReader) GetFreshness(ctx context.Context, ref data.CitationRef) (d data.FreshnessDoc, err error) {
+	defer w.t.start(ctx, "CitationReader", "GetFreshness", &err)()
+	return w.n.GetFreshness(ctx, ref)
+}
+
 type timedCitationWriter struct {
 	t timer
 	n data.CitationWriter
@@ -357,6 +362,11 @@ type timedCitationWriter struct {
 func (w timedCitationWriter) PutCitations(ctx context.Context, s data.CitationSet) (err error) {
 	defer w.t.start(ctx, "CitationWriter", "PutCitations", &err)()
 	return w.n.PutCitations(ctx, s)
+}
+
+func (w timedCitationWriter) PutFreshness(ctx context.Context, d data.FreshnessDoc) (err error) {
+	defer w.t.start(ctx, "CitationWriter", "PutFreshness", &err)()
+	return w.n.PutFreshness(ctx, d)
 }
 
 type timedLawReader struct {

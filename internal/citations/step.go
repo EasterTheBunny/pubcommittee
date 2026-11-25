@@ -2,7 +2,9 @@ package citations
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 	"time"
@@ -148,14 +150,15 @@ func (r *Resolver) Provision(ctx context.Context, id string) (data.Provision, bo
 
 // Step is the citation step that runs after a version is stored and a
 // release point is stored: it resolves the citations of every stored version
-// of the bill against the current release point and writes the sets. Writes
-// are write-once, so repeating the step with the same release is a no-op. It
+// of the bill against the current release point and writes the sets. Sets
+// are write-once, so repeating the step with the same release rewrites only
+// each set's FreshnessDoc, which then flags any later law stored since. It
 // returns the number of sets written or confirmed. Nothing runs it
 // automatically in the local phase; a command or job calls it over stored
 // data. later lists public laws enacted after the release point, for the
 // freshness flags.
 func Step(
-	ctx context.Context, text data.BillText, law data.LawReader, store data.CitationWriter,
+	ctx context.Context, text data.BillText, law data.LawReader, store Store,
 	bill data.BillRef, parserVersion string, later []LaterLaw,
 ) (int, error) {
 	rel, err := law.CurrentRelease(ctx)
@@ -179,9 +182,53 @@ func Step(
 		if err != nil {
 			return 0, fmt.Errorf("citations %s: %w", s.Ref, err)
 		}
-		if err := store.PutCitations(ctx, set); err != nil {
-			return 0, fmt.Errorf("citations %s: store: %w", s.Ref, err)
+		if err := storeSet(ctx, store, set, later); err != nil {
+			return 0, fmt.Errorf("citations %s: %w", s.Ref, err)
 		}
 	}
 	return len(vs), nil
+}
+
+// Store reads and writes citation sets and their freshness flags.
+type Store interface {
+	data.CitationReader
+	data.CitationWriter
+}
+
+// storeSet writes the set without its freshness flags, which change as later
+// laws are stored, and then replaces the set's FreshnessDoc with them. A set
+// stored earlier that differs only in its flags (written before the flags had
+// their own document) is kept; any other difference is ErrConflict.
+func storeSet(ctx context.Context, store Store, set data.CitationSet, later []LaterLaw) error {
+	doc := data.FreshnessDoc{Ref: set.Ref, Flags: set.Freshness, Laws: lawIDs(later)}
+	set.Freshness = []data.FreshnessFlag{}
+	err := store.PutCitations(ctx, set)
+	if errors.Is(err, data.ErrConflict) {
+		old, gerr := store.GetCitations(ctx, set.Ref)
+		if gerr != nil {
+			return fmt.Errorf("store: %w", errors.Join(err, gerr))
+		}
+		old.Freshness = set.Freshness
+		if !reflect.DeepEqual(old, set) {
+			return fmt.Errorf("store: %w", err)
+		}
+		err = nil
+	}
+	if err != nil {
+		return fmt.Errorf("store: %w", err)
+	}
+	if err := store.PutFreshness(ctx, doc); err != nil {
+		return fmt.Errorf("store freshness: %w", err)
+	}
+	return nil
+}
+
+// lawIDs lists the public laws of later, sorted.
+func lawIDs(later []LaterLaw) []string {
+	ids := make([]string, 0, len(later))
+	for _, ll := range later {
+		ids = append(ids, ll.PublicLaw)
+	}
+	slices.Sort(ids)
+	return ids
 }
