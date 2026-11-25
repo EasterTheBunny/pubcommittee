@@ -55,6 +55,9 @@ pubcommittee/
 ├── architecture/
 │   └── README.md          implementation architecture (Go on Google Cloud,
 │                          REST/OpenAPI, adapters, ingest, notifications)
+├── infra/                 public OpenTofu modules and example root
+│   └── README.md          module rules; cloud runbook: first data in an
+│                          environment, each new bill, new US Code release
 ├── demo/                  archived M0 proof of concept (static SvelteKit site
 │                          on mock data; served from the Netlify site)
 └── app/                   M1 web app (SvelteKit 3, Svelte 5, Tailwind 4,
@@ -84,6 +87,7 @@ pubcommittee/
 | What is in scope now versus later | `design/MILESTONES.md` |
 | Build work for a milestone | `design/tasks/README.md`, then the task file |
 | Stack, hosting, data stores, API shape | `architecture/README.md` |
+| Run jobs in a cloud environment (first data, new bill, new US Code release) | `infra/README.md` § Cloud runbook |
 | Change demo data (archived M0) | `demo/src/lib/mock/` |
 | Change a page | `app/src/routes/` |
 | Change shared UI | `app/src/lib/components/` |
