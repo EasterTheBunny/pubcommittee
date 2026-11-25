@@ -20,6 +20,7 @@ const (
 	envOperators       = "OPERATORS_JSON"
 	envDeployPrincipal = "DEPLOY_PRINCIPAL"
 	envAudience        = "ADMIN_API_AUDIENCE"
+	envClientAudiences = "ADMIN_API_CLIENT_AUDIENCES"
 )
 
 // gcpSource is the ingest_state key prefix of the govinfo bill source.
@@ -53,7 +54,7 @@ func wire(tel *telemetry.Telemetry, getenv func(string) string) (adminapi.Deps, 
 		Ports:   tel.WrapPlatform("gcp", p.Platform()),
 		Fetcher: src,
 		Source:  gcpSource,
-		Auth:    newIDTokenAuth(audience, googleValidator),
+		Auth:    newIDTokenAuth(audience, strings.Split(getenv(envClientAudiences), ","), googleValidator),
 		Config:  cfg,
 	}, nil
 }

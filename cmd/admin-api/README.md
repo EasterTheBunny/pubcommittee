@@ -32,7 +32,8 @@ On `gcp` the variables below are required; the operator list is never read from 
 
 | Variable (`gcp`) | Meaning |
 | --- | --- |
-| `ADMIN_API_AUDIENCE` | Expected ID token audience: the service URL, `https://<host>` with no path. `pubctl` sends a token for `scheme://host` of its `--url`, so the two match when `--url` is the service URL. |
+| `ADMIN_API_AUDIENCE` | Required. Accepted ID token audience for service account callers (such as the deploy account): the service URL, `https://<host>` with no path. `pubctl` sends a service account token for `scheme://host` of its `--url`, so the two match when `--url` is the service URL. |
+| `ADMIN_API_CLIENT_AUDIENCES` | Optional, comma-separated OAuth client ids, also accepted as audience. A user's `gcloud auth print-identity-token` carries gcloud's OAuth client id as `aud`, never the service URL. Empty or unset: only `ADMIN_API_AUDIENCE` is accepted. Blank entries are ignored. |
 | `OPERATORS_JSON` | Operator list in the format below. Unset or invalid: refuses to start. |
 | `DEPLOY_PRINCIPAL` | Deploy account in IAM member form. Unset: refuses to start. If `OPERATORS_JSON` also holds `deploy_principal`, the two must agree. |
 | cloud port variables | As `cloudports.Open` (project, bucket, database). |
@@ -124,6 +125,6 @@ Each mutating action writes one public log entry with kind, subject, reason, ope
 
 ## Authentication on gcp
 
-Every request must carry `Authorization: Bearer <Google ID token>`. admin-api verifies signature, expiry, and audience (`ADMIN_API_AUDIENCE`), and requires a present, verified `email` claim. The principal is `serviceAccount:<email>` for emails ending in `.gserviceaccount.com`, otherwise `user:<email>`. Anything else is 401. Cloud Run IAM checks the token in front; this check is defense in depth and gives the identity.
+Every request must carry `Authorization: Bearer <Google ID token>`. admin-api verifies signature and expiry with Google's keys, then requires the audience to be `ADMIN_API_AUDIENCE` or one of `ADMIN_API_CLIENT_AUDIENCES`, and requires a present, verified `email` claim. The principal is `serviceAccount:<email>` for emails ending in `.gserviceaccount.com`, otherwise `user:<email>`. Anything else is 401. Cloud Run IAM checks the token in front; this check is defense in depth and gives the identity.
 
 Generation: the gcp `Generator` is nil in M1 (the admin-api service account holds no model role), so `POST /admin/v1/generations` answers as unavailable.

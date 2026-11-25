@@ -18,7 +18,14 @@ go run ./cmd/pubctl --url http://127.0.0.1:8081 bills track us-119-hr-3062 --rea
 | Where `--url` points | Token |
 | --- | --- |
 | Loopback (`localhost`, `127.0.0.1`, `::1`) | None. `localauth` on the local target authenticates every request as the fixed local operator. |
-| Anywhere else | `PUBCTL_TOKEN` if set; otherwise `gcloud auth print-identity-token --audiences=<scheme>://<host>`. |
+| Anywhere else | `PUBCTL_TOKEN` if set; otherwise the gcloud ID token described below. |
+
+Without `PUBCTL_TOKEN`, pubctl reads the active login with `gcloud config get-value account`:
+
+- A **service account** (email ends in `.gserviceaccount.com`): `gcloud auth print-identity-token --audiences=<scheme>://<host>`. The token's audience is the service URL.
+- A **user login** (anything else): `gcloud auth print-identity-token` with no `--audiences`, because gcloud refuses `--audiences` for a user account ("Invalid account type for `--audiences`. Requires valid service account."). The token's audience is gcloud's own OAuth client id; the operator of `admin-api` lists it in `ADMIN_API_CLIENT_AUDIENCES`. Cloud Run IAM accepts it.
+
+The decision is automatic; there is no flag. To force a token, set `PUBCTL_TOKEN`.
 
 The token is sent as `Authorization: Bearer`. The caller must hold the invoker role on `admin-api` and be on the operator list. Any other caller is refused (see Refusals).
 
