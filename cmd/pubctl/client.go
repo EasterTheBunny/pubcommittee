@@ -46,6 +46,20 @@ type client struct {
 	base  *url.URL
 	hc    *http.Client
 	token func(ctx context.Context) (string, error)
+	run   commandRunner // runs gcloud; replaced in tests
+}
+
+// commandRunner runs a program and returns its standard output.
+type commandRunner func(ctx context.Context, name string, args ...string) ([]byte, error)
+
+// execRunner is the real commandRunner.
+func execRunner(ctx context.Context, name string, args ...string) ([]byte, error) {
+	//nolint:gosec // the program is always gcloud and the flags are fixed; only the audience is the operator's own --url
+	out, err := exec.CommandContext(ctx, name, args...).Output()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", name, err)
+	}
+	return out, nil
 }
 
 // newClient builds a client for the admin-api at base. The token comes from
@@ -59,7 +73,7 @@ func newClient(base string, getenv func(string) string, hc *http.Client) (*clien
 	if hc == nil {
 		hc = &http.Client{Timeout: requestLimit}
 	}
-	c := &client{base: u, hc: hc}
+	c := &client{base: u, hc: hc, run: execRunner}
 	switch {
 	case getenv(envToken) != "":
 		tok := getenv(envToken)
@@ -68,7 +82,7 @@ func newClient(base string, getenv func(string) string, hc *http.Client) (*clien
 		c.token = func(context.Context) (string, error) { return "", nil }
 	default:
 		audience := u.Scheme + "://" + u.Host
-		c.token = func(ctx context.Context) (string, error) { return gcloudToken(ctx, audience) }
+		c.token = func(ctx context.Context) (string, error) { return gcloudToken(ctx, c.run, audience) }
 	}
 	return c, nil
 }
@@ -81,11 +95,25 @@ func isLoopback(host string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-// gcloudToken asks the gcloud CLI for an identity token for the audience.
-func gcloudToken(ctx context.Context, audience string) (string, error) {
-	//nolint:gosec // fixed program and flags; the audience is the operator's own --url
-	cmd := exec.CommandContext(ctx, "gcloud", "auth", "print-identity-token", "--audiences="+audience)
-	out, err := cmd.Output()
+// serviceAccountSuffix ends the email of a Google service account.
+const serviceAccountSuffix = ".gserviceaccount.com"
+
+// gcloudToken asks the gcloud CLI for an identity token. The login type
+// decides the flags, from `gcloud config get-value account`: a service account
+// (email ends in .gserviceaccount.com) gets --audiences=<audience>; a user
+// login gets none, because gcloud refuses --audiences for a user account and
+// issues a token whose aud is gcloud's own OAuth client id, which admin-api
+// accepts through ADMIN_API_CLIENT_AUDIENCES.
+func gcloudToken(ctx context.Context, run commandRunner, audience string) (string, error) {
+	acct, err := run(ctx, "gcloud", "config", "get-value", "account")
+	if err != nil {
+		return "", fmt.Errorf("gcloud config get-value account: %w (or set %s)", err, envToken)
+	}
+	args := []string{"auth", "print-identity-token"}
+	if strings.HasSuffix(strings.TrimSpace(string(acct)), serviceAccountSuffix) {
+		args = append(args, "--audiences="+audience)
+	}
+	out, err := run(ctx, "gcloud", args...)
 	if err != nil {
 		return "", fmt.Errorf("gcloud auth print-identity-token: %w (or set %s)", err, envToken)
 	}

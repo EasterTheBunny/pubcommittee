@@ -13,12 +13,15 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
-const testAudience = "https://admin.example.invalid"
+const (
+	testAudience = "https://admin.example.invalid"
+	testClientID = "1234.apps.example.invalid"
+)
 
 var errFake = errors.New("fake invalid token")
 
 func fakeValidator(p *idtoken.Payload, err error) tokenValidator {
-	return func(context.Context, string, string) (*idtoken.Payload, error) { return p, err }
+	return func(context.Context, string) (*idtoken.Payload, error) { return p, err }
 }
 
 func payload(aud, email string, verified any) *idtoken.Payload {
@@ -38,12 +41,18 @@ func TestIDTokenAuth(t *testing.T) {
 		name   string
 		header string
 		pl     *idtoken.Payload
+		client []string
 		err    error
 		want   string
 		fail   bool
 	}{
 		{name: "user", header: "Bearer t", pl: payload(testAudience, "a@example.invalid", true), want: "user:a@example.invalid"},
 		{name: "service account", header: "Bearer t", pl: payload(testAudience, "x@p.iam.gserviceaccount.com", true), want: "serviceAccount:x@p.iam.gserviceaccount.com"},
+		{name: "client audience ok", header: "Bearer t", pl: payload(testClientID, "a@example.invalid", true), client: []string{"other", testClientID}, want: "user:a@example.invalid"},
+		{name: "url audience ok with client list", header: "Bearer t", pl: payload(testAudience, "a@example.invalid", true), client: []string{testClientID}, want: "user:a@example.invalid"},
+		{name: "unlisted audience", header: "Bearer t", pl: payload("999.apps.example.invalid", "a@example.invalid", true), client: []string{testClientID}, fail: true},
+		{name: "client audience with empty list", header: "Bearer t", pl: payload(testClientID, "a@example.invalid", true), client: []string{"", " "}, fail: true},
+		{name: "empty audience claim", header: "Bearer t", pl: payload("", "a@example.invalid", true), client: []string{""}, fail: true},
 		{name: "no header", pl: payload(testAudience, "a@example.invalid", true), fail: true},
 		{name: "not bearer", header: "Basic t", pl: payload(testAudience, "a@example.invalid", true), fail: true},
 		{name: "empty bearer", header: "Bearer  ", pl: payload(testAudience, "a@example.invalid", true), fail: true},
@@ -56,7 +65,7 @@ func TestIDTokenAuth(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			a := newIDTokenAuth(testAudience, fakeValidator(tc.pl, tc.err))
+			a := newIDTokenAuth(testAudience, tc.client, fakeValidator(tc.pl, tc.err))
 			r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/v1/jobs", http.NoBody)
 			if tc.header != "" {
 				r.Header.Set("Authorization", tc.header)
