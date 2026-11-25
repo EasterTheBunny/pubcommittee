@@ -29,6 +29,12 @@ func newFetcher(cfg config) (data.BillFetcher, error) {
 	return s, nil
 }
 
+// defaultSource is the example data on disk on the local targets.
+const defaultSource = sourceFixtures
+
+// checkSource accepts both sources on the local targets.
+func checkSource(config) error { return nil }
+
 // localTarget is true where the data directory is local: --publish-policy
 // only writes there. A cloud policy version is published by an operator.
 const localTarget = true
@@ -38,7 +44,7 @@ const localTarget = true
 // service (one request at a time, politeness rules of the adapter).
 func newLawSource(cfg config, fetcher data.BillFetcher) (data.LawSource, error) {
 	if cfg.Source == sourceGovinfo {
-		s, err := uscode.New(uscode.Config{UserAgent: "pubcommittee-dev/0 (civic bill reader)"})
+		s, err := uscode.New(uscode.Config{UserAgent: userAgent})
 		if err != nil {
 			return nil, fmt.Errorf("uscode: %w", err)
 		}

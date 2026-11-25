@@ -8,7 +8,8 @@
 | --- | --- | --- | --- |
 | `local` | `DATA_DIR` (filesystem) | `localauth` | Runs. For local work. |
 | `memory` | process memory | `localauth` | Runs. Nothing persists. |
-| `gcp`, `emulator` | none yet | Google ID token | Returns an error until M1-03b adds the cloud adapters and verifier. |
+| `gcp` | `cloudports` (GCS, Firestore) | Google ID token | Wired. Generator is nil (see below). |
+| `emulator` | none | none | Returns an error; use `gcp`. |
 
 Build and run locally (the `local` tag):
 
@@ -26,6 +27,17 @@ DATA_DIR=.local-data PORT=8081 go run -tags local ./cmd/admin-api
 | `INGEST_SOURCE` | `fixtures` | Bill source of pulls: `fixtures` or `govinfo`. |
 | `FIXTURES_DIR` | `fixtures` | Example data directory when `INGEST_SOURCE=fixtures`. |
 | `OPERATORS_FILE` | none | JSON operator list (below). Without it: one operator `op-local` ("Local Operator", principal `local-operator`) and deploy principal `local-deploy`. |
+
+On `gcp` the variables below are required; the operator list is never read from a file:
+
+| Variable (`gcp`) | Meaning |
+| --- | --- |
+| `ADMIN_API_AUDIENCE` | Expected ID token audience: the service URL, `https://<host>` with no path. `pubctl` sends a token for `scheme://host` of its `--url`, so the two match when `--url` is the service URL. |
+| `OPERATORS_JSON` | Operator list in the format below. Unset or invalid: refuses to start. |
+| `DEPLOY_PRINCIPAL` | Deploy account in IAM member form. Unset: refuses to start. If `OPERATORS_JSON` also holds `deploy_principal`, the two must agree. |
+| cloud port variables | As `cloudports.Open` (project, bucket, database). |
+
+Principals are environment values and are never logged.
 
 Run `admin-api -healthcheck` to call its own `/healthz` (used by the image health check).
 
@@ -109,3 +121,9 @@ Each mutating action writes one public log entry with kind, subject, reason, ope
 - A `track` with no stored selection policy answers 409; publish a policy first (`POST /admin/v1/selection-policy`).
 - `track` does not pull. Run `reingest` (or `job-ingest --bill`) to pull text, citations and comparisons; a failed pull leaves the bill tracked and the response carries `pull_error`.
 - `reparse` answers 503 for a new parser version; it stores nothing.
+
+## Authentication on gcp
+
+Every request must carry `Authorization: Bearer <Google ID token>`. admin-api verifies signature, expiry, and audience (`ADMIN_API_AUDIENCE`), and requires a present, verified `email` claim. The principal is `serviceAccount:<email>` for emails ending in `.gserviceaccount.com`, otherwise `user:<email>`. Anything else is 401. Cloud Run IAM checks the token in front; this check is defense in depth and gives the identity.
+
+Generation: the gcp `Generator` is nil in M1 (the admin-api service account holds no model role), so `POST /admin/v1/generations` answers as unavailable.

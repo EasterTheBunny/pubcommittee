@@ -23,6 +23,15 @@ DATA_DIR=.local-data go run -tags local ./cmd/job-ingest --source govinfo --bill
 | `--dry-run` | Report what would change; write nothing, fetch no text. |
 | `--verify` | Re-fetch stored originals and compare SHA-256; a mismatch is a failure and nothing is overwritten. |
 
+Cloud targets (`-tags gcp`, `-tags emulator`): storage is Cloud Storage and Firestore through `internal/cloudports`. Environment on `gcp`: `GCP_PROJECT`, `GCS_BUCKET` (both required) and `FIRESTORE_DATABASE` (optional, default database when empty); credentials come from the workload identity of the Cloud Run job, none are set here. Only `--source govinfo` exists there and it is the default, so a job run passes no `--source`; `--source fixtures` is refused. `--law` and the citation step use the live Law Revision Counsel source (same politeness rules; neutral User-Agent shared with the local build). The emulator target also uses the live sources and needs `STORAGE_EMULATOR_HOST` and `FIRESTORE_EMULATOR_HOST`. `--publish-policy` is refused on both (an operator action, local target only). Flags a Cloud Run job run passes, one per execution:
+
+```sh
+job-ingest --bill us-119-hr-4313 --track      # pull and track
+job-ingest --evaluate                         # apply the stored policy to the catalog
+job-ingest --law --titles all                 # store a new US Code release point
+job-ingest --analyze                          # citations and comparisons over stored versions
+```
+
 Environment: `DATA_DIR` (local target). Output: one JSON report per bill on stdout (`stored`, `present`, `would_store`, `failures`); logs on stderr. Exit non-zero when any pull failed.
 
 Stored, as in [architecture § Data recorded per ingest](../../architecture/README.md#data-recorded-per-ingest):

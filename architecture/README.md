@@ -412,7 +412,7 @@ Build: multi-stage Dockerfile. A Go builder stage with module and build caches c
 | --- | --- | --- |
 | Go version | Go 1.27, in `go.mod` (`go` and `toolchain` lines) and the builder image, pinned by digest | One version everywhere; bumped deliberately |
 | Go tools | `golangci-lint` and `oapi-codegen` pinned with the `tool` directive in `go.mod`, run with `go tool` | Versions live in the module; nothing to install by hand |
-| Lint | `golangci-lint` v2, strict: all linters enabled, each disabled linter justified in `.golangci.yml`, no issue limits, `//nolint` only with a named linter and reason | Findings fail CI |
+| Lint | `golangci-lint` v2, strict: all linters enabled, each disabled linter justified in `.golangci.yml`, no issue limits, `//nolint` only with a named linter and reason. `.golangci.yml` sets `run.build-tags: [memory]`, and `--build-tags` adds to it rather than replacing it, so linting `gcp`, `emulator`, or `local` needs a config copy with that tag in place of `memory` | Findings fail CI |
 | Development container | `docker/dev.Dockerfile`; builds, tests, and lint run inside it, with explicit CPU and memory limits, for agents and CI alike | Same toolchain everywhere; parallel work cannot starve the host |
 | Node | Node 24 (`node:24-bookworm-slim`, pinned by digest in `docker/dev.Dockerfile`) for `app/` | One runtime for UI builds, type generation, and Playwright |
 | TypeScript types | `openapi-typescript` as a dev dependency in `app/`, with the npm override `overrides.openapi-typescript.typescript=$typescript` because its peer range stops at TypeScript 5 | Pinned by the app's lockfile |
@@ -459,6 +459,7 @@ Open: whether a local pre-commit secret scanner is wanted beside CI scanning.
 - **Safe to overlap.** Two runs at once must not corrupt state: writes are keyed by window or version, and immutable paths are written once.
 - **Window from flags or environment,** defaulting to "now". `--dry-run` reports what would change without writing.
 - **No schedule inside the image.** The schedule belongs to the platform (Cloud Scheduler, cron, CronJob), so the same image runs on demand or on any cadence.
+- **Cloud targets (M1-05).** On `gcp` and `emulator`, `job-ingest` pulls only from the live sources: `--source govinfo` is the default and `fixtures` is refused. `--publish-policy` is local-only; a cloud policy version is published through `admin-api`. The first `--law` run of a new release needs `--titles <list>|all`.
 
 ### Build targets
 The `TARGET` build argument selects the build tag, and so the [wiring](#build-time-wiring) compiled into the image:
@@ -935,6 +936,7 @@ As built (M1-12, `internal/adminapi`, `cmd/admin-api`, `cmd/pubctl`):
 - Single-document changes use `ApplyLogged`; re-ingest writes its log entry first through `Moderation.Record`. Track also updates the stored bill document's reasons, which a pull reads before the catalog. Locally, track does not pull; `bills reingest` runs the shared pipeline `ingest.PullSteps`, the same one `job-ingest` uses. Policy publishing calls `selection.PublishAs` with the operator as actor.
 - A re-parse with the current parser re-parses, compares, and reports; a different parser version answers `503` and writes nothing until a storage path for a second parser version is chosen. Regenerate answers `501` until a `Generator` is wired (M1-09). With `phase: steward_signoff`, track answers `409` and changes nothing.
 - Local `admin-api` reads `OPERATORS_FILE` (placeholder operators) and accepts a local-only `X-Local-Principal` header in place of a verified identity.
+- On `gcp`, `admin-api` reads its configuration from the environment only, and refuses to start without it: `ADMIN_API_AUDIENCE` (exactly `https://<host>` of the URL `pubctl --url` names), `OPERATORS_JSON` (the operator list in the `OPERATORS_FILE` format), and `DEPLOY_PRINCIPAL`. It verifies the Google ID token on every request itself, behind Cloud Run IAM, and maps the token's verified email to `user:` or `serviceAccount:`. Its bill source is govinfo; it has no generator in M1 (its account holds no model role), so regenerate answers unavailable. `pubctl` sends `PUBCTL_TOKEN` or `gcloud auth print-identity-token --audiences=<scheme://host>`. The deploy account's token must carry its email (`id_token_include_email` on the GitHub auth step) for the roster call.
 
 ### Roster log
 The public log records every change to the operator roster, so administrator access is public without a public roster file.
