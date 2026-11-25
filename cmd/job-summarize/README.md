@@ -22,6 +22,11 @@ DATA_DIR=.local-data go run -tags local ./cmd/job-summarize --collect
 - `--generator claude` is a live model run (stage L3). It refuses to start unless
   `PUBCOMMITTEE_LIVE_MODEL_RUNS=1` is set and the operator's key is in `ANTHROPIC_API_KEY`. Do not
   use it without the operator's approval: it costs money.
+- On the `gcp` build (Cloud Run job), `--generator claude` uses Claude Models on Google Cloud with the
+  job's service account (no API key); the workspace is `ANTHROPIC_GOOGLE_CLOUD_WORKSPACE_ID`, the project
+  `GCP_PROJECT`. The `gcp` build has no `fakegen`: without `--generator claude` and the live-run switch,
+  every model call is refused, so only `--submit --dry-run` works. `--collect` of a live batch also needs
+  both.
 - `--dry-run` with `--submit` plans and prints counts and input sizes; it writes and submits nothing.
 - Outputs are stored write-once at `generated/{task}/{bill}/v/{version}/{key}.json`; ready summaries
   are served by read-api (`/summary`, `/changes`), ready explanations by `/explanations`. Every
