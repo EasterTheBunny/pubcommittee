@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"google.golang.org/api/idtoken"
 )
 
 const testNowUnix = 1_800_000_000
@@ -35,9 +37,22 @@ func fakeJWT(t *testing.T, claims map[string]any) string {
 func goodClaims() map[string]any {
 	return map[string]any{
 		"iss": "https://accounts.google.com", "aud": testAudience,
-		"email": "a@example.invalid", "email_verified": true,
+		"email": "a@example.invalid", "email_verified": true, "sub": "1",
 		"exp": time.Unix(testNowUnix, 0).Add(time.Hour).Unix(),
 	}
+}
+
+var errBadSignature = errors.New("bad signature")
+
+// signed marks a token as carrying a valid signature for fakeFull.
+func signed(tok string) string { return tok + "sig-ok" }
+
+// fakeFull stands in for googleValidator: it accepts only signed tokens.
+func fakeFull(ctx context.Context, tok string) (*idtoken.Payload, error) {
+	if !strings.HasSuffix(tok, ".sig-ok") {
+		return nil, errBadSignature
+	}
+	return unverifiedValidator(func() time.Time { return time.Unix(testNowUnix, 0) })(ctx, tok)
 }
 
 func with(c map[string]any, k string, v any) map[string]any {
@@ -55,7 +70,8 @@ type cloudRunCase struct {
 	serverless string
 	client     []string
 	want       string
-	reason     string // empty: success
+	reason     string    // empty: success
+	shapes     [2]string // no-bearer refusals: logged authorization and serverless shapes
 }
 
 func cloudRunCases(t *testing.T) []cloudRunCase {
@@ -79,8 +95,15 @@ func cloudRunCases(t *testing.T) []cloudRunCase {
 		{name: "no email", authz: "Bearer " + fakeJWT(t, with(goodClaims(), "email", nil)), reason: reasonNoEmail},
 		{name: "unverified", authz: "Bearer " + fakeJWT(t, with(goodClaims(), "email_verified", false)), reason: reasonUnverified},
 		{name: "verified missing", authz: "Bearer " + fakeJWT(t, with(goodClaims(), "email_verified", nil)), reason: reasonUnverified},
-		{name: "no header", reason: reasonNoBearer},
-		{name: "not bearer", authz: "Basic " + good, reason: reasonNoBearer},
+		{name: "lowercase scheme", authz: "bearer " + good, want: "user:a@example.invalid"},
+		{name: "signed authorization alone", authz: "Bearer " + signed(good), want: "user:a@example.invalid"},
+		{name: "signed authorization and serverless", authz: "Bearer " + signed(good), serverless: "Bearer " + good, want: "user:a@example.invalid"},
+		{name: "signed authorization, other subject in serverless", authz: "Bearer " + signed(good), serverless: "Bearer " + fakeJWT(t, with(goodClaims(), "sub", "2")), reason: reasonMismatch},
+		{name: "signed authorization, serverless not bearer", authz: "Bearer " + signed(good), serverless: "Basic x", reason: reasonMismatch},
+		{name: "serverless not bearer", serverless: "Basic x", authz: "Bearer " + good, reason: reasonNoBearer, shapes: [2]string{shapeBearer, shapeOther}},
+		{name: "no header", reason: reasonNoBearer, shapes: [2]string{shapeAbsent, shapeAbsent}},
+		{name: "not bearer", authz: "Basic " + good, reason: reasonNoBearer, shapes: [2]string{shapeOther, shapeAbsent}},
+		{name: "scheme only", authz: "Bearer", reason: reasonNoBearer, shapes: [2]string{shapeOther, shapeAbsent}},
 		{name: "empty bearer", authz: "Bearer  ", reason: reasonEmpty},
 		{name: "two segments", authz: "Bearer a.b", reason: reasonMalformed},
 		{name: "bad base64", authz: "Bearer a.!!!.c", reason: reasonMalformed},
@@ -96,7 +119,7 @@ func TestCloudRunAuth(t *testing.T) {
 			t.Parallel()
 			var buf bytes.Buffer
 			log := slog.New(slog.NewJSONHandler(&buf, nil))
-			a := newCloudRunAuth(testAudience, tc.client, func() time.Time { return time.Unix(testNowUnix, 0) }, log)
+			a := newCloudRunAuth(testAudience, tc.client, fakeFull, func() time.Time { return time.Unix(testNowUnix, 0) }, log)
 			r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/v1/jobs", http.NoBody)
 			if tc.authz != "" {
 				r.Header.Set("Authorization", tc.authz)
@@ -133,13 +156,27 @@ func checkRefusal(t *testing.T, tc cloudRunCase, logged string, err error) {
 	if e := json.Unmarshal([]byte(logged), &rec); e != nil {
 		t.Fatalf("log: %v: %s", e, logged)
 	}
-	if rec["level"] != "WARN" || rec["reason"] != tc.reason || len(rec) != 4 {
-		t.Fatalf("log record %v", rec)
-	}
+	checkRecord(t, tc, rec)
 	for _, secret := range []string{"example.invalid", "evil.invalid", "Bearer", tc.authz, "iam.gserviceaccount"} {
 		if secret != "" && (strings.Contains(logged, secret) || strings.Contains(err.Error(), secret)) {
 			t.Fatalf("leak of %q: %s / %v", secret, logged, err)
 		}
+	}
+}
+
+// checkRecord checks the log record's fields: a no-bearer refusal also carries
+// the shape class of each header.
+func checkRecord(t *testing.T, tc cloudRunCase, rec map[string]any) {
+	t.Helper()
+	fields := 4
+	if tc.reason == reasonNoBearer {
+		fields = 6
+		if rec["authorization"] != tc.shapes[0] || rec["serverless"] != tc.shapes[1] {
+			t.Fatalf("shapes %v, want %v", rec, tc.shapes)
+		}
+	}
+	if rec["level"] != "WARN" || rec["reason"] != tc.reason || len(rec) != fields {
+		t.Fatalf("log record %v", rec)
 	}
 }
 
