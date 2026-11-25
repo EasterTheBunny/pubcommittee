@@ -3,13 +3,18 @@
 package main
 
 import (
+	"errors"
+
 	"github.com/easterthebunny/pubcommittee/internal/adminapi"
 	"github.com/easterthebunny/pubcommittee/internal/telemetry"
 )
 
-// wire is a placeholder until M1-03b adds the cloud adapters and the Google
-// ID token verifier. It must never import a local-only adapter (depguard,
-// test/ci/deps.sh).
+// errNoCloud is returned by the emulator target, which has no Google ID token
+// verifier; the gcp target wires the real one.
+var errNoCloud = errors.New("the emulator target has no Google ID token verifier; use gcp")
+
+// wire is a placeholder on the emulator target. It must never import a
+// local-only adapter (depguard, test/ci/deps.sh).
 func wire(_ *telemetry.Telemetry, _ func(string) string) (adminapi.Deps, error) {
 	return adminapi.Deps{}, errNoCloud
 }

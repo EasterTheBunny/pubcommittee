@@ -24,6 +24,10 @@ import (
 
 const serviceName = "job-ingest"
 
+// userAgent is sent to the Law Revision Counsel on every target; neutral, no
+// environment or deployment names.
+const userAgent = "pubcommittee-ingest/0 (open civic project; existing-law pull)"
+
 // Source names of --source.
 const (
 	sourceFixtures = "fixtures"
@@ -90,7 +94,8 @@ func parseArgs(args []string, getenv func(string) string) (config, ingest.Option
 	var opts ingest.Options
 	cfg := config{}
 	fs.Var(&bills, "bill", "bill id, for example us-119-hr-4313 (repeatable, or comma separated)")
-	fs.StringVar(&cfg.Source, "source", envOr(getenv, "INGEST_SOURCE", sourceFixtures), "fixtures or govinfo")
+	fs.StringVar(&cfg.Source, "source", envOr(getenv, "INGEST_SOURCE", defaultSource),
+		"fixtures or govinfo (cloud targets: govinfo only, the default)")
 	fs.StringVar(&cfg.FixturesDir, "fixtures-dir", envOr(getenv, "FIXTURES_DIR", "fixtures"),
 		"directory of the example data")
 	fs.BoolVar(&opts.Track, "track", false, "track the bill: fetch, parse and store every text version")
@@ -110,6 +115,9 @@ func parseArgs(args []string, getenv func(string) string) (config, ingest.Option
 	}
 	if cfg.Source != sourceFixtures && cfg.Source != sourceGovinfo {
 		return cfg, opts, nil, errSource
+	}
+	if err := checkSource(cfg); err != nil {
+		return cfg, opts, nil, err
 	}
 	refs := make([]data.BillRef, 0, len(bills))
 	for _, id := range bills {
