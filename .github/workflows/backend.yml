@@ -1,6 +1,8 @@
 name: backend
 on:
   push:
+    # Branches only: a release tag points at a main commit that already passed CI.
+    branches: ["**"]
     paths-ignore: ["app/**", "demo/**", "design/**", "architecture/**"]
   pull_request:
 

@@ -12,6 +12,7 @@ import (
 	"github.com/easterthebunny/pubcommittee/internal/billxml"
 	"github.com/easterthebunny/pubcommittee/internal/citations"
 	"github.com/easterthebunny/pubcommittee/internal/data"
+	"github.com/easterthebunny/pubcommittee/internal/versiondiff"
 )
 
 // Details for derived documents whose data other tasks produce. They name
@@ -158,7 +159,7 @@ func (s *Server) GetVersionChangeSummary(
 	// The target of a change summary is the code of the previous version.
 	out, err := s.published(r.Context(), data.TaskVersionChanges, vs[res.n-1].Ref, vs[res.n-2].Ref.Version)
 	if errors.Is(err, data.ErrNotFound) {
-		notFound(w, detailNoChanges)
+		s.serveNoDifferences(w, r, res, vs)
 		return
 	}
 	if err != nil {
@@ -175,6 +176,50 @@ func (s *Server) GetVersionChangeSummary(
 	}
 	doc.Version, doc.AsOf, doc.Provenance, doc.ContentClass = meta(out.Meta)
 	sendJSON(w, r, cacheShort, doc)
+}
+
+// serveNoDifferences answers a version whose text equals the previous one
+// with a fixed change summary built from the stored comparison (no model
+// call). Any other version without a published summary is not found.
+func (s *Server) serveNoDifferences(w http.ResponseWriter, r *http.Request, res resolved, vs []data.VersionSummary) {
+	if s.ports.Comparisons == nil {
+		notFound(w, detailNoChanges)
+		return
+	}
+	c, err := s.ports.Comparisons.GetComparison(r.Context(), data.ComparisonRef{
+		Bill: res.ref, From: vs[res.n-2].Ref.Version, To: vs[res.n-1].Ref.Version,
+		Method: versiondiff.Method(billxml.ParserVersion),
+	})
+	if errors.Is(err, data.ErrNotFound) || (err == nil && hasChanges(c)) {
+		notFound(w, detailNoChanges)
+		return
+	}
+	if err != nil {
+		fail(w, r, fmt.Errorf("get comparison: %w", err))
+		return
+	}
+	doc := apiv1.VersionChangeSummary{
+		Bill:       res.id,
+		FromN:      res.n - 1,
+		ToN:        res.n,
+		Headline:   fmt.Sprintf("No text changes from version %d.", res.n-1),
+		Statements: []apiv1.Statement{},
+		Flags:      new([]apiv1.VersionChangeSummaryFlags{apiv1.VersionChangeSummaryFlagsNoDifferences}),
+	}
+	doc.Version, doc.AsOf, doc.Provenance, _ = meta(c.Meta)
+	// The headline is platform text, whatever the comparison's class.
+	doc.ContentClass = apiv1.TrustedContentClass(data.ContentPlatform)
+	sendJSON(w, r, cacheShort, doc)
+}
+
+// hasChanges reports whether a comparison holds any change.
+func hasChanges(c data.Comparison) bool {
+	for _, sc := range c.Sections {
+		if len(sc.Changes) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // published reads the current output of a task for a version and target. A

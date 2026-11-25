@@ -27,6 +27,11 @@ const policyV1 = "v1"
 func evaluateCatalog(ctx context.Context, d ingest.Deps, opts ingest.Options, out io.Writer) (int, error) {
 	p, err := d.Ports.PublicDocs.GetSelectionPolicy(ctx)
 	if errors.Is(err, data.ErrNotFound) || (err == nil && p.Mode == "") {
+		if opts.DryRun {
+			// Nothing to evaluate and nothing changes: a dry run reports that
+			// and succeeds, so it works as the deploy smoke test everywhere.
+			return 0, encode(out, noPolicyReport{DryRun: true, Notes: []string{errNoPolicy.Error()}})
+		}
 		return 0, errNoPolicy
 	}
 	if err != nil {
@@ -43,6 +48,12 @@ func evaluateCatalog(ctx context.Context, d ingest.Deps, opts ingest.Options, ou
 		return len(rep.Changed), errFailed
 	}
 	return len(rep.Changed), nil
+}
+
+// noPolicyReport is the report of an --evaluate dry run with no stored policy.
+type noPolicyReport struct {
+	DryRun bool     `json:"dry_run"`
+	Notes  []string `json:"notes"`
 }
 
 // policyStore joins the two ports selection.Publish needs.

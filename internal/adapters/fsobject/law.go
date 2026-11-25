@@ -136,3 +136,34 @@ func (s *Store) GetCitations(ctx context.Context, ref data.CitationRef) (data.Ci
 	}
 	return set, nil
 }
+
+// PutFreshness stores or replaces the freshness flags of a citation set.
+func (s *Store) PutFreshness(ctx context.Context, d data.FreshnessDoc) error {
+	if err := d.Ref.Validate(); err != nil {
+		return fmt.Errorf("put freshness: %w", err)
+	}
+	body, err := json.Marshal(d)
+	if err != nil {
+		return fmt.Errorf("put freshness %s: encode: %w: %w", d.Ref, data.ErrInvalid, err)
+	}
+	if _, err := s.PutReplaceable(ctx, d.Ref.FreshnessPath(), body); err != nil {
+		return fmt.Errorf("put freshness %s: %w", d.Ref, err)
+	}
+	return nil
+}
+
+// GetFreshness returns the current freshness flags of the set with this ref.
+func (s *Store) GetFreshness(ctx context.Context, ref data.CitationRef) (data.FreshnessDoc, error) {
+	if err := ref.Validate(); err != nil {
+		return data.FreshnessDoc{}, fmt.Errorf("get freshness: %w", err)
+	}
+	body, err := s.GetFile(ctx, ref.FreshnessPath())
+	if err != nil {
+		return data.FreshnessDoc{}, fmt.Errorf("get freshness %s: %w", ref, err)
+	}
+	var d data.FreshnessDoc
+	if err := json.Unmarshal(body, &d); err != nil {
+		return data.FreshnessDoc{}, fmt.Errorf("get freshness %s: decode: %w: %w", ref, data.ErrInvalid, err)
+	}
+	return d, nil
+}

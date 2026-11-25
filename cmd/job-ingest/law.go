@@ -59,7 +59,8 @@ func ingestLaw(
 	if stored && cfg.Titles == "" {
 		titles = nil
 	}
-	res, err := lawingest.Step(ctx, src, d.Ports.Law, d.Ports.LawStore, titles)
+	res, err := lawingest.Step(ctx, src, d.Ports.Law, d.Ports.LawStore, titles,
+		lawingest.WithLogger(d.Log), lawingest.WithSource(lawSourceName(cfg)))
 	if err != nil {
 		return 0, fmt.Errorf("law step: %w", err)
 	}
@@ -81,6 +82,14 @@ func newestRelease(ctx context.Context, src data.LawSource, r data.LawReader) (d
 		return data.ReleasePoint{}, false, fmt.Errorf("get release: %w", err)
 	}
 	return rps[0], true, nil
+}
+
+// lawSourceName names the law source in progress lines.
+func lawSourceName(cfg config) string {
+	if cfg.Source == sourceGovinfo {
+		return "uscode"
+	}
+	return sourceFixtures
 }
 
 // lawTitles reads --titles. Empty means: with the fixtures, the titles they

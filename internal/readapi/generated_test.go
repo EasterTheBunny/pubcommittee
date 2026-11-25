@@ -10,8 +10,10 @@ import (
 
 	apiv1 "github.com/easterthebunny/pubcommittee/api/v1"
 	"github.com/easterthebunny/pubcommittee/internal/adapters/memory"
+	"github.com/easterthebunny/pubcommittee/internal/billxml"
 	"github.com/easterthebunny/pubcommittee/internal/data"
 	"github.com/easterthebunny/pubcommittee/internal/readapi/seed"
+	"github.com/easterthebunny/pubcommittee/internal/versiondiff"
 )
 
 // trackedVersions returns the versions of the tracked seed bill, oldest first.
@@ -153,6 +155,61 @@ func TestVersionChangesFromStoredOutput(t *testing.T) {
 		t.Errorf("content_class %q provenance %q", doc.ContentClass, doc.Provenance)
 	}
 	checkProblem(t, first, do(t, http.MethodGet, first, nil))
+}
+
+// A version whose text equals the previous one gets the fixed no-differences
+// answer from its stored comparison; one with changes and no published
+// summary stays not found.
+func TestVersionChangesNoDifferences(t *testing.T) {
+	t.Parallel()
+	store, base := citationsStore(t)
+	vs := trackedVersions(t, store)
+	if len(vs) < 2 {
+		t.Skip("seed bill has fewer than two versions")
+	}
+	u := base + "/v1/bills/" + seed.TrackedBill + "/v/2/changes"
+	checkProblem(t, u, do(t, http.MethodGet, u, nil))
+
+	asOf := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+	putUnchangedComparison(t, store, vs[0].Ref, vs[1].Ref, asOf)
+	got := do(t, http.MethodGet, u, nil)
+	if got.status != http.StatusOK {
+		t.Fatalf("status %d: %s", got.status, got.body)
+	}
+	var doc apiv1.VersionChangeSummary
+	if err := json.Unmarshal(got.body, &doc); err != nil {
+		t.Fatal(err)
+	}
+	checkNoDifferences(t, doc, asOf)
+}
+
+// putUnchangedComparison stores a comparison of from and to with no changes.
+func putUnchangedComparison(t *testing.T, store *memory.Store, from, to data.VersionRef, asOf time.Time) {
+	t.Helper()
+	if err := store.PutComparison(context.Background(), data.Comparison{
+		Ref: data.ComparisonRef{
+			Bill: from.Bill, From: from.Version, To: to.Version, Method: versiondiff.Method(billxml.ParserVersion),
+		},
+		Sections: []data.SectionComparison{{Path: []string{"1"}, Status: "unchanged"}},
+		Meta:     data.Meta{Version: 1, AsOf: asOf, Provenance: data.ProvenanceSource, ContentClass: data.ContentOfficial},
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// checkNoDifferences asserts the fixed answer for version 2 against version 1.
+func checkNoDifferences(t *testing.T, doc apiv1.VersionChangeSummary, asOf time.Time) {
+	t.Helper()
+	if doc.FromN != 1 || doc.ToN != 2 || doc.Headline != "No text changes from version 1." || len(doc.Statements) != 0 {
+		t.Errorf("doc = %+v", doc)
+	}
+	want := []apiv1.VersionChangeSummaryFlags{apiv1.VersionChangeSummaryFlagsNoDifferences}
+	if doc.Flags == nil || !slices.Equal(*doc.Flags, want) {
+		t.Errorf("flags = %v, want %v", doc.Flags, want)
+	}
+	if doc.ContentClass != apiv1.TrustedContentClass(data.ContentPlatform) || !doc.AsOf.Equal(asOf) {
+		t.Errorf("content_class %q as_of %v", doc.ContentClass, doc.AsOf)
+	}
 }
 
 // A summary the grader marked contradicted is withheld: the route answers not found.

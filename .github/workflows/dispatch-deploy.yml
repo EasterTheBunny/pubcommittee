@@ -5,8 +5,10 @@ name: dispatch-deploy
 # here: the deploy itself runs and logs only in the private repository, which
 # verifies the commit against this repository's main before building anything.
 on:
+  # Every CI workflow that can run on a push to main. A commit that changes only
+  # app/ runs web and not backend, so each one's completion is a chance to dispatch.
   workflow_run:
-    workflows: [backend]
+    workflows: [backend, web, infra]
     types: [completed]
     branches: [main]
   push:
@@ -20,13 +22,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  dispatch:
-    # A main deploy only after a successful backend CI run on a push to main.
+  gate:
+    # A main deploy only after a successful CI run on a push to main. Then every CI
+    # workflow that ran for that push must have succeeded. Workflows skipped by their
+    # path filters do not count. While one is still running, this run stops quietly
+    # and that workflow's own completion starts a new check. A tag push needs no
+    # gate: promote accepts only a commit that dev ran, which passed this gate.
     if: >-
       github.event_name == 'push' ||
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.event == 'push' &&
        github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # list this commit's CI runs
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -eu
+          if [ "$EVENT" = push ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          runs=$(gh api "repos/$REPO/actions/runs?head_sha=$RUN_SHA&event=push&branch=main&per_page=100" \
+            --jq '[.workflow_runs[] | select(.name == "backend" or .name == "web" or .name == "infra")]
+                  | group_by(.name) | map(max_by(.run_attempt))
+                  | map("\(.name) \(.status) \(.conclusion // "none")") | .[]')
+          echo "$runs"
+          if echo "$runs" | grep -qv ' completed '; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "CI still running for $RUN_SHA: no dispatch from this run"
+            exit 0
+          fi
+          if echo "$runs" | grep -qv ' completed success$'; then
+            echo "CI failed for $RUN_SHA: no dispatch" >&2
+            exit 1
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+  dispatch:
+    needs: gate
+    if: needs.gate.outputs.ready == 'true'
     runs-on: ubuntu-latest
     # Secrets DEPLOY_APP_ID, DEPLOY_APP_KEY, DEPLOY_OWNER and DEPLOY_REPO: the App, and the
     # private repository's owner and name (secrets so they are masked in logs). The App is

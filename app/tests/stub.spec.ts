@@ -56,3 +56,23 @@ test('a generated summary carries the accuracy note with a link to the bill text
 	await expect(note.getByRole('link', { name: 'bill text' })).toHaveAttribute('href', '#bill-text');
 	await expect(page.locator('#bill-text')).toHaveCount(1);
 });
+
+test('a version with no text changes says so, without the accuracy note', async ({ page }) => {
+	await page.goto('/bills/us-119-hr-3/v/2');
+	const changes = page.locator('section', {
+		has: page.getByRole('heading', { name: 'What changed from the previous version' })
+	});
+	await expect(changes).toContainText('No text changes from version 1.');
+	await expect(changes).toContainText('From the version comparison');
+	await expect(changes.locator('[data-accuracy-note]')).toHaveCount(0);
+});
+
+test('a long bill page is sent compressed', async ({ request }) => {
+	const res = await request.get('/bills/us-119-hr-2', {
+		headers: { 'accept-encoding': 'br, gzip' }
+	});
+	expect(res.status()).toBe(200);
+	expect(res.headers()['content-encoding']).toBe('br');
+	expect(res.headers()['vary']).toContain('Accept-Encoding');
+	expect((await res.text()).length).toBeGreaterThan(1_000_000);
+});

@@ -30,7 +30,7 @@ func WithAnalysis(p Pipeline) (Pipeline, error) {
 // a bill stored before the steps existed catches up; sets and comparisons
 // are write-once, so repeating them is a no-op.
 func (r *Run) analysisWanted() bool {
-	return r.Decision.Tracked && !r.DryRun && r.Ports.CitationStore != nil
+	return r.Decision.Tracked && !r.DryRun && r.Ports.CitationStore != nil && r.Ports.Citations != nil
 }
 
 func citationsStep(ctx context.Context, r *Run) error {
@@ -52,12 +52,13 @@ func citationsStep(ctx context.Context, r *Run) error {
 		r.fail(r.Bill.String()+"/citations", err)
 		return nil
 	}
-	n, err := citations.Step(
-		ctx, r.Ports.BillText, r.Ports.Law, r.Ports.CitationStore, r.Bill, billxml.ParserVersion, later)
+	store := citationPorts{r.Ports.Citations, r.Ports.CitationStore}
+	n, err := citations.Step(ctx, r.Ports.BillText, r.Ports.Law, store, r.Bill, billxml.ParserVersion, later)
 	switch {
 	case errors.Is(err, data.ErrConflict):
-		// A set stored earlier for this release differs, for example because
-		// a later law now flags a provision. Stored sets are never rewritten.
+		// A set stored earlier for this release differs in more than its
+		// freshness flags (those live in a replaceable document). Stored sets
+		// are never rewritten.
 		r.Report.Notes = append(r.Report.Notes,
 			"citations: a stored set for this release differs and was kept: "+shortErr(err))
 	case err != nil:
@@ -158,4 +159,10 @@ func Analyze(ctx context.Context, d Deps, o Options, bill data.BillRef) (Report,
 		}
 	}
 	return r.Report, nil
+}
+
+// citationPorts joins the citation reader and writer of a port group.
+type citationPorts struct {
+	data.CitationReader
+	data.CitationWriter
 }

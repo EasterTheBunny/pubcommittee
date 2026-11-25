@@ -1,6 +1,8 @@
 name: web
 on:
   push:
+    # Branches only: a release tag points at a main commit that already passed CI.
+    branches: ["**"]
     paths: ["app/**", "demo/**", "api/**", "test/acceptance/M1-14/**", ".github/workflows/web.yml"]
   pull_request:
 

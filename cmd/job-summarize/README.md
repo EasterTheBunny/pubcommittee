@@ -27,7 +27,7 @@ DATA_DIR=.local-data go run -tags local ./cmd/job-summarize --collect
   `GCP_PROJECT`. The `gcp` build has no `fakegen`: without `--generator claude` and the live-run switch,
   every model call is refused, so only `--submit --dry-run` works. `--collect` of a live batch also needs
   both.
-- `--dry-run` with `--submit` plans and prints counts and input sizes; it writes and submits nothing.
+- `--dry-run` with `--submit` plans and prints counts and input sizes; it writes and submits nothing. With no `--bill` it plans nothing and reports `no --bill: wiring check only`: the job started and reached its stores (the deploy smoke test runs it this way).
 - Outputs are stored write-once at `generated/{task}/{bill}/v/{version}/{key}.json`; ready summaries
   are served by read-api (`/summary`, `/changes`), ready explanations by `/explanations`. Every
   output is `review_state: unreviewed`, provenance `auto`.

@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"errors"
+	"strings"
 	"testing"
+
+	"github.com/easterthebunny/pubcommittee/internal/generate"
 )
 
 func env(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
@@ -56,5 +60,24 @@ func TestRevalidateAndRetryFlags(t *testing.T) {
 		if _, _, err := parseArgs(args, env(nil)); err != nil {
 			t.Errorf("%s: %v", name, err)
 		}
+	}
+}
+
+// A dry run needs no bill: it plans nothing and checks the job starts (the
+// deploy smoke test). A real submit still needs one.
+func TestDryRunNeedsNoBill(t *testing.T) {
+	t.Parallel()
+	if _, refs, err := parseArgs([]string{"--submit", "--dry-run"}, env(nil)); err != nil || len(refs) != 0 {
+		t.Fatalf("parseArgs = %d refs, %v", len(refs), err)
+	}
+	var out bytes.Buffer
+	if n, err := submitAll(t.Context(), generate.Deps{}, nil, true, &out); err != nil || n != 0 {
+		t.Fatalf("submitAll = %d, %v", n, err)
+	}
+	if !strings.Contains(out.String(), `"dry_run":true`) || !strings.Contains(out.String(), noteNoBill) {
+		t.Errorf("report = %s", out.String())
+	}
+	if _, _, err := parseArgs([]string{"--submit"}, env(nil)); !errors.Is(err, errNoBill) {
+		t.Errorf("submit without bill: err = %v, want errNoBill", err)
 	}
 }

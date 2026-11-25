@@ -224,7 +224,7 @@ export interface paths {
         };
         /**
          * Summary of what changed from the previous version (M1-09)
-         * @description Not found for the first version of a bill.
+         * @description Not found for the first version of a bill. A version whose text equals the previous one gets a fixed answer built from the stored comparison, with no model call: flag `no-differences`, no statements, content class `platform`. Otherwise not found until a generated summary is published.
          */
         get: operations["getVersionChangeSummary"];
         put?: never;
@@ -683,7 +683,8 @@ export interface components {
             to_n: number;
             headline: string;
             statements: components["schemas"]["Statement"][];
-            flags?: ("auto" | "steward-checked" | "bill-only")[];
+            /** @description `no-differences`: the text equals the previous version's; the answer is built from the stored comparison, not generated. */
+            flags?: ("auto" | "steward-checked" | "bill-only" | "no-differences")[];
         };
         /** @enum {string} */
         CitationState: "resolved" | "ambiguous" | "unresolved" | "steward-confirmed";

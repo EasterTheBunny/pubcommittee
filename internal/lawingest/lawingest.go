@@ -10,6 +10,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"slices"
+	"time"
 
 	"github.com/easterthebunny/pubcommittee/internal/data"
 	"github.com/easterthebunny/pubcommittee/internal/uslm"
@@ -39,6 +42,41 @@ func AllTitles() []int {
 	return out
 }
 
+// Option configures Step.
+type Option func(*options)
+
+type options struct {
+	log    *slog.Logger
+	now    func() time.Time
+	source string
+}
+
+// Progress log values. A run's mode says which titles it stores: every title
+// (full) or the ones given (subset). A title's method says how it was stored:
+// fetched from the source. M1-07b adds the incremental mode and the copy method.
+const (
+	ModeFull    = "full"
+	ModeSubset  = "subset"
+	MethodFetch = "fetch"
+)
+
+// WithLogger logs one info line per stored title, so a long run shows its
+// progress. Without it, Step logs nothing.
+func WithLogger(l *slog.Logger) Option {
+	return func(o *options) { o.log = l }
+}
+
+// WithSource names the law source in progress lines, for example "uscode"
+// (the Law Revision Counsel) or "fixtures".
+func WithSource(name string) Option {
+	return func(o *options) { o.source = name }
+}
+
+// WithClock sets the clock for the elapsed times in progress lines (tests).
+func WithClock(now func() time.Time) Option {
+	return func(o *options) { o.now = now }
+}
+
 // Step stores the newest release point of src. With no titles, an already
 // stored release is left alone and nothing is fetched except the release
 // list; a release not yet stored needs titles (ErrInvalid otherwise). With
@@ -46,8 +84,9 @@ func AllTitles() []int {
 // which adds titles to it; sections already stored are confirmed
 // byte for byte.
 func Step(
-	ctx context.Context, src data.LawSource, r data.LawReader, w data.LawWriter, titles []int,
+	ctx context.Context, src data.LawSource, r data.LawReader, w data.LawWriter, titles []int, opts ...Option,
 ) (Result, error) {
+	o := newOptions(opts)
 	rp, rel, err := newestRelease(ctx, src)
 	if err != nil {
 		return Result{}, err
@@ -64,13 +103,11 @@ func Step(
 		}
 		return res, nil
 	}
-	for _, t := range titles {
-		n, err := storeTitle(ctx, src, w, rp, rel, t)
-		if err != nil {
-			return Result{}, err
-		}
-		res.Sections += n
+	n, err := o.storeTitles(ctx, src, w, rp, rel, titles)
+	if err != nil {
+		return Result{}, err
 	}
+	res.Sections = n
 	if err := w.PutRelease(ctx, rel); err != nil {
 		return Result{}, fmt.Errorf("law ingest: %w", err)
 	}
@@ -78,6 +115,56 @@ func Step(
 		return Result{}, fmt.Errorf("law ingest: %w", err)
 	}
 	return res, nil
+}
+
+func newOptions(opts []Option) options {
+	o := options{now: time.Now}
+	for _, opt := range opts {
+		opt(&o)
+	}
+	return o
+}
+
+// storeTitles stores each title in order and logs its progress.
+func (o options) storeTitles(
+	ctx context.Context, src data.LawSource, w data.LawWriter, rp data.ReleasePoint, rel data.Release, titles []int,
+) (int, error) {
+	start := o.now()
+	o.started(ctx, rel.ID, titles)
+	total := 0
+	for i, t := range titles {
+		n, err := storeTitle(ctx, src, w, rp, rel, t)
+		if err != nil {
+			return 0, err
+		}
+		total += n
+		o.progress(ctx, rel.ID, t, n, i+1, len(titles), start)
+	}
+	return total, nil
+}
+
+// progress logs one stored title: which, how many sections, and how far
+// the run is. Never logs section text.
+func (o options) progress(ctx context.Context, release string, title, sections, done, total int, start time.Time) {
+	if o.log == nil {
+		return
+	}
+	o.log.InfoContext(ctx, "law title stored",
+		"release", release, "title", title, "method", MethodFetch, "source", o.source, "sections", sections,
+		"done", done, "total", total, "elapsed_s", int(o.now().Sub(start).Seconds()))
+}
+
+// started logs the run's mode, source, and title count before the first title.
+func (o options) started(ctx context.Context, release string, titles []int) {
+	if o.log == nil {
+		return
+	}
+	mode := ModeSubset
+	if slices.Equal(titles, AllTitles()) {
+		mode = ModeFull
+	}
+	o.log.InfoContext(ctx, "law ingest started",
+		"release", release, "mode", mode, "source", o.source, "total", len(titles))
 }
 
 // storeTitle fetches one title, parses it, and stores its sections.
