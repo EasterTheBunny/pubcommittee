@@ -34,6 +34,7 @@ On `gcp` the variables below are required; the operator list is never read from 
 | --- | --- |
 | `ADMIN_API_AUDIENCE` | Required. Accepted ID token audience for service account callers (such as the deploy account): the service URL, `https://<host>` with no path. `pubctl` sends a service account token for `scheme://host` of its `--url`, so the two match when `--url` is the service URL. |
 | `ADMIN_API_CLIENT_AUDIENCES` | Optional, comma-separated OAuth client ids, also accepted as audience. A user's `gcloud auth print-identity-token` carries gcloud's OAuth client id as `aud`, never the service URL. Empty or unset: only `ADMIN_API_AUDIENCE` is accepted. Blank entries are ignored. |
+| `ADMIN_API_TOKEN_VERIFIED_BY` | Optional. Unset: admin-api verifies the ID token signature itself (full mode). `cloud-run`: trust Cloud Run's signature check (see Authentication on gcp). Any other value refuses to start. Set it to `cloud-run` on Cloud Run. |
 | `OPERATORS_JSON` | Operator list in the format below. Unset or invalid: refuses to start. |
 | `DEPLOY_PRINCIPAL` | Deploy account in IAM member form. Unset: refuses to start. If `OPERATORS_JSON` also holds `deploy_principal`, the two must agree. |
 | cloud port variables | As `cloudports.Open` (project, bucket, database). |
@@ -126,5 +127,11 @@ Each mutating action writes one public log entry with kind, subject, reason, ope
 ## Authentication on gcp
 
 Every request must carry `Authorization: Bearer <Google ID token>`. admin-api verifies signature and expiry with Google's keys, then requires the audience to be `ADMIN_API_AUDIENCE` or one of `ADMIN_API_CLIENT_AUDIENCES`, and requires a present, verified `email` claim. The principal is `serviceAccount:<email>` for emails ending in `.gserviceaccount.com`, otherwise `user:<email>`. Anything else is 401. Cloud Run IAM checks the token in front; this check is defense in depth and gives the identity.
+
+On Cloud Run, set `ADMIN_API_TOKEN_VERIFIED_BY=cloud-run`. Cloud Run verifies the ID token (the IAM invoker check) and then removes its signature before the request reaches the container, so full verification always fails there and every caller would get 401. In this mode admin-api reads the token from `X-Serverless-Authorization` if that header is present, otherwise from `Authorization` (never `Authorization` when `X-Serverless-Authorization` is present: Cloud Run checks the former in precedence and passes the latter on unchanged and unverified). It decodes the payload without checking the signature, and still requires: issuer `accounts.google.com` or `https://accounts.google.com`, `exp` in the future (one minute of skew), audience in the accepted set, and a present, verified `email`. A malformed token is refused. Principal mapping is unchanged.
+
+Trust boundary: this mode is safe only because the service allows no unauthenticated invokers, so every request that reaches the container passed Cloud Run's IAM check of exactly the header read. Never set it on a host without that check, or on a service that allows `allUsers`.
+
+Every refused authentication logs one warning line, `authentication refused`, with `reason` set to a class only: `no bearer`, `empty bearer`, `token rejected`, `malformed token`, `wrong issuer`, `expired`, `wrong audience`, `no email`, `unverified email`. It never logs a token, email, principal, or audience value.
 
 Generation: the gcp `Generator` is nil in M1 (the admin-api service account holds no model role), so `POST /admin/v1/generations` answers as unavailable.
