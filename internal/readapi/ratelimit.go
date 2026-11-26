@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"log/slog"
 	"math"
 	"net"
 	"net/http"
@@ -119,6 +120,9 @@ type limiter struct {
 	limits RateLimits
 	header string
 	now    func() time.Time
+	// debug logs each request's address shape (logShape) to log.
+	debug bool
+	log   *slog.Logger
 
 	mu      sync.Mutex
 	key     []byte
@@ -207,6 +211,9 @@ func (l *limiter) sweep(now time.Time) {
 // middleware answers 429 with Retry-After when a client is over its limit.
 func (l *limiter) middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if l.debug {
+			l.logShape(r)
+		}
 		if ok, wait := l.allow(r); !ok {
 			w.Header().Set("Retry-After", strconv.Itoa(wait))
 			w.Header().Set("Cache-Control", cacheControlNoStore)

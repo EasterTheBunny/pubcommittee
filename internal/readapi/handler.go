@@ -20,6 +20,10 @@ type Options struct {
 	// client address, for a deployment behind a trusted proxy. Empty uses the
 	// socket address. The address is only ever hashed in memory.
 	ClientIPHeader string
+	// ClientIPDebug logs, per request, which address headers arrived and how
+	// X-Forwarded-For is built, as short keyed tags, never values
+	// (RATE_LIMIT_DEBUG=1; a temporary check for choosing ClientIPHeader).
+	ClientIPDebug bool
 	// Logger receives one line per request; nil means slog.Default.
 	Logger *slog.Logger
 	// Now is the clock; nil means time.Now.
@@ -47,6 +51,7 @@ func Handler(s *Server, opts Options) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
+	lim.debug, lim.log = opts.ClientIPDebug, opts.Logger
 	mux := http.NewServeMux()
 	apiv1.HandlerWithOptions(s, apiv1.StdHTTPServerOptions{BaseRouter: mux, ErrorHandlerFunc: bindError})
 	mux.HandleFunc("GET /robots.txt", robots)
