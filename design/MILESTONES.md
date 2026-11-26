@@ -88,7 +88,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 **Out of scope.** Accounts, signals, briefs. Automatic feed ingestion (milestone not yet assigned).
 
 **Exit criteria**
-- Three real bills, one with multiple versions, display correctly with explanations.
+- Three real bills, one with multiple versions, display correctly, with a bill summary on every version and inline explanations on each bill's latest version ([M1-09c](tasks/m1/09c-latest-version-explanations.md)).
 - Measured citation resolution rate and explanation accuracy on a sample, with a target set for M3.
 - Answers recorded for the M1 open questions in [01](01-bill-ingestion-and-display.md) (line unit, non-prose content).
 - An automated client can fetch any line range by canonical address, without running page scripts, and the structured form matches the page.
@@ -171,6 +171,12 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 - Audit completed without exposing individual signals.
 - Stable operation through at least one markup and one floor vote on a high-interest bill.
 - Inference review against every public output combined ([11](11-ai-security.md)): a model-assisted red team working from pages, exports, feed, and briefs cannot infer an individual's signal or link one display name across bills.
+
+### Known issues
+
+Issues seen earlier and deferred to M4. Each is decided before the M4 exit or carried forward with a reason.
+
+- **Explanations are not carried to an unchanged version** (seen 2026-11-25, H.R. 4313 in `dev` and `staging`). Version 3 serves an explanation for lines 4–25; version 4 has no text changes but serves none for those lines, even after a fresh `job-summarize` run. Each explanation's generation key includes its version (`GenKey.Version`, `internal/generate/plan.go`), so every version is generated on its own, and a v4 output that fails a validator is never published. Cause on v4 not yet confirmed: check `generated_status` and compare `/v1/bills/us-119-hr-4313/v/3/explanations` with `/v/4/explanations`. A fix would copy a ready output to the next version when the stored comparison ([M1-08](tasks/m1/08-version-history-and-stale.md)) classifies every line of the section as unchanged and the section's citations and provision texts match, with provenance naming the version it was carried from. How that provenance is shown is an operator decision. H.R. 4313 version 4 is `rfs` (referred in Senate), with the same text as `eh`; [M1-05b](tasks/m1/05b-version-ordering-and-referral.md) collapses such referrals, which settles this case but not a non-referral version with unchanged text.
 
 ---
 
