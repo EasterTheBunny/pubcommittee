@@ -43,7 +43,7 @@ Stop and tell the user, in full sentences, if any of these hold:
 - **Uncommitted changes under `design/`, `architecture/`, `app/`, `cmd/`, `internal/`, `api/`, `infra/`, `test/`, `docker/`, or `.claude/`.** Worktrees start from a commit. Ask the user to commit; do not commit for them unless they say so.
 - **No integration branch.** Work integrates on `<milestone>-integration`, never `main`. Ask before creating it from `main`.
 - **Docker is not usable** (`docker info` fails) or Compose v2 is missing (`docker compose version`).
-- **`deploy/`, `contacts/`, `.env*`, `.local-data/` could enter a worktree, a prompt, an image, or a commit.** Never copy them. You, the top-level agent, may read `deploy/` and run read-only `tofu init -lockfile=readonly`, `tofu validate`, `tofu plan`, `tofu show`, `tofu fmt -check` there; never edit it, propose changes as a unified diff for the operator; never `tofu apply`, another state-changing `tofu` command, or `gcloud`: print those for the operator ([AGENTS.md](../../../AGENTS.md)). Never read `contacts/`, `.env*`, or `.local-data/`, and never pass `deploy/` content or plan output to a task-orchestrator.
+- **`deploy/`, `contacts/`, `.env*`, `.local-data/` could enter a worktree, a prompt, an image, or a commit.** Never copy them. You, the top-level agent, may read `deploy/` and run read-only `tofu init -lockfile=readonly`, `tofu validate`, `tofu plan`, `tofu show`, `tofu fmt -check` there; never edit it, propose changes as a unified diff for the operator; never `tofu apply`, another state-changing `tofu` command, or `gcloud`: print those for the operator. The one exception is the operator's `pubops` MCP tools: read tools freely, the others only with the operator's approval per call, and a live model run only after an approved estimate ([AGENTS.md](../../../AGENTS.md)). Never read `contacts/`, `.env*`, or `.local-data/`, and never pass `deploy/` content or plan output to a task-orchestrator.
 
 Then check out the integration branch, so every worktree starts from it. Pick a run id (`r<yyyymmdd-hhmm>`); every container in this run carries the label `pubcommittee.run=<run id>`.
 
@@ -186,5 +186,5 @@ Only that signed commit reaches `main`. Never merge into `main`, push, or open a
 
 - Depth is three. Launch only `task-orchestrator` agents.
 - Every container in a run has explicit CPU and memory limits and the run label.
-- Never run operator-only steps (environments.md § Operator and agent), paid live model runs, or anything against a cloud environment. A task that needs one reports `blocked`.
+- Never run operator-only steps (environments.md § Operator and agent), paid live model runs, or anything against a cloud environment. A task that needs one reports `blocked`. Only you, the top-level agent, may use `pubops` (AGENTS.md); never pass its tools or results to a task-orchestrator.
 - Open questions: a task answers the ones inside its own scope with evidence (implementation choices, or what its task file says to answer); product, policy, legal, and spending decisions go to the user ([run-task § Rules](../run-task/SKILL.md)). Never assume an answer to the second kind.

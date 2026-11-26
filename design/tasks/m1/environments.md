@@ -74,7 +74,7 @@ How the development environment grows as M1 tasks complete: what runs on a local
 | Approve `staging` and `prod` promotions | Yes | Starts them only when asked |
 | `tofu plan` against an environment | Approves access | Top-level agent only: reads `deploy/` and runs `tofu init`, `tofu validate`, `tofu plan`, `tofu show` there (read-only; `init` with `-lockfile=readonly`) |
 | `tofu apply`, any other state-changing `tofu` command, and any `prod` change | Yes | Never runs them; prints the exact command for the operator |
-| `gcloud` commands | Yes | Never runs them; prints the exact command for the operator |
+| `gcloud` commands | Yes | Never runs them; prints the exact command for the operator. Exception: the top-level agent may call the operator's `pubops` MCP tools (AGENTS.md): read tools freely, job runs and live model runs only with the operator's approval per call |
 | Private values: operator roster, project ids, environment values files | Yes, in the private deployment repository only | Never commits them to this repository; uses placeholders |
 | Sign and land work on `main` (`git merge --squash m1-integration`, `git commit -S`) | Yes, with their own key | Commits unsigned on `task/*` and `m1-integration` only |
 | `pubctl` actions (track, untrack, reparse, regenerate, publish policy) | Yes: the public log names the administrator who acted | Drafts the commands and reasons |
