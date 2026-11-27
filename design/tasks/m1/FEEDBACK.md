@@ -11,6 +11,7 @@ Context for every item: the local run uses the fake generator (`adapters/fakegen
 | 3 | Most bill links answer 404 | Done: a tracked bill with no stored text has a page |
 | 4 | Explanations sit in a side-bar, not pinned to the sections they describe; H.R. 3062's are hard to place; live data still explains the short title | Done: inline controls above the lines, with readable citations |
 | 5 | A command to switch to the live-model data | Done: `scripts/local.sh data live` / `data fake` |
+| 6 | Explanations of one H.R. 3062 section overlap: all start at line 3 and end between lines 33 and 45 | Open: [M1-10b](10b-explanation-line-pinning.md) |
 
 ## 1. "What changes" repeats the bill text; "Why it matters" is empty
 
@@ -67,3 +68,11 @@ Context for every item: the local run uses the fake generator (`adapters/fakegen
 ## 5. Switch to the live-model data
 
 **Done (2026-11-22).** `scripts/local.sh data live` switches to a copy of the M1-09 live-model outputs (no key or model call); `data fake` switches back, and `data` shows the set in use. The set not in use is kept in `.local-data.<name>/` (git-ignored).
+
+## 6. Explanations of one section overlap
+
+**Seen (2026-11-25, `dev` and `staging`).** On H.R. 3062, several explanations of the same version all start at line 3 and end between lines 33 and 45, so they cover nearly the same text.
+
+**Cause.** One explanation per (section, provision) is planned, which is intended. Each is pinned from the lowest to the highest anchor its `changes` statements cite (`Section.ExplanationSpan`, `internal/data/explain.go`); the model cites the lead-in line 3 in each, so each range runs from line 3 to its last cited line.
+
+**Decided (operator, 2026-11-25).** M1 follow-up task [M1-10b](10b-explanation-line-pinning.md): pin each explanation to the lines it cites, on the read side, with no regeneration.

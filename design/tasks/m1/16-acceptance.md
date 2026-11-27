@@ -16,7 +16,7 @@ Prove each M1 exit criterion with recorded evidence, set measured targets for M3
 **In**
 - The three exit bills are decided in [M1-04](04-bill-xml-parser.md) (H.R. 4313, H.R. 3062, H.R. 3427 of the 119th Congress) and live in `fixtures/`: real, at least one with multiple official versions, together covering amendatory text, insertions, repeals, and freestanding text. Locally they are tracked by policy or by a local `bills track`.
 - Evidence per exit criterion:
-  1. **Three real bills display correctly with explanations**: review of every section against the official text; explanation spot-check.
+  1. **Three real bills display correctly with explanations**: review of every section against the official text; explanation spot-check. Inline explanations are checked on each bill's latest version; older versions need a bill summary ([M1-09c](09c-latest-version-explanations.md)).
   2. **Measured citation resolution rate and explanation accuracy**: reports from M1-07 (citation resolution) and M1-09 (`test/accuracy/report.md`: statements supported and contradicted against their cited lines, validator and grader catch rates, grader-to-operator agreement, CRS coverage), each with a target set for M3.
   3. **Answers recorded for M1 open questions** in [01](../../01-bill-ingestion-and-display.md#open-questions): line unit and non-prose content (M1-04).
   4. **Automated client fetches any line range by canonical address without running scripts, and the structured form matches the page**: a scripted check that fetches page HTML and the `read-api` resource for every line range of the exit bills and compares anchors and text.
