@@ -48,7 +48,7 @@ These kinds are excluded from tracking by default. A bill-level signal could app
 ### Selection rules
 1. **Committee action, not referral.** Nearly every bill is referred to a committee on introduction, so referral alone does not count. A bill qualifies once the legislature records committee activity beyond referral (a hearing, markup, a report, or discharge), a floor action, or placement on a calendar.
 2. **Companions follow.** A bill identical to, or the other chamber's companion of, a tracked bill is tracked too ([04](04-bill-lineage-and-competing-bills.md)).
-3. **Topic focus (pilot).** During the pilot, a qualifying bill must also match a focus topic, judged from the legislature's own subject indexing and the bill's title, never from our reading of its politics. Pilot topics: **healthcare, deficit reduction, and affordability**.
+3. **Topic focus (pilot).** During the pilot, a qualifying bill must also match a focus topic, judged from the legislature's own subject indexing and the bill's title, never from our reading of its politics. Pilot topics: **healthcare, deficit reduction, and affordability**. The subject terms and title words of each topic are part of the published selection policy (version 1, M1); changing them is a new policy version, published and logged by an administrator.
 4. **Nominations.** Pilot offices and stewards may nominate a bill that the rules miss. Adding it needs sign-off by stewards from two parties ([05](05-roles-and-stewardship.md)) and is logged publicly.
 5. **Administrator selection.** An administrator may add an allowed bill directly, through privileged system access rather than the product. Before stewards from two parties are active, this needs no other sign-off; afterwards it needs two-party steward sign-off like a nomination ([05](05-roles-and-stewardship.md#platform-administration)). Each selection is logged publicly with the administrator's name and a reason, and the bill shows "selected by an administrator" among its reasons.
 6. **Once tracked, stays tracked** for the rest of its session. Changing the rules never removes a bill people are already reviewing.
@@ -131,6 +131,12 @@ People can ask for an eligible catalog bill to be brought into review. Requests 
 
 Where no machine-readable feed exists (later jurisdictions), a steward enters the text and the version is labelled *steward-entered*.
 
+### Lines and addressing
+Decided in M1 (M1-04):
+- **The line unit** is one line per source element that carries its own text. A level element's head line joins its number, heading, and first text; its children nest one level deeper. The source's own line numbering and sentence boundaries are not used.
+- **Non-prose content** (tables, formulas, graphics, tables of contents) is one line each, with its kind, flattened text, and the raw markup.
+- **Wrapped continuations:** a sentence split across list items is finished by the source's continuation text, which is its own line at the parent's depth and is flagged as a continuation, so a selection can extend over it and never splits the sentence. Punctuation after a quoted block belongs to the line before it.
+
 ### Kinds of bill change
 The parser and explainer must handle at least:
 - **Amendatory instructions** — "in section 12, strike 'thirty' and insert 'sixty'". Mechanical; eligible for an as-amended preview.
@@ -145,6 +151,9 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 | --- | --- | --- |
 | Bill against law | Bill section vs. the provisions it touches | Explanation: current provision text, what changes, why it matters; optional unofficial preview. Shown directly above the lines it explains, naming the provision it changes, as one control per part that has content; one part is open at a time and pushes the text down. Readable without scripts (M1 operator feedback) |
 | Citizen edit against bill | Suggested edit vs. bill lines | Literal side-by-side: deletions struck, insertions marked (rendered by [03](03-review-features-and-support.md)) |
+
+### Auto-generated text
+Summaries and change explanations written without a steward are labelled auto-generated and carry their tested accuracy: 75–85% against the whole bill text, measured in M1 from operator grading of a hard sample ([accuracy report](../test/accuracy/report.md)). The note links to the lines the text describes, so a reader can check it. A version whose text repeats the previous one says so instead of carrying a generated change summary.
 
 ### Existing law freshness
 - Each provision records the effective date of the consolidated source.
@@ -176,18 +185,10 @@ The two comparisons must be **visually distinct** so readers never confuse an ex
 
 ## Open questions
 
-- What is the smallest line unit: the source document's own line numbering, sentence, or clause? Must be stable and meaningful for suggested edits.
-  - **Decided (M1-04):** one line per source element that carries its own text. A level element's head line joins its enum, header, and first text with single spaces; its children nest one level deeper. Neither the source's own line numbering nor sentences are used.
-- How are explanations generated at scale (rules, templates, assisted drafting), and what accuracy bar must they meet before display without steward review?
-  - **Measured (M1-09):** tested accuracy of auto-generated summaries and explanations is 75–85% against the whole bill text, from operator grading of a hard sample: 20 of 30 statements were supported by the lines they cite (67%), and 3 to 6 more were correct but rested on lines of the bill they did not cite (77–87%) ([accuracy report](../test/accuracy/report.md)). Auto-generated text is shown with that range and a prompt to verify it against the bill text. The bar for display without steward review is still open.
+- What accuracy bar must auto-generated explanations meet before display without steward review? M1 measured 75–85% (see Auto-generated text).
 - How quickly must a new version appear after publication? The product doc marks speed as low priority at launch.
-- How are tables, formulas, and other non-prose bill content made addressable?
-  - **Decided (M1-04):** tables, formulas, graphics, and tables of contents are one line each, with their kind, flattened text, and raw markup. Confirmed on real bills for tables; no real bill in the 119-1 House archive has a `<formula>`, so formulas are tested on constructed XML only.
-- How are wrapped continuation lines (one sentence split across lines at the same depth) told apart from separate items, so a selection never splits a sentence?
-  - **Decided (M1-04):** a sentence split across list items is finished by the source's continuation text, which is its own line at the parent's depth, flagged `continuation`, so a selection can extend over it. Punctuation after a quoted block is appended to the line before it.
 - Should excluded measure kinds (privileged resolutions, simple resolutions) offer a bill-level signal only, or stay out of the product entirely?
 - The legislature's subject indexing often arrives days or weeks after introduction. Is title matching enough in the meantime, or do pilot bills wait for indexing?
-- Which subject terms define each focus topic, and who maintains that list?
 - When exactly does the administrator phase rule end: the first two-party steward pair, or a fixed pilot date?
 - What request threshold puts a bill in the steward queue, and should it scale with the number of reviewers?
 - How many bills can stewards and the pilot absorb, and how is a capacity decline explained so it does not read as a judgment on the bill?

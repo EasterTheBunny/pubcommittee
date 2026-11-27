@@ -27,10 +27,18 @@ const report = (name, key) => {
 	check(name, c.bad.length === 0 && c.ok > 0, `${c.bad.length} mismatches, first: ${c.bad[0]}`, `${c.ok} compared`);
 };
 
+// A 429 is waited out as api/MACHINE-API.md asks of every client: sleep for Retry-After
+// (at most a minute) and try again, a few times. A hosted gate reads enough bulk routes
+// to reach the published limits.
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const get = async (base, path, headers = {}) => {
-	const res = await fetch(base + path, { headers: { ...ua, ...headers }, redirect: 'manual' });
-	const body = await res.text();
-	return { status: res.status, headers: res.headers, body };
+	for (let attempt = 0; ; attempt++) {
+		const res = await fetch(base + path, { headers: { ...ua, ...headers }, redirect: 'manual' });
+		const body = await res.text();
+		if (res.status !== 429 || attempt >= 5) return { status: res.status, headers: res.headers, body };
+		const wait = Math.min(Number(res.headers.get('retry-after')) || 1, 60);
+		await sleep(wait * 1000);
+	}
 };
 const json = async (path) => {
 	const r = await get(api, path);
@@ -210,6 +218,7 @@ report('pages show citation text; unresolved citations have their own section', 
 // ---- 4. Auto-generated explanations are labelled ------------------------------------------------
 let summaries = 0;
 let changeSummaries = 0;
+let noDifferences = 0;
 for (const b of bills) {
 	for (let n = 1; n <= 4; n++) {
 		const s = await get(api, `/v1/bills/${b}/v/${n}/summary`);
@@ -235,20 +244,29 @@ for (const b of bills) {
 			tally('short-title', !(sec?.lines ?? []).every((l) => / may be cited as /i.test(l.text)), `${b} v${n} ${e.section_id} short-title section has an explanation`);
 		}
 		const ch = await get(api, `/v1/bills/${b}/v/${n}/changes`);
+		// A version whose text repeats the previous one gets the fixed no-differences answer:
+		// built from the comparison, not generated, so it has no auto label and no accuracy note.
+		let generatedChanges = 0;
 		if (ch.status === 200) {
-			changeSummaries++;
 			const cj = JSON.parse(ch.body);
-			tally('label', cj.provenance === 'auto' && cj.flags?.includes('auto'), `${b} v${n} change summary unlabelled`);
-			tally('label-page', /Auto-generated/.test(pg.body), `${b} v${n} changes page lacks the label`);
+			if (cj.flags?.includes('no-differences')) {
+				noDifferences++;
+				tally('label', cj.content_class === 'platform' && cj.statements.length === 0 && !cj.flags.includes('auto'), `${b} v${n} no-differences answer mislabelled`);
+			} else {
+				changeSummaries++;
+				generatedChanges = 1;
+				tally('label', cj.provenance === 'auto' && cj.flags?.includes('auto'), `${b} v${n} change summary unlabelled`);
+				tally('label-page', /Auto-generated/.test(pg.body), `${b} v${n} changes page lacks the label`);
+			}
 		}
 		// Every generated part of the page (summary, change summary, each explanation) carries the accuracy note.
 		const count = (re) => (pg.body.match(re) ?? []).length;
-		const generated = count(/data-explanation/g) + (s.status === 200 ? 1 : 0) + (ch.status === 200 ? 1 : 0);
+		const generated = count(/data-explanation/g) + (s.status === 200 ? 1 : 0) + generatedChanges;
 		tally('accuracy-note', count(/data-accuracy-note/g) === generated && /tested accuracy 75–85%/.test(pg.body) === generated > 0, `${b} v${n} page has ${count(/data-accuracy-note/g)} accuracy notes for ${generated} generated parts`);
 	}
 }
 check('a summary is served for every version of the three exit bills', summaries === 12, `${summaries}/12`);
-check('at least one change summary is served', changeSummaries >= 2, `${changeSummaries}`, `${changeSummaries} served`);
+check('at least one change summary is served', changeSummaries >= 2, `${changeSummaries}`, `${changeSummaries} served, ${noDifferences} no-differences answers`);
 report('every served explanation, summary and change summary is labelled auto, content class platform', 'label');
 report('every page with an explanation shows the Auto-generated label', 'label-page');
 report('every summary, change summary and explanation on a page carries the accuracy note', 'accuracy-note');
@@ -278,7 +296,11 @@ report('every summary statement points at lines that exist in the page', 'summar
 	const noPage = all.filter((e) => !e.official_links?.some((l) => l.kind === 'bill-page')).length;
 	console.log(`NOTE ${noPage} of ${all.length} catalog entries have no bill-page link (their BILLSTATUS has no legislationUrl)`);
 	check('not-a-candidate entries carry a reason', all.filter((e) => e.markup_status === 'not-a-candidate').every((e) => e.exclusion_reason), 'missing exclusion reason');
-	check('tracked entries list reasons and the policy version', all.filter((e) => e.tracked).every((e) => e.reasons?.length && e.policy_version >= 1), 'tracked entry without reasons');
+	// A bill an operator tracked by hand before any policy existed keeps its reason
+	// (manual-pull) and policy version 0: evaluation never rewrites a tracked bill's reasons.
+	const byHandBeforePolicy = (e) => e.reasons?.length === 1 && e.reasons[0] === 'manual-pull' && !(e.policy_version >= 1);
+	const noReason = all.filter((e) => e.tracked && !(e.reasons?.length && (e.policy_version >= 1 || byHandBeforePolicy(e))));
+	check('tracked entries list reasons and the policy version', noReason.length === 0, `${noReason.map((e) => `${e.id ?? e.bill}: reasons ${JSON.stringify(e.reasons)}, policy ${e.policy_version}`).join('; ')}`, `${all.filter(byHandBeforePolicy).length} tracked by hand before the policy`);
 	const pg = await get(app, '/catalog');
 	const text = visible(pg.body);
 	check('catalog page renders without scripts with official links and statuses', pg.status === 200 && /Eligible for review/.test(text) && /Congress\.gov/.test(text), 'catalog page lacks statuses or links');
@@ -304,8 +326,10 @@ report('every summary statement points at lines that exist in the page', 'summar
 	check('a tracked bill shows why it is in review', /In review because/.test(tr.body), 'reason missing');
 }
 {
-	const pol = await json('/v1/selection-policy');
-	check('selection policy is served with a version and rules', pol.policy_version >= 1 && pol.rules?.length > 0, 'no policy');
+	// A missing policy is a failed check, not a stop: the checks after it still run.
+	const pr = await get(api, '/v1/selection-policy');
+	const pol = pr.status === 200 ? JSON.parse(pr.body) : {};
+	check('selection policy is served with a version and rules', pol.policy_version >= 1 && pol.rules?.length > 0, `no policy (${pr.status})`);
 	const pg = await get(app, '/policy');
 	const t = visible(pg.body);
 	check('policy page states the rules and the version, without scripts', /Policy version \d+/.test(t) && /committee action/i.test(t), 'text missing');

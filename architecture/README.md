@@ -873,7 +873,7 @@ Cache classes (M1-10): immutable `public, max-age=31536000, immutable`; short `p
 - **Pagination.** Opaque cursors from the adapter, passed as `?cursor=`. No offsets.
 - **Caching.** Strong `ETag` on every `GET`, with `If-None-Match` returning `304`. `Cache-Control` per resource as in the table; `immutable` for official text. Credentialed responses are `private, no-store`.
 - **Errors.** RFC 9457 problem details (`application/problem+json`) with a stable `type` per typed data error, in the path form `/problems/<name>` (`not-found`, `conflict`, `invalid`, `rate-limited`, `unavailable`). No stack traces or vendor errors.
-- **Rate limits.** `429` with `Retry-After`; published limits per route class, as ranges. `read-api` limits in memory per instance, keyed on `HMAC(k_rate, ip ‖ day)` that never leaves memory; it holds no storage port for limits.
+- **Rate limits.** `429` with `Retry-After`; published limits per route class, as ranges. `read-api` limits in memory per instance, keyed on `HMAC(k_rate, ip ‖ day)` that never leaves memory; it holds no storage port for limits. The address is the last `X-Forwarded-For` entry (`CLIENT_IP_HEADER`), which Google's front end appends, so a caller cannot forge it. Measured in `dev` (2026-11-26): a direct caller gets its own limit; behind Firebase Hosting the last entry is the Hosting node, and one client spread over many connections is not limited per reader (3,000 of 3,000 requests passed). There, load is bounded by `max_instances` and the CDN, not the limiter. Per-reader edge limits are M2 (Open decisions).
 - **Public log.** Entries store the day only, like every public timestamp, plus a write sequence assigned by the store; the log lists later days first and, within a day, the last written first, across all entry kinds.
 - **Feed.** `GET /v1/feed?since=<RFC 3339>` in the collection convention; entries carry type, day-granular time, and canonical address. `since` is day-granular (entries whose day is on or after the day of `since`), so clients de-duplicate by entry id. An entry's `updated` is the UTC day it joined the feed, not the source event's time, so a late run never stamps entries before a client's last `since`. Titles come from templates and never repeat source or administrator text.
 - **Licences.** Official text and US Code provisions are marked public domain; platform-generated content is CC0 1.0.
@@ -1096,6 +1096,7 @@ Rules:
 | M5 verification | Tier records, district fields, complementary suppression across breakdowns |
 
 ## Open decisions
+- **Per-reader rate limits at the edge (M2):** Firebase Hosting gives read-api no unforgeable reader address (the reader is the second-last `X-Forwarded-For` entry, which a direct caller can forge), so edge readers are not limited one by one. Planned (operator, 2026-11-26): an external HTTPS load balancer with Cloud Armor rate limiting in front of read-api, which limits by client address before traffic reaches Cloud Run; it adds a monthly cost and replaces or sits beside the Hosting edge.
 - **Domain name** for `<domain>` and `api.<domain>`; required before M2 sign-in.
 - **Serverless Postgres vendor**, and whether its resume latency is acceptable for sign-in.
 - **Sessions in the document store or SQL:** the document store avoids a SQL resume on every signed-in request.

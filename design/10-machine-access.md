@@ -58,7 +58,7 @@ Published per official version, and refreshed on a schedule for live data:
 | Briefs | Each delivered brief and office responses |
 | Moderation log | As published in [09](09-integrity-moderation-and-privacy.md) |
 
-Bulk exports exist so that no one needs to scrape. Each export states its as-of time and licence.
+Bulk exports exist so that no one needs to scrape. Each export states its as-of time and licence: official text is public domain, and platform-generated content is CC0 1.0 (decided in M1).
 
 Export rules ([11](11-ai-security.md)):
 - Keyed by item, not by author. Authors appear under a per-bill pseudonym, so exports cannot be joined across bills by name.
@@ -182,6 +182,6 @@ Consistent with [09](09-integrity-moderation-and-privacy.md), suspected automati
 - **Platform-generated content:** change explanations may be produced automatically ([01](01-bill-ingestion-and-display.md)). This doc treats that as system output with a provenance flag, not as a user write. Confirm that boundary.
 - **Display names on pages:** exports use per-bill pseudonyms; should public pages do the same, at the cost of following one person's argument across bills?
 - **Presence checks:** required for every signal, once per session, or only after behavioral detection raises a flag?
-- **Licence** for exports and structured data. Decided for M1: official text is public domain and platform-generated content is CC0 1.0. Open: the licence for user content (comments, suggestions), before M2 exports review items.
+- **Licence** for user content (comments, suggestions) in exports and structured data, before M2 exports review items. Official text and platform-generated content are decided (Read access).
 - What volume or pattern counts as "suspected automation" worth disclosing, and how is the detection method described without teaching evasion?
 - Where is the line between a comment that argues with AI-generated summaries (legitimate) and one written to manipulate automated readers (spam)? The moderation charter needs a test that does not depend on position.

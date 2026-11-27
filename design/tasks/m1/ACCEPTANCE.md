@@ -14,4 +14,6 @@ Operator feedback from using the local run: [FEEDBACK.md](FEEDBACK.md).
 
 ## Hosted gate
 
-Not started (cloud phase).
+Passed on 2026-11-27 in `staging`. The same check script as the local gate passed all 64 checks against the hosted API edge and web UI, with selection policy v1 published; the operator checked by hand the explanations of the three exit bills against the official text, installation on a phone and a desktop with offline reading, and held the reader session. Evidence: [test/acceptance/M1-16/EVIDENCE.md § Hosted gate](../../../test/acceptance/M1-16/EVIDENCE.md#hosted-gate-staging-2026-11-26).
+
+Open questions answered in M1 moved to decided behavior in [01](../../01-bill-ingestion-and-display.md) (Lines and addressing, Auto-generated text, Selection rules) and [10](../../10-machine-access.md) (Read access). Follow-up tasks recorded after the gate: M1-05b, M1-07b, M1-09b, M1-09c, M1-10b.

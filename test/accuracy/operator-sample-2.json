@@ -207,7 +207,7 @@
     "cited": [
       "s4-l26: Section 1898(b)(1) of the Social Security Act (42 U.S.C. 1395iii(b)(1)) is amended by striking “$1,403,000,000” and inserting “$1,400,500,000”."
     ],
-    "operator_label": "supported",
+    "operator_label": "unsupported",
     "stratum": "validator-rejected",
     "validator_status": "unverified",
     "validator_findings": [
@@ -223,7 +223,7 @@
       "prev:s2-l2: Section 1866G(a)(1) of the Social Security Act (42 U.S.C. 1395cc–7(a)(1)) is amended by striking “2025” and inserting “2030”.",
       "s2-l2: Section 1866G(a)(1) of the Social Security Act (42 U.S.C. 1395cc–7(a)(1)) is amended by striking “January 30, 2026” and inserting “September 30, 2030”."
     ],
-    "operator_label": "unsupported",
+    "operator_label": "supported",
     "operator_comment": "Medicare Improvement Fund does not show up in cited text",
     "stratum": "validator-rejected",
     "validator_status": "unverified",

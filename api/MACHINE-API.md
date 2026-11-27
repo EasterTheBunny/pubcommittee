@@ -133,7 +133,7 @@ Every `GET` has a strong `ETag`; send it back as `If-None-Match` and an unchange
 | Short | Catalog, bills, explanations, summaries, citations, policy, log, discovery, and anything resolved from `latest` or no version | `public, max-age=60, stale-while-revalidate=300` |
 | Batch | Feed and exports | `public, max-age=900` |
 
-Anonymous reads are limited per client address and route class. The ranges below are what a client can expect; the exact values are set by the operator and may change inside them. Exceeding a limit slows you down: the answer is `429` with `Retry-After` (seconds), and the allowance refills continuously. No address is banned, and no address is stored: the limiter keeps only a keyed hash that lives in memory and changes every day. Limits are counted per server instance, so they are approximate.
+Anonymous reads are limited per client address and route class. The ranges below are what a client can expect; the exact values are set by the operator and may change inside them. Exceeding a limit slows you down: the answer is `429` with `Retry-After` (seconds), and the allowance refills continuously. No address is banned, and no address is stored: the limiter keeps only a keyed hash that lives in memory and changes every day. Limits are counted per server instance, so they are approximate. Through the CDN in front of the API, the address the limiter sees is the CDN node's, so a client there shares its allowance with others served by the same node.
 
 | Route class | Routes | Requests per minute per client |
 | --- | --- | --- |
