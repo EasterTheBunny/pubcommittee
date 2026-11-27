@@ -32,6 +32,9 @@ Flags for each job: [`cmd/job-ingest`](../cmd/job-ingest/README.md), [`cmd/job-s
 
 Run these steps in order. Each one starts after the previous execution succeeded.
 
+0. **Selection policy.** Publish the current version with `pubctl`, from the repository root as yourself:
+   `go run ./cmd/pubctl --url <admin-api URL> selection-policy publish --builtin v1 --reason "<public reason>"`.
+   It is public and permanent: an immutable policy version, served at `/v1/selection-policy` and on `/policy`, and an entry in the environment's public log under your operator name. Without a policy, `pubctl bills track` answers 409, catalog entries carry no reasons, and there is no tracked-set breakdown export and no `policy` entry in the feed. The `<admin-api URL>` is the stack output `admin_api_url`.
 1. **Existing law.** In the first environment, download the newest US Code release:
    `job-ingest --law --titles all`, with `--task-timeout=4h`.
    In any other environment, copy that release instead of downloading it again:
@@ -40,13 +43,24 @@ Run these steps in order. Each one starts after the previous execution succeeded
 3. **Catch up.** `job-ingest --analyze` runs citations and comparisons over every tracked bill. It is needed only when bills were pulled before step 1 finished.
 4. **Plan.** `job-summarize --submit --dry-run --bill <id>` prints the planned tasks and input characters, and writes nothing. Estimate the cost from them.
 5. **Generate**, after approval: `job-summarize --submit --generator claude --bill <id>`, with the live-run switch. Then `job-summarize --collect --generator claude` until no batch is waiting.
-6. **Publish.** `job-exports` writes the exports and the change feed.
+6. **Publish.** `job-ingest --evaluate` sets every catalog entry's markup status, reasons, and policy version, and writes the tracked-set breakdown; then `job-exports` writes the exports and the change feed.
 
 `job-summarize --submit` refuses a bill with no citation set, so steps 1 and 3 come first.
 
 ### Each new bill
 
 Once a release is stored, a new bill needs steps 2, 4, 5 and 6 only. `--track` stores every text version and runs citations and comparisons. No separate `--analyze` is needed.
+
+### New selection policy version
+
+A policy version is immutable; a change is the next version, and every environment logs it publicly.
+
+1. **Write it.** Add `internal/selection/policies/v<N>.json` with `version` set to the latest plus one, and land it through a pull request. The version must be the latest plus one: publishing the latest again changes nothing, and a gap is refused.
+2. **Publish it**, in each environment: `go run ./cmd/pubctl --url <admin-api URL> selection-policy publish --file internal/selection/policies/v<N>.json --reason "<what changed and why>"` (or `--builtin v<N>` from a build that holds the file). Public and permanent, with a log entry under your name.
+3. **Preview**: `job-ingest --evaluate --dry-run` lists the entries that would change and the bills that would become newly tracked, and writes nothing.
+4. **Evaluate**: `job-ingest --evaluate`. Tracked bills are never untracked by a new policy.
+5. **New bills.** For each bill in the report's `newly_tracked`: `job-ingest --bill <id> --track`, then the summarize steps of "Each new bill" (dry run, estimate, approval, submit, collect).
+6. **Publish**: `job-exports` writes the tracked-set breakdown and the feed's `policy` entry.
 
 ### New US Code release
 

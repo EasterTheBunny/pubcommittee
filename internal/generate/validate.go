@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/easterthebunny/pubcommittee/internal/data"
 )
@@ -21,7 +22,8 @@ type ModelOutput struct {
 var ErrOutputInvalid = errors.New("model output does not match the schema")
 
 // ParseOutput decodes the model text strictly: unknown fields, trailing
-// data, an empty statement list, empty text or a bad role are errors.
+// data, an empty statement list, empty or placeholder text, or a bad role
+// are errors.
 func ParseOutput(text string) (ModelOutput, error) {
 	var out ModelOutput
 	dec := json.NewDecoder(strings.NewReader(text))
@@ -39,11 +41,33 @@ func ParseOutput(text string) (ModelOutput, error) {
 		if strings.TrimSpace(s.Text) == "" {
 			return ModelOutput{}, fmt.Errorf("%w: statement %d is empty", ErrOutputInvalid, i)
 		}
+		if isPlaceholder(s.Text) {
+			return ModelOutput{}, fmt.Errorf("%w: statement %d is a placeholder", ErrOutputInvalid, i)
+		}
 		if s.Role != "" && !slices.Contains([]string{data.RoleNow, data.RoleChanges, data.RoleWhy}, s.Role) {
 			return ModelOutput{}, fmt.Errorf("%w: statement %d role %q", ErrOutputInvalid, i, s.Role)
 		}
 	}
 	return out, nil
+}
+
+// placeholderWords are texts a model writes instead of an answer. Seen in
+// staging (2026-11-26): a lone "placeholder" statement, no anchor, no role
+// changes, on change explanations that other versions answered in full.
+func placeholderWords() []string {
+	return []string{"placeholder", "tbd", "todo", "n/a", "na", "none", "null", "lorem ipsum", "...", "…"}
+}
+
+// isPlaceholder reports whether a statement holds no content: a placeholder
+// word, or no letter at all. Such an output is invalid (no answer), not
+// unverified (an answer that failed a check).
+func isPlaceholder(text string) bool {
+	t := strings.ToLower(strings.TrimSpace(text))
+	t = strings.TrimRight(t, ".!?:;")
+	if slices.Contains(placeholderWords(), t) {
+		return true
+	}
+	return !strings.ContainsFunc(t, unicode.IsLetter)
 }
 
 // expandAnchor lists the single-line keys of an anchor ("s4-l12-14" ->
