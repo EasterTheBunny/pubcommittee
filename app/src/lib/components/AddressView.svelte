@@ -17,11 +17,11 @@
 		data.range
 			? linesHref({
 					billId: data.bill.id,
-					version: data.n,
+					version: data.code,
 					sectionId: data.sectionId,
 					...data.range
 				})
-			: sectionHref(data.bill.id, data.n, data.sectionId)
+			: sectionHref(data.bill.id, data.code, data.sectionId)
 	);
 </script>
 
@@ -35,13 +35,13 @@
 <div class="mx-auto max-w-[900px] px-4 py-6 sm:px-6">
 	<nav aria-label="Breadcrumb" class="text-sm text-muted">
 		<a href={billHref(data.bill.id)}>{data.bill.title}</a> /
-		<a href={billHref(data.bill.id, data.n)}>{data.versionLabel}</a>
+		<a href={billHref(data.bill.id, data.code)}>{data.versionLabel}</a>
 	</nav>
 	<h1 class="mt-2 font-display text-xl font-bold sm:text-2xl">
 		{heading}{#if data.range}, {rangeLabel(data.range.from, data.range.to)}{/if}
 	</h1>
 	<p class="mt-1 text-sm text-muted">
-		{data.versionLabel}, version {data.n} of {data.address.latest_version}.
+		{data.versionLabel}; the latest version is {data.address.latest_version}.
 		{#if data.address.resolved_from_latest}
 			This address follows the latest version; to cite it, use the
 			<a href={pinned}>pinned address</a>.
@@ -61,7 +61,7 @@
 		<h2 class="mb-1 eyebrow">Bill text</h2>
 		<LineList
 			billId={data.bill.id}
-			version={data.n}
+			version={data.code}
 			sectionId={data.sectionId}
 			{lines}
 			highlight={data.range}
@@ -69,9 +69,9 @@
 		/>
 		{#if data.range}
 			<p class="mt-3 text-sm">
-				<a href={sectionHref(data.bill.id, data.n, data.sectionId)}>The whole section</a>
+				<a href={sectionHref(data.bill.id, data.code, data.sectionId)}>The whole section</a>
 			</p>
 		{/if}
 	</section>
 </div>
-<LineSelectionBar billId={data.bill.id} version={data.n} />
+<LineSelectionBar billId={data.bill.id} version={data.code} />

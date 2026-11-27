@@ -6,6 +6,8 @@ After M1 exit. Depends on [M1-07b](07b-incremental-law-release.md) for the chang
 
 When a new US Code release changes a provision that an explanation was written against, `job-summarize` plans a new explanation for that section, and only for it. The new explanation is served as current; the old one stays readable from old links, marked with the release it was written against and the explanation that replaced it.
 
+Re-planning covers the latest version of a bill only ([M1-09c](09c-latest-version-explanations.md)): a superseded version keeps its stored explanations and gets no new one.
+
 ## Read first
 
 - [M1-09](09-ai-generation.md) (tasks, keys, write-once outputs, revalidation)

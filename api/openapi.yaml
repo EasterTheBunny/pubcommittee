@@ -25,8 +25,11 @@ info:
 
     **Addresses.** Paths mirror page addresses. A bill id is
     `<jurisdiction>-<session>-<type>-<number>` (for example `us-119-hr-4127`).
-    `{n}` is the 1-based position of an official version in the bill's version
-    list. `{section}` is a section id (`s4`, or a dotted path such as `s4.b`).
+    `{version}` is the lower-case code of an official version (`ih`, `rh`, `eh`,
+    ...) or the word `latest`. A code never changes when another version
+    arrives. A referral version whose text equals the version before it is not
+    listed; its code redirects to that version.
+    `{section}` is a section id (`s4`, or a dotted path such as `s4.b`).
     `{range}` is `12` (one line) or `12-13` (inclusive), the same form the page
     fragment uses (`#s4-l12-13`). A block is a line plus the lines nested under
     it and is addressed as the range `n-block_to` given on its first line.
@@ -156,12 +159,12 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
-  /v1/bills/{bill}/v/{n}:
+  /v1/bills/{bill}/v/{version}:
     get:
       tags: [versions]
       operationId: getVersion
       summary: One official version with sections, lines, and anchors
-      description: Immutable. `n` may be an integer or the word `latest`; a `latest` request answers with `address.resolved_from_latest` true and a `Content-Location` of the pinned address.
+      description: Immutable. `version` is a version code such as `eh`, or the word `latest`; the code of a referral that collapsed into another version answers `308` to that version; a `latest` request answers with `address.resolved_from_latest` true and a `Content-Location` of the pinned address.
       x-cache: immutable
       parameters:
         - $ref: '#/components/parameters/BillPath'
@@ -177,10 +180,14 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Version' }
         '304': { $ref: '#/components/responses/NotModified' }
+        '308':
+          description: The code is a referral that collapsed into another version; `Location` is the same route on that version. Every route that takes a version code answers this way.
+          headers:
+            Location: { description: 'Same route with the code of the version it collapsed into.', schema: { type: string } }
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
-  /v1/bills/{bill}/v/{n}/s/{section}:
+  /v1/bills/{bill}/v/{version}/s/{section}:
     get:
       tags: [versions]
       operationId: getSection
@@ -202,7 +209,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
-  /v1/bills/{bill}/v/{n}/s/{section}/l/{range}:
+  /v1/bills/{bill}/v/{version}/s/{section}/l/{range}:
     get:
       tags: [versions]
       operationId: getLineRange
@@ -276,7 +283,7 @@ paths:
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
 
-  /v1/bills/{bill}/v/{n}/explanations:
+  /v1/bills/{bill}/v/{version}/explanations:
     get:
       tags: [derived]
       operationId: listExplanations
@@ -299,7 +306,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
-  /v1/bills/{bill}/v/{n}/summary:
+  /v1/bills/{bill}/v/{version}/summary:
     get:
       tags: [derived]
       operationId: getBillSummary
@@ -320,7 +327,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
-  /v1/bills/{bill}/v/{n}/changes:
+  /v1/bills/{bill}/v/{version}/changes:
     get:
       tags: [derived]
       operationId: getVersionChangeSummary
@@ -344,7 +351,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
-  /v1/bills/{bill}/v/{n}/citations:
+  /v1/bills/{bill}/v/{version}/citations:
     get:
       tags: [derived]
       operationId: listCitations
@@ -369,7 +376,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
-  /v1/bills/{bill}/v/{n}/citations/unresolved:
+  /v1/bills/{bill}/v/{version}/citations/unresolved:
     get:
       tags: [derived]
       operationId: listUnresolvedCitations
@@ -391,7 +398,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { $ref: '#/components/responses/Unavailable' }
-  /v1/bills/{bill}/v/{n}/compare/{m}:
+  /v1/bills/{bill}/v/{version}/compare/{other}:
     get:
       tags: [derived]
       operationId: compareVersions
@@ -401,10 +408,11 @@ paths:
       parameters:
         - $ref: '#/components/parameters/BillPath'
         - $ref: '#/components/parameters/VersionPath'
-        - name: m
+        - name: other
           in: path
           required: true
-          schema: { type: integer, minimum: 1 }
+          description: Version code of the compared version.
+          schema: { $ref: '#/components/schemas/VersionCode' }
       responses:
         '200':
           description: The comparison.
@@ -596,14 +604,14 @@ components:
       description: Bill id, for example `us-119-hr-4127`.
       schema: { $ref: '#/components/schemas/BillId' }
     VersionPath:
-      name: n
+      name: version
       in: path
       required: true
-      description: 1-based position in the bill's version list, or `latest`.
+      description: Lower-case version code, for example `eh`, or `latest`.
       schema:
         type: string
-        pattern: '^([1-9][0-9]*|latest)$'
-        maxLength: 16
+        pattern: '^([a-z]{2,4}|latest)$'
+        maxLength: 8
     SectionPath:
       name: section
       in: path
@@ -741,8 +749,8 @@ components:
         canonical: { type: string, description: Pinned API path of this answer. }
         page: { type: string, description: Page path for people; same address shape. }
         fragment: { type: string, description: 'In-page fragment form, for example `#s4-l12-13`.' }
-        pinned_version: { type: integer, minimum: 1 }
-        latest_version: { type: integer, minimum: 1 }
+        pinned_version: { $ref: '#/components/schemas/VersionCode' }
+        latest_version: { $ref: '#/components/schemas/VersionCode' }
         is_latest: { type: boolean }
         resolved_from_latest:
           type: boolean
@@ -757,12 +765,27 @@ components:
         session: { type: string, examples: ['119'] }
         type: { type: string, examples: [hr] }
         number: { type: integer, minimum: 1 }
+    VersionCode:
+      type: string
+      pattern: '^[a-z]{2,4}$'
+      description: Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+    Referral:
+      type: object
+      description: A referral version whose text is the same as the version it is attached to. It is not a version of its own; its original stays stored.
+      required: [code, type, published_at]
+      properties:
+        code: { $ref: '#/components/schemas/VersionCode' }
+        type: { type: string, description: 'For example `Referred in Senate`.' }
+        published_at: { type: string, format: date-time, description: Date of the referral. }
     VersionSummary:
       type: object
-      required: [n, code, type, published_at, address]
+      required: [code, type, published_at, address]
       properties:
-        n: { type: integer, minimum: 1 }
-        code: { type: string, description: 'Official version code, for example `ih`.' }
+        code: { $ref: '#/components/schemas/VersionCode' }
+        referrals:
+          type: array
+          description: Referral versions with this version's text, collapsed into it.
+          items: { $ref: '#/components/schemas/Referral' }
         type: { type: string, description: 'introduced, reported, engrossed, enrolled, ...' }
         published_at: { type: string, format: date-time }
         address: { type: string, description: API path of the version. }
@@ -778,7 +801,7 @@ components:
             title: { type: string }
             status: { type: string }
             chamber: { $ref: '#/components/schemas/Chamber' }
-            latest_version: { type: integer, minimum: 1 }
+            latest_version: { $ref: '#/components/schemas/VersionCode' }
             address: { type: string }
     Bill:
       allOf:
@@ -882,11 +905,14 @@ components:
         - $ref: '#/components/schemas/Meta'
         - type: object
           x-carries-text: true
-          required: [bill, n, code, type, published_at, source_sha256, licence, address, sections]
+          required: [bill, code, type, published_at, source_sha256, licence, address, sections]
           properties:
             bill: { $ref: '#/components/schemas/BillId' }
-            n: { type: integer, minimum: 1 }
-            code: { type: string }
+            code: { $ref: '#/components/schemas/VersionCode' }
+            referrals:
+              type: array
+              description: Referral versions with this version's text, collapsed into it.
+              items: { $ref: '#/components/schemas/Referral' }
             type: { type: string }
             published_at: { type: string, format: date-time }
             source_sha256: { type: string, pattern: '^[0-9a-f]{64}$' }
@@ -901,10 +927,10 @@ components:
         - $ref: '#/components/schemas/Meta'
         - type: object
           x-carries-text: true
-          required: [bill, n, licence, address, section]
+          required: [bill, code, licence, address, section]
           properties:
             bill: { $ref: '#/components/schemas/BillId' }
-            n: { type: integer, minimum: 1 }
+            code: { $ref: '#/components/schemas/VersionCode' }
             licence: { type: string, enum: [public-domain] }
             address: { $ref: '#/components/schemas/AddressInfo' }
             section: { $ref: '#/components/schemas/Section' }
@@ -915,10 +941,10 @@ components:
         - type: object
           x-carries-text: true
           description: The anchor `(bill, version, section path, from, to)` and its lines.
-          required: [bill, n, section_id, section_path, from, to, licence, address, lines]
+          required: [bill, code, section_id, section_path, from, to, licence, address, lines]
           properties:
             bill: { $ref: '#/components/schemas/BillId' }
-            n: { type: integer, minimum: 1 }
+            code: { $ref: '#/components/schemas/VersionCode' }
             section_id: { $ref: '#/components/schemas/SectionId' }
             section_path:
               type: array
@@ -945,10 +971,10 @@ components:
         - $ref: '#/components/schemas/Meta'
         - type: object
           x-carries-text: true
-          required: [bill, n, section_id, what_changes, why_it_matters, flags]
+          required: [bill, code, section_id, what_changes, why_it_matters, flags]
           properties:
             bill: { $ref: '#/components/schemas/BillId' }
-            n: { type: integer, minimum: 1 }
+            code: { $ref: '#/components/schemas/VersionCode' }
             section_id: { $ref: '#/components/schemas/SectionId' }
             provision_id: { type: string, description: 'Existing-law provision this explains, for example `usc/42/1395`.' }
             provision_citation: { type: string, description: 'The provision as people cite it, for example `42 U.S.C. 1395`.' }
@@ -991,10 +1017,10 @@ components:
         - $ref: '#/components/schemas/Meta'
         - type: object
           x-carries-text: true
-          required: [bill, n, headline, statements, address]
+          required: [bill, code, headline, statements, address]
           properties:
             bill: { $ref: '#/components/schemas/BillId' }
-            n: { type: integer, minimum: 1 }
+            code: { $ref: '#/components/schemas/VersionCode' }
             headline: { type: string }
             statements:
               type: array
@@ -1008,11 +1034,11 @@ components:
         - $ref: '#/components/schemas/Meta'
         - type: object
           x-carries-text: true
-          required: [bill, from_n, to_n, headline, statements]
+          required: [bill, from_code, to_code, headline, statements]
           properties:
             bill: { $ref: '#/components/schemas/BillId' }
-            from_n: { type: integer, minimum: 1 }
-            to_n: { type: integer, minimum: 2 }
+            from_code: { $ref: '#/components/schemas/VersionCode' }
+            to_code: { $ref: '#/components/schemas/VersionCode' }
             headline: { type: string }
             statements:
               type: array
@@ -1031,10 +1057,10 @@ components:
         - $ref: '#/components/schemas/Meta'
         - type: object
           x-carries-text: true
-          required: [bill, n, section_id, text, state, provision_ids]
+          required: [bill, code, section_id, text, state, provision_ids]
           properties:
             bill: { $ref: '#/components/schemas/BillId' }
-            n: { type: integer, minimum: 1 }
+            code: { $ref: '#/components/schemas/VersionCode' }
             section_id: { $ref: '#/components/schemas/SectionId' }
             line: { type: integer, minimum: 1, description: 'Line holding the citation, when known.' }
             text: { type: string, description: The citation as written in the bill (official). }
@@ -1064,14 +1090,14 @@ components:
         the addressed lines in the latest version. `moved` is the same words elsewhere or renumbered, `changed`
         words altered with a counterpart, `removed` no counterpart (no `new_*` fields). A section is classified
         over all its lines. Derived from official text; carries none.
-      required: [to_n, class]
+      required: [to_code, class]
       properties:
-        to_n: { type: integer, minimum: 1, description: The latest version the lines were compared with. }
+        to_code: { $ref: '#/components/schemas/VersionCode', description: The latest version the lines were compared with. }
         class: { type: string, enum: [unchanged, moved, changed, removed] }
         new_section_id: { $ref: '#/components/schemas/SectionId' }
         new_from: { type: integer, minimum: 1 }
         new_to: { type: integer, minimum: 1 }
-        new_address: { type: string, description: 'Path of the best new location, for example `/v1/bills/<bill>/v/3/s/2/l/4-5`.' }
+        new_address: { type: string, description: 'Path of the best new location, for example `/v1/bills/<bill>/v/eh/s/2/l/4-5`.' }
         new_anchor: { type: string, description: 'Fragment of the new location, for example `#s2-l4-5`.' }
     ComparisonChange:
       type: object
@@ -1097,11 +1123,11 @@ components:
         - $ref: '#/components/schemas/Meta'
         - type: object
           x-carries-text: true
-          required: [bill, from_n, to_n, sections]
+          required: [bill, from_code, to_code, sections]
           properties:
             bill: { $ref: '#/components/schemas/BillId' }
-            from_n: { type: integer, minimum: 1 }
-            to_n: { type: integer, minimum: 1 }
+            from_code: { $ref: '#/components/schemas/VersionCode' }
+            to_code: { $ref: '#/components/schemas/VersionCode' }
             sections:
               type: array
               items: { $ref: '#/components/schemas/ComparisonSection' }

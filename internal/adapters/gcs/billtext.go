@@ -21,8 +21,9 @@ func versionDir(ref data.VersionRef) string {
 	return path.Join("bills", ref.Bill.String(), "v", ref.Version)
 }
 
-// ListVersions returns the stored versions of bill ordered by PublishedAt,
-// then version code. A version whose source.xml is written but whose
+// ListVersions returns the listed versions of bill in stage rank order (see
+// data.PublicVersions): codes outside the rank table and collapsed referrals
+// are left out. A version whose source.xml is written but whose
 // text.json is not yet is not published and is left out.
 func (s *Store) ListVersions(ctx context.Context, bill data.BillRef) ([]data.VersionSummary, error) {
 	if err := bill.Validate(); err != nil {
@@ -52,12 +53,11 @@ func (s *Store) ListVersions(ctx context.Context, bill data.BillRef) ([]data.Ver
 		}
 		out = append(out, data.VersionSummary{Ref: v.Ref, Type: v.Type, PublishedAt: v.PublishedAt})
 	}
-	slices.SortFunc(out, func(a, b data.VersionSummary) int {
-		if c := a.PublishedAt.Compare(b.PublishedAt); c != 0 {
-			return c
-		}
-		return strings.Compare(a.Ref.Version, b.Ref.Version)
-	})
+	set, err := data.LoadReferrals(ctx, s.GetFile, bill)
+	if err != nil {
+		return nil, fmt.Errorf("list versions: %w", err)
+	}
+	out, _ = data.PublicVersions(out, set)
 	return out, nil
 }
 

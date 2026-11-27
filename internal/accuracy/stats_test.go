@@ -93,8 +93,9 @@ func TestCollectReadyBillSummary(t *testing.T) {
 	if s == nil {
 		t.Fatalf("no %s stats in %d tasks", data.TaskBillSummary, len(stats))
 	}
-	if s.Outputs != 4 || s.ByStatus[data.GenReady] != s.Outputs {
-		t.Errorf("Outputs = %d, ByStatus = %v; want 4 all ready", s.Outputs, s.ByStatus)
+	// Bill 4313 has three listed versions (ih, rh, eh); rfs equals eh and is collapsed, so three summaries.
+	if s.Outputs != 3 || s.ByStatus[data.GenReady] != s.Outputs {
+		t.Errorf("Outputs = %d, ByStatus = %v; want 3 all ready", s.Outputs, s.ByStatus)
 	}
 	if len(s.Failures) != 0 {
 		t.Errorf("Failures = %v, want none", s.Failures)

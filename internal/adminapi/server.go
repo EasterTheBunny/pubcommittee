@@ -84,7 +84,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST "+PathPrefix+"/bills/{bill}/untrack", op(s.untrack))
 	mux.Handle("PATCH "+PathPrefix+"/bills/{bill}/catalog", op(s.patchCatalog))
 	mux.Handle("POST "+PathPrefix+"/bills/{bill}/reingest", op(s.reingest))
-	mux.Handle("POST "+PathPrefix+"/bills/{bill}/v/{n}/reparse", op(s.reparse))
+	mux.Handle("POST "+PathPrefix+"/bills/{bill}/v/{version}/reparse", op(s.reparse))
 	mux.Handle("POST "+GenerationRoute, op(s.generate))
 	mux.Handle("POST "+PolicyRoute, op(s.publishPolicy))
 	mux.Handle("GET "+FailuresRoute, op(s.failures))

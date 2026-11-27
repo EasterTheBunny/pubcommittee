@@ -55,7 +55,7 @@ type CatalogPatch struct {
 // ReparseResult answers a reparse.
 type ReparseResult struct {
 	Bill          string `json:"bill"`
-	Version       int    `json:"version"`
+	Version       string `json:"version"` // version code, for example "eh"
 	StoredParser  string `json:"stored_parser_version"`
 	CurrentParser string `json:"current_parser_version"`
 	Changed       bool   `json:"changed"`
@@ -83,7 +83,7 @@ type GenerationRequest struct {
 
 	Task    string `json:"task"`
 	Bill    string `json:"bill"`
-	Version int    `json:"version"`
+	Version string `json:"version"` // version code, for example "eh"
 }
 
 // SourceState is the ingest state of one source, for ingest failures and jobs.

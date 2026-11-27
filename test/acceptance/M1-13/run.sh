@@ -61,9 +61,9 @@ has "line text in server HTML" "$tmp/body" 'The Secretary shall publish clinic h
 has "content class on text" "$tmp/body" 'data-content-class="official"'
 has "rel=alternate to read-api" "$tmp/body" 'rel="alternate" type="application/json"'
 has "no summary: designed empty state" "$tmp/body" 'No summary is published'
-expect "line range address" 200 "$(get "$app/bills/$bill/v/2/s/s4/l/1-3")"
+expect "line range address" 200 "$(get "$app/bills/$bill/v/rh/s/s4/l/1-3")"
 expect "version-less section address" 200 "$(get "$app/bills/$bill/s/s4")"
-expect "old-version address" 200 "$(get "$app/bills/$bill/v/1/s/s4/l/2")"
+expect "old-version address" 200 "$(get "$app/bills/$bill/v/ih/s/s4/l/2")"
 has "old-version notice" "$tmp/body" 'data-notice='
 expect "policy" 200 "$(get "$app/policy")"
 expect "log" 200 "$(get "$app/log")"
@@ -75,9 +75,9 @@ if grep -q 'data-line=' "$tmp/body"; then fail "untracked bill shows lines"; fi
 ok "untracked bill shows no text"
 
 # Content negotiation: 303 to the read-api resource.
-code=$(curl -s -o /dev/null -D "$tmp/head" -w '%{http_code}' -H 'Accept: application/json' "$app/bills/$bill/v/2/s/s4/l/1-3")
+code=$(curl -s -o /dev/null -D "$tmp/head" -w '%{http_code}' -H 'Accept: application/json' "$app/bills/$bill/v/rh/s/s4/l/1-3")
 [ "$code" = 303 ] || fail "Accept: application/json answered $code, want 303"
-grep -qi "^location: .*/v1/bills/$bill/v/2/s/s4/l/1-3" "$tmp/head" || fail "303 Location is not the read-api resource"
+grep -qi "^location: .*/v1/bills/$bill/v/rh/s/s4/l/1-3" "$tmp/head" || fail "303 Location is not the read-api resource"
 ok "Accept: application/json answers 303 to the read-api resource"
 
 # The web host sets no cookies.

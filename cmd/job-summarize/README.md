@@ -14,6 +14,12 @@ DATA_DIR=.local-data go run -tags local ./cmd/job-summarize --collect
 - `--revalidate --bill <id>` repeats the deterministic checks on the stored outputs with the current validators.
   It calls no model and regenerates nothing. An output whose status or findings change is stored as a revised
   record beside the write-once one (readers see the revised record); a newly ready output is published.
+- `--submit` plans the inline explanations (`change-explanation`, `bill-explanation`) of the latest version of a
+  bill only; its bill summary and version change summary are planned for every version. The report lists, per
+  superseded version, `explanations_left_out` (tasks not yet stored; stored ones stay and keep being served).
+  `--explain-version <code>` (with `--submit` and exactly one `--bill`) also plans the inline explanations of
+  that one older version; a code not in the bill's version list is refused. With `--generator claude` it is a
+  live run: `--dry-run` first, operator-approved cost.
 - `--submit --retry` also plans again the stored outputs that are not ready (rejected, refused, truncated or
   invalid). A later `--collect` stores a ready answer as the revised record of the same key, so the write-once
   key does not block a retry and no prompt edit is needed. It costs money with `--generator claude`.

@@ -81,8 +81,8 @@ func parseRange(s string) (from, to int, err error) {
 // billPath is the API path of a bill.
 func billPath(id string) string { return pathPrefix + id }
 
-// versionPath is the API path of version n of a bill.
-func versionPath(id string, n int) string { return billPath(id) + "/v/" + strconv.Itoa(n) }
+// versionPath is the API path of the version with the given code of a bill.
+func versionPath(id, code string) string { return billPath(id) + "/v/" + code }
 
 // anchorOf is the fragment form of a line, for example "s4-l12".
 func anchorOf(path []string, n int) string { return sectionID(path) + "-l" + strconv.Itoa(n) }

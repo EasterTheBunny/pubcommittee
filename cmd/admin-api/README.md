@@ -81,7 +81,7 @@ Every route authenticates first. A principal of the wrong role gets 403. Operato
 | `POST /admin/v1/bills/{bill}/untrack` | operator | `reason` | Untrack a bill; stored text is kept. |
 | `PATCH /admin/v1/bills/{bill}/catalog` | operator | `reason`, and any of `title`, `status`, `chamber`, `introduced`, `policy_area`, `subjects` | Correct ingestion errors. |
 | `POST /admin/v1/bills/{bill}/reingest` | operator | `reason` | Pull again, verify by SHA-256. |
-| `POST /admin/v1/bills/{bill}/v/{n}/reparse` | operator | `reason` | Reparse stored version `n`; reports only. |
+| `POST /admin/v1/bills/{bill}/v/{version}/reparse` | operator | `reason` | Reparse the stored version with that code (for example `eh`); reports only. |
 | `POST /admin/v1/generations` | operator | `reason`, `task`, `bill`, `version` | Regenerate; 501 until M1-09. |
 | `POST /admin/v1/selection-policy` | operator | `reason`, `policy` | Publish the next policy version. |
 | `GET /admin/v1/ingest/failures` | operator | optional `source=<source>/<session>` | Failed items per source. |

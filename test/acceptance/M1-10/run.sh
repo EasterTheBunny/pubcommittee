@@ -36,7 +36,7 @@ has "bill carries review state and provenance" /tmp/m110.body '"review_state":"o
 has "bill carries provenance" /tmp/m110.body '"provenance"'
 
 # curl can fetch any line range by canonical address: anchors, depth, text, provenance.
-expect "line range" 200 "$(get "$api/v1/bills/$bill/v/2/s/s4/l/1-3")"
+expect "line range" 200 "$(get "$api/v1/bills/$bill/v/rh/s/s4/l/1-3")"
 for want in '"anchor":"s4-l1"' '"depth":1' '"text":"The Secretary' '"block_to"' '"provenance"' '"content_class":"official"'; do
 	has "line range has $want" /tmp/m110.body "$want"
 done
@@ -44,15 +44,15 @@ has "official text is immutable" /tmp/m110.head 'immutable'
 
 etag=$(sed -n 's/^[Ee][Tt]ag: *//p' /tmp/m110.head | tr -d '\r')
 [ -n "$etag" ] || fail "no ETag"
-expect "If-None-Match answers 304" 304 "$(get -H "If-None-Match: $etag" "$api/v1/bills/$bill/v/2/s/s4/l/1-3")"
+expect "If-None-Match answers 304" 304 "$(get -H "If-None-Match: $etag" "$api/v1/bills/$bill/v/rh/s/s4/l/1-3")"
 
 # Version-less address resolves to latest and says so.
 expect "latest section" 200 "$(get "$api/v1/bills/$bill/s/s4")"
 has "latest is stated" /tmp/m110.body '"resolved_from_latest":true'
-has "latest is pinned in Content-Location" /tmp/m110.head '/v1/bills/us-119-hr-4127/v/2/s/s4'
+has "latest is pinned in Content-Location" /tmp/m110.head '/v1/bills/us-119-hr-4127/v/rh/s/s4'
 # Old version points to its comparison.
-expect "old version" 200 "$(get "$api/v1/bills/$bill/v/1")"
-has "old version links to compare" /tmp/m110.body '/compare/2'
+expect "old version" 200 "$(get "$api/v1/bills/$bill/v/ih")"
+has "old version links to compare" /tmp/m110.body '/compare/rh'
 
 # Untracked catalog entries carry no bill text.
 expect "catalog" 200 "$(get "$api/v1/bills?scope=catalog&q=naming")"

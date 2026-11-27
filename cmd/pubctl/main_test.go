@@ -93,9 +93,9 @@ func TestMissingReasonSendsNothing(t *testing.T) {
 		{"track", []string{"bills", "track", testBill}},
 		{"untrack", []string{"bills", "untrack", testBill}},
 		{"reingest", []string{"bills", "reingest", testBill}},
-		{"reparse", []string{"bills", "reparse", testBill, "--version", "1"}},
+		{"reparse", []string{"bills", "reparse", testBill, "--version", "eh"}},
 		{"patch", []string{"bills", "catalog", "patch", testBill, "--title", "T"}},
-		{"generations", []string{"generations", "create", "--task", "t", "--bill", testBill, "--version", "1"}},
+		{"generations", []string{"generations", "create", "--task", "t", "--bill", testBill, "--version", "eh"}},
 		{"policy", []string{"selection-policy", "publish", "--builtin", "v1"}},
 		{"blank reason", []string{"bills", "track", testBill, "--reason", "   "}},
 	}

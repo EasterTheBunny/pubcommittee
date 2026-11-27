@@ -12,8 +12,9 @@ import (
 	"github.com/easterthebunny/pubcommittee/internal/data"
 )
 
-// ListVersions returns the stored versions of bill, ordered by PublishedAt
-// then version code. A bill with no versions gives an empty list.
+// ListVersions returns the listed versions of bill in stage rank order (see
+// data.PublicVersions): codes outside the rank table and collapsed referrals
+// are left out. A bill with no versions gives an empty list.
 func (s *Store) ListVersions(ctx context.Context, bill data.BillRef) ([]data.VersionSummary, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, fmt.Errorf("list versions: %w", err)
@@ -27,19 +28,14 @@ func (s *Store) ListVersions(ctx context.Context, bill data.BillRef) ([]data.Ver
 		}
 		out = append(out, data.VersionSummary{Ref: v.Ref, Type: v.Type, PublishedAt: v.PublishedAt})
 	}
-	slices.SortFunc(out, func(a, b data.VersionSummary) int {
-		if c := a.PublishedAt.Compare(b.PublishedAt); c != 0 {
-			return c
+	var set data.ReferralSet
+	if b, ok := s.files[data.ReferralsPath(bill)]; ok {
+		var err error
+		if set, err = data.ParseReferrals(b); err != nil {
+			return nil, fmt.Errorf("list versions: %w", err)
 		}
-		switch {
-		case a.Ref.Version < b.Ref.Version:
-			return -1
-		case a.Ref.Version > b.Ref.Version:
-			return 1
-		default:
-			return 0
-		}
-	})
+	}
+	out, _ = data.PublicVersions(out, set)
 	return out, nil
 }
 

@@ -87,8 +87,8 @@ func TestGeneratedSummariesNotFoundBeforeOutput(t *testing.T) {
 	t.Parallel()
 	_, base := citationsStore(t)
 	for _, u := range []string{
-		base + "/v1/bills/" + seed.TrackedBill + "/v/1/summary",
-		base + "/v1/bills/" + seed.TrackedBill + "/v/1/changes",
+		base + "/v1/bills/" + seed.TrackedBill + "/v/ih/summary",
+		base + "/v1/bills/" + seed.TrackedBill + "/v/ih/changes",
 	} {
 		checkProblem(t, u, do(t, http.MethodGet, u, nil))
 	}
@@ -100,7 +100,7 @@ func TestBillSummaryFromStoredOutput(t *testing.T) {
 	vs := trackedVersions(t, store)
 	publishOutput(t, store, data.TaskBillSummary, vs[0].Ref, "", "A short headline.")
 
-	u := base + "/v1/bills/" + seed.TrackedBill + "/v/1/summary"
+	u := base + "/v1/bills/" + seed.TrackedBill + "/v/ih/summary"
 	got := do(t, http.MethodGet, u, nil)
 	if got.status != http.StatusOK {
 		t.Fatalf("status %d: %s", got.status, got.body)
@@ -109,8 +109,8 @@ func TestBillSummaryFromStoredOutput(t *testing.T) {
 	if err := json.Unmarshal(got.body, &doc); err != nil {
 		t.Fatal(err)
 	}
-	if doc.Bill != seed.TrackedBill || doc.N != 1 || doc.Headline != "A short headline." {
-		t.Errorf("bill %q n %d headline %q", doc.Bill, doc.N, doc.Headline)
+	if doc.Bill != seed.TrackedBill || doc.Code != "ih" || doc.Headline != "A short headline." {
+		t.Errorf("bill %q code %q headline %q", doc.Bill, doc.Code, doc.Headline)
 	}
 	checkGeneratedStatement(t, doc.Statements)
 	if doc.ContentClass != apiv1.TrustedContentClass("platform") || doc.Provenance != apiv1.Provenance("auto") {
@@ -130,12 +130,12 @@ func TestVersionChangesFromStoredOutput(t *testing.T) {
 	if len(vs) < 2 {
 		t.Skip("seed bill has fewer than two versions")
 	}
-	first := base + "/v1/bills/" + seed.TrackedBill + "/v/1/changes"
+	first := base + "/v1/bills/" + seed.TrackedBill + "/v/ih/changes"
 	checkProblem(t, first, do(t, http.MethodGet, first, nil))
 
 	publishOutput(t, store, data.TaskVersionChanges, vs[1].Ref, vs[0].Ref.Version, "The second version changes the limit.")
 
-	u := base + "/v1/bills/" + seed.TrackedBill + "/v/2/changes"
+	u := base + "/v1/bills/" + seed.TrackedBill + "/v/rh/changes"
 	got := do(t, http.MethodGet, u, nil)
 	if got.status != http.StatusOK {
 		t.Fatalf("status %d: %s", got.status, got.body)
@@ -144,8 +144,8 @@ func TestVersionChangesFromStoredOutput(t *testing.T) {
 	if err := json.Unmarshal(got.body, &doc); err != nil {
 		t.Fatal(err)
 	}
-	if doc.Bill != seed.TrackedBill || doc.FromN != 1 || doc.ToN != 2 {
-		t.Errorf("bill %q from_n %d to_n %d; want %q 1 2", doc.Bill, doc.FromN, doc.ToN, seed.TrackedBill)
+	if doc.Bill != seed.TrackedBill || doc.FromCode != "ih" || doc.ToCode != "rh" {
+		t.Errorf("bill %q from_code %q to_code %q; want %q ih rh", doc.Bill, doc.FromCode, doc.ToCode, seed.TrackedBill)
 	}
 	if doc.Headline != "The second version changes the limit." {
 		t.Errorf("headline %q", doc.Headline)
@@ -167,7 +167,7 @@ func TestVersionChangesNoDifferences(t *testing.T) {
 	if len(vs) < 2 {
 		t.Skip("seed bill has fewer than two versions")
 	}
-	u := base + "/v1/bills/" + seed.TrackedBill + "/v/2/changes"
+	u := base + "/v1/bills/" + seed.TrackedBill + "/v/rh/changes"
 	checkProblem(t, u, do(t, http.MethodGet, u, nil))
 
 	asOf := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
@@ -197,10 +197,10 @@ func putUnchangedComparison(t *testing.T, store *memory.Store, from, to data.Ver
 	}
 }
 
-// checkNoDifferences asserts the fixed answer for version 2 against version 1.
+// checkNoDifferences asserts the fixed answer for version rh against version ih.
 func checkNoDifferences(t *testing.T, doc apiv1.VersionChangeSummary, asOf time.Time) {
 	t.Helper()
-	if doc.FromN != 1 || doc.ToN != 2 || doc.Headline != "No text changes from version 1." || len(doc.Statements) != 0 {
+	if doc.FromCode != "ih" || doc.ToCode != "rh" || doc.Headline != "No text changes from version ih." || len(doc.Statements) != 0 {
 		t.Errorf("doc = %+v", doc)
 	}
 	want := []apiv1.VersionChangeSummaryFlags{apiv1.VersionChangeSummaryFlagsNoDifferences}
@@ -227,7 +227,7 @@ func TestBillSummaryWithheldWhenContradicted(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	got := do(t, http.MethodGet, base+"/v1/bills/"+seed.TrackedBill+"/v/1/summary", nil)
+	got := do(t, http.MethodGet, base+"/v1/bills/"+seed.TrackedBill+"/v/ih/summary", nil)
 	if got.status != http.StatusNotFound {
 		t.Fatalf("status %d: %s", got.status, got.body)
 	}

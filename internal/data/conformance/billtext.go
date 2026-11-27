@@ -162,9 +162,67 @@ func checkListOrder(t *testing.T, bt data.BillText, pub data.Publisher) {
 	for _, s := range list {
 		codes = append(codes, s.Ref.Version)
 	}
-	want := []string{"eh", "ih", "rh"}
+	want := []string{"ih", "rh", "eh"}
 	if !reflect.DeepEqual(codes, want) {
-		t.Errorf("ListVersions order = %v, want %v (PublishedAt, then code)", codes, want)
+		t.Errorf("ListVersions order = %v, want %v (stage rank only)", codes, want)
+	}
+	checkUnknownAndReferral(t, bt, pub)
+}
+
+// listedCodes returns the version codes ListVersions gives for the sample
+// bill, with the summaries.
+func listedCodes(t *testing.T, bt data.BillText) ([]string, []data.VersionSummary) {
+	t.Helper()
+	list, err := bt.ListVersions(context.Background(), SampleBill(1))
+	if err != nil {
+		t.Fatalf("ListVersions: %v", err)
+	}
+	codes := make([]string, 0, len(list))
+	for _, s := range list {
+		codes = append(codes, s.Ref.Version)
+	}
+	return codes, list
+}
+
+// checkUnknownAndReferral: a code outside the stage rank table is stored but
+// not listed, and a referral named in the bill's referral set is listed as a
+// note on the version it collapsed into.
+func checkUnknownAndReferral(t *testing.T, bt data.BillText, pub data.Publisher) {
+	t.Helper()
+	ctx := context.Background()
+	rfs := SampleVersion(1, "rfs")
+	for _, v := range []data.OfficialVersion{SampleVersion(1, "zz"), rfs} {
+		if err := pub.PutVersion(ctx, v, []byte("x"+v.Ref.Version)); err != nil {
+			t.Fatalf("PutVersion %s: %v", v.Ref, err)
+		}
+	}
+	if codes, _ := listedCodes(t, bt); !reflect.DeepEqual(codes, []string{"ih", "rh", "eh", "rfs"}) {
+		t.Errorf("ListVersions with an unknown code = %v, want [ih rh eh rfs] (unknown left out)", codes)
+	}
+	set := data.ReferralSet{Bill: SampleBill(1), Collapsed: []data.Referral{
+		{Code: "rfs", Into: "eh", Type: "Referred in Senate", PublishedAt: rfs.PublishedAt},
+	}}
+	body, err := data.MarshalReferrals(set)
+	if err != nil {
+		t.Fatalf("MarshalReferrals: %v", err)
+	}
+	if _, err := pub.PutReplaceable(ctx, data.ReferralsPath(SampleBill(1)), body); err != nil {
+		t.Fatalf("PutReplaceable referrals: %v", err)
+	}
+	checkCollapsedList(t, bt)
+	if _, err := bt.GetVersion(ctx, rfs.Ref); err != nil {
+		t.Errorf("GetVersion of a collapsed referral: %v (the original stays stored)", err)
+	}
+}
+
+func checkCollapsedList(t *testing.T, bt data.BillText) {
+	t.Helper()
+	codes, list := listedCodes(t, bt)
+	if !reflect.DeepEqual(codes, []string{"ih", "rh", "eh"}) {
+		t.Fatalf("ListVersions with a collapsed referral = %v, want [ih rh eh]", codes)
+	}
+	if got := list[2].Referrals; len(got) != 1 || got[0].Code != "rfs" || got[0].Type != "Referred in Senate" {
+		t.Errorf("eh referrals = %+v, want the collapsed rfs", got)
 	}
 }
 

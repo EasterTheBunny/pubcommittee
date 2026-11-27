@@ -11,11 +11,11 @@ import (
 
 const lineRangeOK = `{
  "version": 1, "as_of": "2026-01-02T03:04:05Z", "provenance": "source", "content_class": "official",
- "bill": "us-119-hr-4127", "n": 1, "section_id": "s4", "section_path": ["s4"],
+ "bill": "us-119-hr-4127", "code": "ih", "section_id": "s4", "section_path": ["s4"],
  "from": 5, "to": 6, "licence": "public-domain",
- "address": {"canonical": "/v1/bills/us-119-hr-4127/v/1/s/s4/l/5-6", "pinned_version": 1,
-   "latest_version": 2, "is_latest": false, "resolved_from_latest": false,
-   "compare": "/v1/bills/us-119-hr-4127/v/1/compare/2"},
+ "address": {"canonical": "/v1/bills/us-119-hr-4127/v/ih/s/s4/l/5-6", "pinned_version": "ih",
+   "latest_version": "rh", "is_latest": false, "resolved_from_latest": false,
+   "compare": "/v1/bills/us-119-hr-4127/v/ih/compare/rh"},
  "lines": [
   {"n": 5, "depth": 0, "text": "Congress finds the following:", "anchor": "s4-l5", "block_to": 6},
   {"n": 6, "depth": 1, "text": "(1) one", "anchor": "s4-l6", "block_to": 6}
@@ -62,17 +62,17 @@ type route = struct {
 func TestHarnessAcceptsValidResponses(t *testing.T) {
 	t.Parallel()
 	h := stub(t, map[string]route{
-		"/v1/bills/us-119-hr-4127/v/1/s/s4/l/5-6": {200, "application/json", lineRangeOK},
-		"/v1/bills/us-119-hr-4127/v/9": {
+		"/v1/bills/us-119-hr-4127/v/ih/s/s4/l/5-6": {200, "application/json", lineRangeOK},
+		"/v1/bills/us-119-hr-4127/v/zz": {
 			404, "application/problem+json",
 			`{"type":"/problems/not-found","title":"Not Found","status":404}`,
 		},
 	})
-	res := h.MustGet(t, "/v1/bills/us-119-hr-4127/v/1/s/s4/l/5-6", nil)
+	res := h.MustGet(t, "/v1/bills/us-119-hr-4127/v/ih/s/s4/l/5-6", nil)
 	if res.Status != http.StatusOK {
 		t.Fatalf("status %d", res.Status)
 	}
-	if res := h.MustGet(t, "/v1/bills/us-119-hr-4127/v/9", nil); res.Status != http.StatusNotFound {
+	if res := h.MustGet(t, "/v1/bills/us-119-hr-4127/v/zz", nil); res.Status != http.StatusNotFound {
 		t.Fatalf("status %d", res.Status)
 	}
 }
@@ -94,8 +94,8 @@ func TestHarnessRejectsDepartures(t *testing.T) {
 	for name, rt := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			h := stub(t, map[string]route{"/v1/bills/us-119-hr-4127/v/1/s/s4/l/5-6": rt})
-			_, err := h.Get(t.Context(), "/v1/bills/us-119-hr-4127/v/1/s/s4/l/5-6", nil, nil)
+			h := stub(t, map[string]route{"/v1/bills/us-119-hr-4127/v/ih/s/s4/l/5-6": rt})
+			_, err := h.Get(t.Context(), "/v1/bills/us-119-hr-4127/v/ih/s/s4/l/5-6", nil, nil)
 			t.Logf("rejected: %v", err)
 			if err == nil {
 				t.Fatal("departure from the contract was accepted")

@@ -20,6 +20,12 @@ const meta = {
 	content_class: 'official'
 };
 
+// Versions are addressed by code, never by position: the first version is `ih`, the second `rh`.
+// Positions are internal only (1-based index into `versions`).
+const CODES = ['ih', 'rh'];
+const codeOf = (n) => CODES[n - 1];
+const POSITION = new Map(CODES.map((code, i) => [code, i + 1]));
+
 const v1 = [
 	sec('s1', 'Section 1.', 'Short title', mkLines('s1', ['This Act is the Stub Act.'])),
 	sec(
@@ -77,23 +83,22 @@ function billDoc(k) {
 		status: 'reported',
 		sponsor: 'Rep. Stub',
 		review_state: 'open',
-		latest_version: versions[k].length,
+		latest_version: codeOf(versions[k].length),
 		address: `/v1/bills/${id(k)}`,
 		official_links: [],
 		versions: versions[k].map((_, i) => ({
-			n: i + 1,
-			code: i ? 'rh' : 'ih',
+			code: codeOf(i + 1),
 			type: i ? 'reported' : 'introduced',
 			published_at: `2026-03-0${i + 1}T12:00:00Z`,
-			address: `/v1/bills/${id(k)}/v/${i + 1}`
+			address: `/v1/bills/${id(k)}/v/${codeOf(i + 1)}`
 		}))
 	};
 }
 const addr = (k, n, tail, page) => ({
-	canonical: `/v1/bills/${id(k)}/v/${n}${tail}`,
+	canonical: `/v1/bills/${id(k)}/v/${codeOf(n)}${tail}`,
 	page,
-	pinned_version: n,
-	latest_version: versions[k].length,
+	pinned_version: codeOf(n),
+	latest_version: codeOf(versions[k].length),
 	is_latest: n === versions[k].length,
 	resolved_from_latest: false
 });
@@ -117,24 +122,24 @@ http
 			const k = key(m[1]);
 			return k ? ok(res, billDoc(k)) : problem(res, 404);
 		}
-		if ((m = /^\/v1\/bills\/([^/]+)\/v\/(\d+|latest)(\/.*)?$/.exec(u.pathname))) {
+		if ((m = /^\/v1\/bills\/([^/]+)\/v\/([^/]+)(\/.*)?$/.exec(u.pathname))) {
 			const k = key(m[1]);
 			if (!k) return problem(res, 404);
-			const n = m[2] === 'latest' ? versions[k].length : Number(m[2]);
-			const secs = versions[k][n - 1];
+			// `latest` or a known version code; any other code is not found
+			const n = m[2] === 'latest' ? versions[k].length : POSITION.get(m[2]);
+			const secs = n && versions[k][n - 1];
 			if (!secs) return problem(res, 404);
 			const rest = m[3] ?? '';
 			if (rest === '') {
 				return ok(res, {
 					...meta,
 					bill: id(k),
-					n,
-					code: n > 1 ? 'rh' : 'ih',
+					code: codeOf(n),
 					type: 'x',
 					published_at: '2026-03-01T12:00:00Z',
 					source_sha256: 'x',
 					licence: 'public-domain',
-					address: addr(k, n, '', `/bills/${id(k)}/v/${n}`),
+					address: addr(k, n, '', `/bills/${id(k)}/v/${codeOf(n)}`),
 					sections: secs
 				});
 			}
@@ -146,7 +151,7 @@ http
 					content_class: 'platform',
 					flags: ['auto'],
 					bill: id(k),
-					n,
+					code: codeOf(n),
 					headline: 'Offices stay open an hour later.',
 					statements: [
 						{ text: 'Offices close at six.', anchors: ['s2-l2'], content_class: 'platform' }
@@ -160,9 +165,9 @@ http
 					content_class: 'platform',
 					flags: ['no-differences'],
 					bill: id(k),
-					from_n: 1,
-					to_n: 2,
-					headline: 'No text changes from version 1.',
+					from_code: codeOf(1),
+					to_code: codeOf(2),
+					headline: 'No text changes from version ih.',
 					statements: []
 				});
 			}
@@ -173,9 +178,9 @@ http
 					return ok(res, {
 						...meta,
 						bill: id(k),
-						n,
+						code: codeOf(n),
 						licence: 'public-domain',
-						address: addr(k, n, rest, `/bills/${id(k)}/v/${n}${rest}`),
+						address: addr(k, n, rest, `/bills/${id(k)}/v/${codeOf(n)}${rest}`),
 						section: s
 					});
 				const from = Number(m[2]);
@@ -183,22 +188,22 @@ http
 				return ok(res, {
 					...meta,
 					bill: id(k),
-					n,
+					code: codeOf(n),
 					section_id: s.id,
 					section_path: s.path,
 					from,
 					to,
 					licence: 'public-domain',
-					address: addr(k, n, rest, `/bills/${id(k)}/v/${n}${rest}`),
+					address: addr(k, n, rest, `/bills/${id(k)}/v/${codeOf(n)}${rest}`),
 					lines: s.lines.filter((l) => l.n >= from && l.n <= to)
 				});
 			}
-			if ((m = /^\/compare\/(\d+)$/.exec(rest)) && k === 'stub' && n === 1 && m[1] === '2') {
+			if ((m = /^\/compare\/([^/]+)$/.exec(rest)) && k === 'stub' && n === 1 && m[1] === 'rh') {
 				return ok(res, {
 					...meta,
 					bill: id(k),
-					from_n: 1,
-					to_n: 2,
+					from_code: codeOf(n),
+					to_code: m[1],
 					sections: [
 						{ section_id: 's1', status: 'unchanged', changes: [] },
 						{

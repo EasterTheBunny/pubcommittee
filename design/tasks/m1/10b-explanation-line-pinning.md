@@ -81,4 +81,34 @@ Item 4 of [FEEDBACK.md](FEEDBACK.md#4-explanations-inline-pinned-to-the-lines-th
 
 ## Measured
 
-Not yet measured.
+### Staging (operator, 2026-11-27, H.R. 3062, rfs, ready explanations)
+
+31 of 38 explanations across four versions start at line 2 or 3 of s2 and end at 27 to 45. Nearly every explanation, in its `changes` statements too, cites the same shared lines (s2-l3, l5-l8, l22, l24, l28, l33, often l35) plus a few of its own (717b l20, l22, l35; 824a/f l23-l26; 796 l9-l11, l45; 60502 l21, l40; 3/301 l12-17, l40; 717a l42). Model anchors, with or without a role filter, therefore do not separate explanations, and a list of runs built from them would still stack every explanation over the shared lines. Line 3 is not the first line of the section there, so the lead-in rule does not fire.
+
+### Fixtures (agent, local, 2026-11-27)
+
+`fixtures/bills/` holds source XML only, so the citation lines come from running the extractor (`citations.Extract`, usc citations) over every fixture version; the provision id is `usc/<title>/<section>[/<path>]`. Per (section, provision) pair, the lines of the section that cite it:
+
+| Measure | Value |
+| --- | --- |
+| (section, provision) pairs in the fixture versions | 125 |
+| Pairs whose citation lines form one run | 121 |
+| Pairs with more than one run | 4 (H.R. 3115 s2 18 U.S.C. 921(a): lines 2 and 193; s3 18 U.S.C. 922: 213 and 279; s3 20 U.S.C. 1070: 239 and 262; H.R. 3944 s2 10 U.S.C. 2883: 24 and 26) |
+| Widest gap between runs | 190 lines (H.R. 3115) |
+| Lines covered, citation lines alone | 133 |
+| Lines covered, each extended to its block | 2757 (15 pairs widen; a cited lead-in takes its whole subsection, for example 2 to 212 and 279 to 2516) |
+
+H.R. 3062 rfs `s2`: every provision cites a single, distinct line (717a 42; 717b 33; 717b(c) 22; 796 45; 824a(e) 24; 824a(f) 26; 824a-4(b) 27; 824o 44; 3/301 33; 42/4321 5; 42/7151 33; 60502 21). The only shared line is 33, cited by 717b, 3/301 and 42/7151, which is the line they all really cite.
+
+### Decisions
+
+- **Rule** (`Section.ExplanationSpans`, `internal/data/explain_span.go`): the lines of the section whose citation links name the provision, one run per cited line, touching runs merged. Fall back to the stored anchors (lead-in left out when other lines are named), then the whole section. `ExplanationSpan` is first-to-last of the runs.
+- **Block extension: dropped.** It widens the fixture spans twentyfold (133 to 2757 lines) and swallows siblings and, for a cited lead-in, the whole subsection. It is not needed: a cited line is the line that says what the provision does.
+- **One range or a list?** One range suffices for 121 of 125 fixture pairs and for every H.R. 3062 pair. Four pairs have more than one run (gaps 1, 22, 65, 190 lines). Their served range runs first-to-last, which is wider than the cited lines but never wider than today. A `line_spans` field and the UI to place several runs is a minor refinement, not needed for the acceptance criteria; it is the operator's call whether to schedule it as part 2.
+- **Call sites.** `read-api` passes the citation links (`toExplanation`, `citationLinks`). The change-explanations export serves the stored explanations (`data.ExplanationsToShow`) with their stored `anchors` and no derived span, so it has no span to disagree with.
+
+### Not measured, operator step
+
+Re-list H.R. 3062 explanations from `dev` or `staging` `read-api` after deploying the rule, and record per-section overlap here. This needs the citation set of each version to be present (a version with no stored citation set falls back to the anchors, as before).
+
+**Decided (operator, 2026-11-27):** part 2 (an additive `line_spans` field and UI placement by runs) is skipped. The four multi-run pairs in the fixtures are served first-to-last, never wider than before.

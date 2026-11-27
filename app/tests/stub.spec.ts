@@ -9,7 +9,7 @@ test.use({ baseURL: stub });
 test('old-version address to changed words shows the notice and a one-tap link to the current version', async ({
 	page
 }) => {
-	await page.goto('/bills/us-119-hr-1/v/1/s/s2/l/2');
+	await page.goto('/bills/us-119-hr-1/v/ih/s/s2/l/2');
 	const notice = page.getByRole('status');
 	await expect(notice).toContainText('These words changed in a newer version.');
 	await notice.getByRole('link', { name: 'See the current version' }).click();
@@ -17,14 +17,14 @@ test('old-version address to changed words shows the notice and a one-tap link t
 });
 
 test('old-version address to unchanged words says so', async ({ page }) => {
-	await page.goto('/bills/us-119-hr-1/v/1/s/s2/l/1');
-	await expect(page.getByRole('status')).toContainText('unchanged in version 2');
-	await page.goto('/bills/us-119-hr-1/v/1/s/s1');
-	await expect(page.getByRole('status')).toContainText('unchanged in version 2');
+	await page.goto('/bills/us-119-hr-1/v/ih/s/s2/l/1');
+	await expect(page.getByRole('status')).toContainText('unchanged in version rh');
+	await page.goto('/bills/us-119-hr-1/v/ih/s/s1');
+	await expect(page.getByRole('status')).toContainText('unchanged in version rh');
 });
 
 test('the current version has no notice', async ({ page }) => {
-	await page.goto('/bills/us-119-hr-1/v/2/s/s2/l/2');
+	await page.goto('/bills/us-119-hr-1/v/rh/s/s2/l/2');
 	await expect(page.getByRole('status')).toHaveCount(0);
 });
 
@@ -45,7 +45,7 @@ test('a very long bill renders every line, fast, without horizontal overflow', a
 test('a generated summary carries the accuracy note with a link to the bill text', async ({
 	page
 }) => {
-	await page.goto('/bills/us-119-hr-1/v/2');
+	await page.goto('/bills/us-119-hr-1/v/rh');
 	const summary = page.locator('section', {
 		has: page.getByRole('heading', { name: 'Bill summary' })
 	});
@@ -58,11 +58,11 @@ test('a generated summary carries the accuracy note with a link to the bill text
 });
 
 test('a version with no text changes says so, without the accuracy note', async ({ page }) => {
-	await page.goto('/bills/us-119-hr-3/v/2');
+	await page.goto('/bills/us-119-hr-3/v/rh');
 	const changes = page.locator('section', {
 		has: page.getByRole('heading', { name: 'What changed from the previous version' })
 	});
-	await expect(changes).toContainText('No text changes from version 1.');
+	await expect(changes).toContainText('No text changes from version ih.');
 	await expect(changes).toContainText('From the version comparison');
 	await expect(changes.locator('[data-accuracy-note]')).toHaveCount(0);
 });

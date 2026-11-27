@@ -74,7 +74,7 @@ Four rules hold the shape together:
 | `worker` | Handles queued tasks (re-anchoring, promotion of accepted bills, re-render hints) | Yes | HTTP service Cloud Tasks pushes to; not publicly routed |
 | `admin-api` | Privileged operations interface for administrators ([Administration](#administration)) | Yes | Not part of the product; no UI; callable only with Google Cloud IAM credentials |
 | Jobs | Ingest, batcher, briefs, exports, detector | Yes | Run to completion; triggered by Cloud Scheduler |
-| Object store | Immutable bill text (source XML + parsed JSON), existing-law excerpts, rendered briefs, exports, count snapshots, feeds | Yes (storage only) | Versioned, write-once paths: `bills/{bill}/v/{n}/text.json` |
+| Object store | Immutable bill text (source XML + parsed JSON), existing-law excerpts, rendered briefs, exports, count snapshots, feeds | Yes (storage only) | Versioned, write-once paths: `bills/{bill}/v/{code}/text.json` |
 | Document store | Public, mutable documents | Yes (per operation) | See [Data placement](#data-placement) |
 | SQL database | Private, relational data | Yes, with resume delay | Serverless Postgres. Never reachable from `read-api` |
 | Key management | HMAC and encryption keys | Near zero | Keys never leave the service; code calls sign and encrypt operations |
@@ -618,7 +618,7 @@ Exact paths, listing formats, and update cadences are confirmed against GPO's pu
 **Pull directly from govinfo in Go, behind a `BillSource` port.** No Python collector, no shared disk, no API key.
 
 - **Change detection.** `job-ingest` reads the `BILLSTATUS` RSS feed or sitemap last-modified dates since its stored watermark, so each run touches only bills that changed. A full listing walk is the fallback when the watermark is missing or a feed gap is detected.
-- **Versions.** Each bill status lists its text versions. Every version not yet stored is fetched from `BILLS`, kept as the **original XML, byte for byte**, with its source URL, retrieval time, and SHA-256, at a write-once path (`bills/{bill}/v/{n}/source.xml`). Nothing is ever overwritten ([01](../design/01-bill-ingestion-and-display.md)).
+- **Versions.** Each bill status lists its text versions. Every version not yet stored is fetched from `BILLS`, kept as the **original XML, byte for byte**, with its source URL, retrieval time, and SHA-256, at a write-once path (`bills/{bill}/v/{code}/source.xml`). Nothing is ever overwritten ([01](../design/01-bill-ingestion-and-display.md)).
 - **Parsing at ingest, never on a request.** The parser turns the original XML into sections, lines, and anchors (`text.json`), recording each line's depth from the XML's nesting (subsection, paragraph, subparagraph, clause, list item) so blocks and edit ranges can be computed ([01](../design/01-bill-ingestion-and-display.md)), using the element rules ourdistrict worked out (`legis-body`, `resolution-body`, `preamble`, `quoted-block`; tables, formulas, and graphics as single units). Parser output carries a parser version so re-parsing a version is a deliberate, versioned act.
 - **Identity.** Bill ids include jurisdiction and session (`us-119-hr-4127`), so nothing assumes one Congress ([principle 7](../design/README.md#global-principles)).
 - **Hand-offs.** A newly stored version triggers stale classification and re-anchoring ([02](../design/02-versions-and-review-lifecycle.md)), lineage candidates from related bills ([04](../design/04-bill-lineage-and-competing-bills.md)), and `job-summarize`.
@@ -736,7 +736,8 @@ job-ingest ──► new version stored ──► job-summarize (submit)
 
 - **Two-phase job, no waiting.** One run submits a batch and exits; a later scheduled run collects results. Nothing stays running while the batch processes, which keeps the job scale-to-zero.
 - **Idempotent by key.** Each task is keyed by `(task, bill, version, target, prompt_version, model)`. Re-running submits only keys with no stored result; a new prompt version or model creates new keys and leaves old outputs in place for comparison.
-- **Outputs are immutable files** in the object store (`generated/{task}/{bill}/v/{n}/{key}.json`); `generations` records status and which output is current.
+- **Inline explanations on the latest version only (M1-09c).** `job-summarize --submit` plans `change-explanation` and `bill-explanation` tasks only for a bill's latest listed version; every version still gets its bill summary and, from the second on, its version change summary. Explanations already stored for a version that has since been superseded stay stored and keep being served. The report's `explanations_left_out` counts what was left out per version, and `--explain-version <code>` plans one older version's explanations on request, under the same live-run rules.
+- **Outputs are immutable files** in the object store (`generated/{task}/{bill}/v/{code}/{key}.json`); `generations` records status and which output is current.
 - **Steward-requested regeneration** goes through the `worker` as one synchronous call with the same rules.
 
 ### Model and platform
@@ -770,7 +771,7 @@ Accuracy is measured against each statement's **cited lines**, which needs no re
 | **CRS summary coverage** | For bill summaries, the grader compares our summary with the Congressional Research Service summary of the same version from `BILLSTATUS` (public domain): points covered, points contradicted | Local live runs | Reports coverage and contradictions |
 
 - **CRS summaries are references, never inputs.** They are not passed to the generating model, so the coverage check stays independent.
-- **Grades are stored** at `generated/{task}/{bill}/v/{n}/{key}.grade.json` with the grader model and prompt version.
+- **Grades are stored** at `generated/{task}/{bill}/v/{code}/{key}.grade.json` with the grader model and prompt version.
 - **Metrics per task:** share of statements *supported*; share *contradicted*, reported separately; fact-fidelity and amendment-consistency failure rates; each check's catch rate on planted errors; grader-to-operator agreement; CRS coverage for bill summaries. The M1 report proposes an M3 target from these.
 - **Reports** are written by a local command (`cmd/accuracy-report`, a development tool, not a deployed image) to `test/accuracy/report.md`, with the inputs needed to reproduce them.
 
@@ -833,14 +834,14 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 | `GET /v1/selection-policy`, `GET /v1/selection-policy/{version}` | `read-api` | None | Short; versions immutable |
 | `GET /v1/bills?scope=catalog&status=&chamber=&committee_activity=&subject=&q=` | `read-api` | None | Short. Catalog entries with official links and markup status |
 | `GET /v1/markup-decisions`, `GET /v1/markup-decisions/{id}` | `read-api` | None | Short |
-| `GET /v1/bills/{bill}/v/{n}` | `read-api` | None | Immutable: metadata, sections, lines, anchors |
-| `GET /v1/bills/{bill}/v/{n}/s/{section}`, `.../s/{section}/l/{range}` | `read-api` | None | Immutable |
+| `GET /v1/bills/{bill}/v/{version}` | `read-api` | None | Immutable: metadata, sections, lines, anchors |
+| `GET /v1/bills/{bill}/v/{version}/s/{section}`, `.../s/{section}/l/{range}` | `read-api` | None | Immutable |
 | `GET /v1/bills/{bill}/s/{section}`, `.../s/{section}/l/{range}` | `read-api` | None | Short: latest version, with an `address` block naming the pinned and latest versions |
-| `GET /v1/bills/{bill}/v/{n}/summary`, `.../changes` | `read-api` | None | Short: bill summary and change summary against the previous version ([M1-09](../design/tasks/m1/09-ai-generation.md)) |
-| `GET /v1/bills/{bill}/v/{n}/citations?state=`, `.../citations/unresolved` | `read-api` | None | Short ([M1-07](../design/tasks/m1/07-us-code-and-citations.md)) |
-| `GET /v1/bills/{bill}/v/{n}/compare/{m}` | `read-api` | None | Immutable: base `n` against `m` ([M1-08](../design/tasks/m1/08-version-history-and-stale.md)) |
-| `GET /v1/bills/{bill}/v/{n}/explanations` | `read-api` | None | Short (stewards correct explanations). Each carries `line_from`, `line_to` (the lines it rests on) and `provision_citation` (for example `16 U.S.C. 824a(f)`); for explanations stored without line anchors they are derived on read from the citation lines, else the whole section. Sections that need no explanation (`data.Section.NeedsExplanation`) are left out, here and in the change-explanations export |
-| `GET /v1/bills/{bill}/v/{n}/review` | `read-api` | None | Short: threads and suggestions for that version |
+| `GET /v1/bills/{bill}/v/{version}/summary`, `.../changes` | `read-api` | None | Short: bill summary and change summary against the previous version ([M1-09](../design/tasks/m1/09-ai-generation.md)) |
+| `GET /v1/bills/{bill}/v/{version}/citations?state=`, `.../citations/unresolved` | `read-api` | None | Short ([M1-07](../design/tasks/m1/07-us-code-and-citations.md)) |
+| `GET /v1/bills/{bill}/v/{version}/compare/{other}` | `read-api` | None | Immutable: base `version` against `other` ([M1-08](../design/tasks/m1/08-version-history-and-stale.md)) |
+| `GET /v1/bills/{bill}/v/{version}/explanations` | `read-api` | None | Short (stewards correct explanations). Each carries `line_from`, `line_to` and `provision_citation` (for example `16 U.S.C. 824a(f)`). The span is derived on read (`data.Section.ExplanationSpans`): the lines of the section whose citation links name the explanation's provision; failing that, the lines its stored anchors name (the section's lead-in left out when other lines are named); failing that, the whole section. `line_from`/`line_to` run from the first to the last of those lines. Model anchors are not the first source: in `staging` the explanations of one section all cited the section's shared amending lines, so pinning on them stacked every explanation over the same range (M1-10b). Sections that need no explanation (`data.Section.NeedsExplanation`) are left out, here and in the change-explanations export |
+| `GET /v1/bills/{bill}/v/{version}/review` | `read-api` | None | Short: threads and suggestions for that version |
 | `GET /v1/threads/{id}`, `GET /v1/suggestions/{id}` | `read-api` | None | Short |
 | `GET /v1/issues`, `GET /v1/issues/{id}` | `read-api` | None | Short |
 | `GET /v1/briefs/{bill}` | `read-api` | None | Until next brief |
@@ -862,7 +863,7 @@ Resources are cut by **freshness and boundary**, not by screen. A page that need
 
 `PUT` and `DELETE` on signals make set and withdraw idempotent, matching `SignalLedger`. The paths above are a starting outline; `api/openapi.yaml` is authoritative once written.
 
-Path parameters (M1-02): `{n}` is the 1-based position in the bill's version list, or `latest`; the version code (for example `ih`) is the `code` field. `{range}` is `12` or `12-13`, inclusive, the same form as the UI fragment `#s4-l12-13`. A block has no syntax of its own: each line carries `block_to`, and the block is the range `n-block_to`. `markup-decisions` routes are not yet in the spec.
+Path parameters: `{version}` is the lower-case version code (for example `eh`) or `latest` (M1-05b; until then it was the 1-based position, which a version inserted mid-list renumbered). Versions are listed in legislative stage order by the code's rank for the bill's origin chamber (`data.VersionRank`: the origin chamber's stages, then the other chamber's, then the amendment exchange), never by date. A referral version (`rfs`, `rfh`) whose text equals the version before it is collapsed: it is not listed, compared, exported, or generated for, its original stays stored byte for byte, `bills/{bill}/referrals.json` (replaceable, written by the ingest `referrals` step) records it, the version it collapsed into carries a `referrals` note, and its code address answers `308` to that version, in either segment of a comparison. `{range}` is `12` or `12-13`, inclusive, the same form as the UI fragment `#s4-l12-13`. A block has no syntax of its own: each line carries `block_to`, and the block is the range `n-block_to`. `markup-decisions` routes are not yet in the spec.
 
 Cache classes (M1-10): immutable `public, max-age=31536000, immutable`; short `public, max-age=60, stale-while-revalidate=300`; batch `public, max-age=900`. Answers resolved from `latest` use the short class. `GET /v1/bills` answers with `anyOf` bill summary or catalog entry, because a tracked catalog entry satisfies both.
 
@@ -919,7 +920,7 @@ Implements [platform administration](../design/05-roles-and-stewardship.md#platf
 | --- | --- | --- |
 | Select a bill | `POST /admin/v1/bills/{bill}/track` | Sets `tracked` with reason `admin:{log id}`, enqueues the `worker` task that fetches and parses all versions and triggers `job-summarize`. Refused for excluded measure kinds. After the early-pilot phase, creates a pending decision needing two-party steward sign-off instead |
 | Correct an error | `POST /admin/v1/bills/{bill}/untrack`, `PATCH /admin/v1/bills/{bill}/catalog` | Ingestion-error corrections only; reason required |
-| Re-ingest or re-parse | `POST /admin/v1/bills/{bill}/reingest`, `POST /admin/v1/bills/{bill}/v/{n}/reparse` | New fetch is checked against the stored SHA-256; a re-parse writes a new parser version beside the old one |
+| Re-ingest or re-parse | `POST /admin/v1/bills/{bill}/reingest`, `POST /admin/v1/bills/{bill}/v/{version}/reparse` | New fetch is checked against the stored SHA-256; a re-parse writes a new parser version beside the old one |
 | Regenerate | `POST /admin/v1/generations` (task, bill, version) | Submits generation tasks under a new key; outputs go to steward review |
 | Publish policy | `POST /admin/v1/selection-policy` | Writes the next immutable `selection_policy` version |
 | Product roles | `POST /admin/v1/roles`, `DELETE /admin/v1/roles/{id}` | Grants and revokes steward, moderator, and office roles; steward and office grants record their verification. Administrator access is not grantable here |

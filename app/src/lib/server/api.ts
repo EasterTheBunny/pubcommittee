@@ -84,14 +84,17 @@ export const readApi = {
 	listBills: (f: Fetch, q: operations['listBills']['parameters']['query'] = {}) =>
 		apiGet<Body<'listBills'>>(f, '/v1/bills', q as Query),
 	getBill: (f: Fetch, bill: string) => apiGet<Body<'getBill'>>(f, `/v1/bills/${enc(bill)}`),
-	getVersion: (f: Fetch, bill: string, n: string | number) =>
-		apiGet<Body<'getVersion'>>(f, `/v1/bills/${enc(bill)}/v/${enc(String(n))}`),
+	getVersion: (f: Fetch, bill: string, version: string) =>
+		apiGet<Body<'getVersion'>>(f, `/v1/bills/${enc(bill)}/v/${enc(version)}`),
 	getSection: (f: Fetch, p: Path<'getSection'>) =>
-		apiGet<Body<'getSection'>>(f, `/v1/bills/${enc(p.bill)}/v/${enc(p.n)}/s/${enc(p.section)}`),
+		apiGet<Body<'getSection'>>(
+			f,
+			`/v1/bills/${enc(p.bill)}/v/${enc(p.version)}/s/${enc(p.section)}`
+		),
 	getLineRange: (f: Fetch, p: Path<'getLineRange'>) =>
 		apiGet<Body<'getLineRange'>>(
 			f,
-			`/v1/bills/${enc(p.bill)}/v/${enc(p.n)}/s/${enc(p.section)}/l/${enc(p.range)}`
+			`/v1/bills/${enc(p.bill)}/v/${enc(p.version)}/s/${enc(p.section)}/l/${enc(p.range)}`
 		),
 	getSectionLatest: (f: Fetch, p: Path<'getSectionLatest'>) =>
 		apiGet<Body<'getSectionLatest'>>(f, `/v1/bills/${enc(p.bill)}/s/${enc(p.section)}`),
@@ -100,18 +103,23 @@ export const readApi = {
 			f,
 			`/v1/bills/${enc(p.bill)}/s/${enc(p.section)}/l/${enc(p.range)}`
 		),
-	listExplanations: (f: Fetch, bill: string, n: number) =>
-		apiGet<Body<'listExplanations'>>(f, `/v1/bills/${enc(bill)}/v/${n}/explanations`, {
+	listExplanations: (f: Fetch, bill: string, version: string) =>
+		apiGet<Body<'listExplanations'>>(f, `/v1/bills/${enc(bill)}/v/${enc(version)}/explanations`, {
 			limit: 200
 		}),
-	getBillSummary: (f: Fetch, bill: string, n: number) =>
-		apiGet<Body<'getBillSummary'>>(f, `/v1/bills/${enc(bill)}/v/${n}/summary`),
-	getVersionChangeSummary: (f: Fetch, bill: string, n: number) =>
-		apiGet<Body<'getVersionChangeSummary'>>(f, `/v1/bills/${enc(bill)}/v/${n}/changes`),
-	listCitations: (f: Fetch, bill: string, n: number) =>
-		apiGet<Body<'listCitations'>>(f, `/v1/bills/${enc(bill)}/v/${n}/citations`, { limit: 200 }),
-	compareVersions: (f: Fetch, bill: string, n: number, m: number) =>
-		apiGet<Body<'compareVersions'>>(f, `/v1/bills/${enc(bill)}/v/${n}/compare/${m}`),
+	getBillSummary: (f: Fetch, bill: string, version: string) =>
+		apiGet<Body<'getBillSummary'>>(f, `/v1/bills/${enc(bill)}/v/${enc(version)}/summary`),
+	getVersionChangeSummary: (f: Fetch, bill: string, version: string) =>
+		apiGet<Body<'getVersionChangeSummary'>>(f, `/v1/bills/${enc(bill)}/v/${enc(version)}/changes`),
+	listCitations: (f: Fetch, bill: string, version: string) =>
+		apiGet<Body<'listCitations'>>(f, `/v1/bills/${enc(bill)}/v/${enc(version)}/citations`, {
+			limit: 200
+		}),
+	compareVersions: (f: Fetch, bill: string, version: string, other: string) =>
+		apiGet<Body<'compareVersions'>>(
+			f,
+			`/v1/bills/${enc(bill)}/v/${enc(version)}/compare/${enc(other)}`
+		),
 	getSelectionPolicy: (f: Fetch) => apiGet<Body<'getSelectionPolicy'>>(f, '/v1/selection-policy'),
 	listModerationLog: (f: Fetch, cursor?: string) =>
 		apiGet<Body<'listModerationLog'>>(f, '/v1/moderation-log', { cursor, limit: 50 })

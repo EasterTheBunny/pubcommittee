@@ -30,6 +30,7 @@ func DefaultSteps() Pipeline {
 		StepFunc{StepName: StepCatalog, Fn: buildCatalog},
 		PolicyStep(ManualEvaluator{}),
 		StepFunc{StepName: StepVersions, Fn: storeVersions},
+		StepFunc{StepName: StepReferrals, Fn: referralsStep},
 		StepFunc{StepName: StepAfterStore, Fn: func(context.Context, *Run) error { return nil }},
 		StepFunc{StepName: StepWriteBill, Fn: writeBill},
 		StepFunc{StepName: StepWriteCatalog, Fn: writeCatalog},
@@ -212,17 +213,15 @@ func storeVersions(ctx context.Context, r *Run) error {
 	if !r.Decision.Tracked {
 		return nil
 	}
-	stored, err := r.Ports.BillText.ListVersions(ctx, r.Bill)
-	if err != nil {
-		return fmt.Errorf("list stored versions: %w", err)
-	}
-	have := map[string]bool{}
-	for _, s := range stored {
-		have[s.Ref.Version] = true
-	}
 	for _, v := range r.Record.Versions {
+		// Stored means the version text exists, listed or not: a collapsed
+		// referral or a code outside the rank table is stored too.
+		_, err := r.Ports.BillText.GetVersion(ctx, v.Ref)
+		if err != nil && !errors.Is(err, data.ErrNotFound) {
+			return fmt.Errorf("get stored version %s: %w", v.Ref, err)
+		}
 		switch {
-		case have[v.Ref.Version]:
+		case err == nil:
 			r.present(ctx, v)
 		case r.DryRun:
 			r.Report.WouldStore = append(r.Report.WouldStore, v.Ref.Version)

@@ -39,49 +39,6 @@ func ProvisionCitation(id string) string {
 	return b.String()
 }
 
-// ExplanationSpan returns the lines of s an explanation is pinned to. In order:
-// the lines named by anchors (as stored with a new explanation); the lines of s
-// that cite provisionID, from links; the whole section. Both are 0 for a
-// section with no lines.
-func (s Section) ExplanationSpan(anchors []string, provisionID string, links []CitationLink) (from, to int) {
-	if len(s.Lines) == 0 {
-		return 0, 0
-	}
-	for _, sp := range s.candidateSpans(anchors, provisionID, links) {
-		if !s.hasLine(sp[0]) || !s.hasLine(sp[1]) {
-			continue
-		}
-		if from == 0 || sp[0] < from {
-			from = sp[0]
-		}
-		to = max(to, sp[1])
-	}
-	if from == 0 {
-		return s.Lines[0].N, s.Lines[len(s.Lines)-1].N
-	}
-	return from, to
-}
-
-// candidateSpans lists the line spans named by the anchors that belong to s; with none, the lines of s that
-// cite provisionID.
-func (s Section) candidateSpans(anchors []string, provisionID string, links []CitationLink) [][2]int {
-	var spans [][2]int
-	for _, a := range anchors {
-		if sec, lo, hi, ok := ParseAnchorID(a); ok && slices.Equal(sec, s.Path) {
-			spans = append(spans, [2]int{lo, hi})
-		}
-	}
-	if len(spans) > 0 || provisionID == "" {
-		return spans
-	}
-	for _, l := range links {
-		if slices.Equal(l.Section, s.Path) && slices.Contains(l.ProvisionIDs, provisionID) {
-			spans = append(spans, [2]int{l.Line, l.Line})
-		}
-	}
-	return spans
-}
-
 func (s Section) hasLine(n int) bool {
 	return slices.ContainsFunc(s.Lines, func(l Line) bool { return l.N == n })
 }

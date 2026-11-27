@@ -124,6 +124,10 @@ func sendJSONAt(w http.ResponseWriter, r *http.Request, class cacheClass, locati
 // fail answers err as a problem. Typed data errors keep their status; the
 // detail is generic, so no vendor error or stack trace reaches the client.
 func fail(w http.ResponseWriter, r *http.Request, err error) {
+	if red, ok := errors.AsType[redirectError](err); ok {
+		redirectVersion(w, r, red)
+		return
+	}
 	if !errors.Is(err, data.ErrNotFound) && !errors.Is(err, data.ErrInvalid) {
 		slog.ErrorContext(r.Context(), "request failed", "route", r.Pattern, "err", err)
 	}
@@ -151,4 +155,29 @@ func invalid(w http.ResponseWriter, detail string) {
 // notFound answers 404 with a handler-written detail.
 func notFound(w http.ResponseWriter, detail string) {
 	httpx.WriteProblem(w, http.StatusNotFound, "", detail)
+}
+
+// redirectVersion answers 308 to the same route with the code of the version
+// a collapsed referral collapsed into. The referral is the same text, so a
+// link or cache entry for it stays valid.
+func redirectVersion(w http.ResponseWriter, r *http.Request, red redirectError) {
+	const marker = "/v/"
+	p := r.URL.Path
+	i := strings.Index(p, marker+red.from)
+	if i < 0 {
+		notFound(w, "no such version")
+		return
+	}
+	rest := p[i+len(marker)+len(red.from):]
+	if rest != "" && !strings.HasPrefix(rest, "/") {
+		notFound(w, "no such version")
+		return
+	}
+	loc := p[:i] + marker + red.to + rest
+	if r.URL.RawQuery != "" {
+		loc += "?" + r.URL.RawQuery
+	}
+	w.Header().Set("Location", loc)
+	w.Header().Set("Cache-Control", cacheControlShort)
+	w.WriteHeader(http.StatusPermanentRedirect)
 }

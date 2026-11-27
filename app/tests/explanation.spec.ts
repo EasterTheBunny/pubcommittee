@@ -2,8 +2,8 @@ import { expect, test, type Locator } from '@playwright/test';
 
 // An explanation is pinned above the line it describes: a row of controls (what changes, why it matters,
 // existing law cited), and one open block below it that pushes the bill text down. Fixture data: the
-// explanation of s4 in version 2 of us-119-hr-4127 rests on lines 4-6 and changes 42 U.S.C. 1395.
-const page2 = '/bills/us-119-hr-4127/v/2';
+// explanation of s4 in version rh of us-119-hr-4127 rests on lines 4-6 and changes 42 U.S.C. 1395.
+const page2 = '/bills/us-119-hr-4127/v/rh';
 const aside = '#s4 aside[data-explanation]';
 
 // Top of an element on the page, not the viewport: the page may scroll when a control is clicked.

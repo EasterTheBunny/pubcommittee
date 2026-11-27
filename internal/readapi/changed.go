@@ -40,12 +40,12 @@ func (s *Server) changedSince(
 	if err != nil {
 		return nil, nil //nolint:nilnil,nilerr // lines the comparison does not cover: no notice
 	}
-	out := &apiv1.ChangedSince{ToN: res.latest, Class: apiv1.ChangedSinceClass(r.Class)}
+	out := &apiv1.ChangedSince{ToCode: res.latestCode, Class: apiv1.ChangedSinceClass(r.Class)}
 	if r.New != nil {
 		id := sectionID(r.New.Section)
 		out.NewSectionId = &id
 		out.NewFrom, out.NewTo = &r.New.From, &r.New.To
-		addr := versionPath(res.id, res.latest) + "/s/" + id + "/l/" + rangeOf(r.New.From, r.New.To)
+		addr := versionPath(res.id, res.latestCode) + "/s/" + id + "/l/" + rangeOf(r.New.From, r.New.To)
 		out.NewAddress = &addr
 		frag := fragmentOf(r.New.Section, r.New.From, r.New.To)[1:]
 		out.NewAnchor = &frag

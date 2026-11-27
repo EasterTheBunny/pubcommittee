@@ -117,7 +117,7 @@ func toCitation(res resolved, set data.CitationSet, e data.CitationEntry) apiv1.
 		ids = []string{}
 	}
 	out := apiv1.Citation{
-		Bill: res.id, N: res.n, SectionId: sectionID(e.Section), Text: e.Text,
+		Bill: res.id, Code: res.code, SectionId: sectionID(e.Section), Text: e.Text,
 		State: apiv1.CitationState(e.State), ProvisionIds: ids,
 	}
 	if e.Line > 0 {

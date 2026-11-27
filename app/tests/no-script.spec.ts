@@ -17,9 +17,9 @@ test('without scripts: browse the catalog, open a bill, read every line, follow 
 		.locator('#s4-l2')
 		.getByRole('link', { name: /Address of line 2/ })
 		.click();
-	await expect(page).toHaveURL(/\/v\/2\/s\/s4\/l\/2$/);
+	await expect(page).toHaveURL(/\/v\/rh\/s\/s4\/l\/2$/);
 	await expect(page.locator('#s4-l2')).toContainText('weekday hours');
-	await page.goto('/bills/us-119-hr-4127/v/2/s/s4/l/1-3');
+	await page.goto('/bills/us-119-hr-4127/v/rh/s/s4/l/1-3');
 	await expect(page.locator('[data-line]')).toHaveCount(3);
 	// no content is gated on scripts: the version switcher and sections nav are plain links
 	await expect(page.getByRole('link', { name: 'The whole section' })).toBeVisible();
@@ -34,7 +34,7 @@ test('without scripts: placeholders open natively and name their milestone', asy
 test('without scripts: every part of an explanation is reachable, one open at a time', async ({
 	page
 }) => {
-	await page.goto('/bills/us-119-hr-4127/v/2');
+	await page.goto('/bills/us-119-hr-4127/v/rh');
 	const ex = page.locator('#s4 aside[data-explanation]');
 	await expect(ex.getByText('Auto-generated').first()).toBeVisible();
 	// the text of every part is in the page itself, scripts or not

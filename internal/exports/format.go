@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"strconv"
 	"time"
 
 	"github.com/easterthebunny/pubcommittee/internal/data"
@@ -66,7 +65,6 @@ type BillTextFile struct {
 
 	Bill          string          `json:"bill"` // bill id, for example us-119-hr-4313
 	Version       string          `json:"version"`
-	Position      int             `json:"n"` // 1-based position in the bill's version list
 	Type          string          `json:"type"`
 	PublishedAt   time.Time       `json:"published_at"`
 	SourceSHA256  string          `json:"source_sha256"`
@@ -120,13 +118,13 @@ type TrackedSetFile struct {
 	Breakdown json.RawMessage `json:"breakdown"`
 }
 
-func billTextFile(id, sourceID string, n int, v data.OfficialVersion) BillTextFile {
+func billTextFile(id, sourceID string, v data.OfficialVersion) BillTextFile {
 	ref := v.Ref
 	f := BillTextFile{
 		Header: newHeader(id, data.ExportBillText, v.Meta.AsOf, data.ContentOfficial),
-		Bill:   ref.Bill.ID(), Version: ref.Version, Position: n, Type: v.Type, PublishedAt: v.PublishedAt.UTC(),
+		Bill:   ref.Bill.ID(), Version: ref.Version, Type: v.Type, PublishedAt: v.PublishedAt.UTC(),
 		SourceSHA256: v.SourceSHA256, SourceExport: sourceID, ParserVersion: v.ParserVersion,
-		Address:  "/v1/bills/" + ref.Bill.ID() + "/v/" + strconv.Itoa(n),
+		Address:  "/v1/bills/" + ref.Bill.ID() + "/v/" + ref.Version,
 		Sections: make([]ExportSection, len(v.Sections)),
 	}
 	for i, s := range v.Sections {

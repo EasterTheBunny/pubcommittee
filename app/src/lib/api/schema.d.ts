@@ -78,7 +78,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/bills/{bill}/v/{n}": {
+    "/v1/bills/{bill}/v/{version}": {
         parameters: {
             query?: never;
             header?: never;
@@ -87,7 +87,7 @@ export interface paths {
         };
         /**
          * One official version with sections, lines, and anchors
-         * @description Immutable. `n` may be an integer or the word `latest`; a `latest` request answers with `address.resolved_from_latest` true and a `Content-Location` of the pinned address.
+         * @description Immutable. `version` is a version code such as `eh`, or the word `latest`; the code of a referral that collapsed into another version answers `308` to that version; a `latest` request answers with `address.resolved_from_latest` true and a `Content-Location` of the pinned address.
          */
         get: operations["getVersion"];
         put?: never;
@@ -98,7 +98,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/bills/{bill}/v/{n}/s/{section}": {
+    "/v1/bills/{bill}/v/{version}/s/{section}": {
         parameters: {
             query?: never;
             header?: never;
@@ -118,7 +118,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/bills/{bill}/v/{n}/s/{section}/l/{range}": {
+    "/v1/bills/{bill}/v/{version}/s/{section}/l/{range}": {
         parameters: {
             query?: never;
             header?: never;
@@ -175,7 +175,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/bills/{bill}/v/{n}/explanations": {
+    "/v1/bills/{bill}/v/{version}/explanations": {
         parameters: {
             query?: never;
             header?: never;
@@ -195,7 +195,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/bills/{bill}/v/{n}/summary": {
+    "/v1/bills/{bill}/v/{version}/summary": {
         parameters: {
             query?: never;
             header?: never;
@@ -215,7 +215,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/bills/{bill}/v/{n}/changes": {
+    "/v1/bills/{bill}/v/{version}/changes": {
         parameters: {
             query?: never;
             header?: never;
@@ -235,7 +235,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/bills/{bill}/v/{n}/citations": {
+    "/v1/bills/{bill}/v/{version}/citations": {
         parameters: {
             query?: never;
             header?: never;
@@ -252,7 +252,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/bills/{bill}/v/{n}/citations/unresolved": {
+    "/v1/bills/{bill}/v/{version}/citations/unresolved": {
         parameters: {
             query?: never;
             header?: never;
@@ -269,7 +269,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/bills/{bill}/v/{n}/compare/{m}": {
+    "/v1/bills/{bill}/v/{version}/compare/{other}": {
         parameters: {
             query?: never;
             header?: never;
@@ -490,8 +490,8 @@ export interface components {
             page?: string;
             /** @description In-page fragment form, for example `#s4-l12-13`. */
             fragment?: string;
-            pinned_version: number;
-            latest_version: number;
+            pinned_version: components["schemas"]["VersionCode"];
+            latest_version: components["schemas"]["VersionCode"];
             is_latest: boolean;
             /** @description True when the request named no version or `latest` and was resolved to `pinned_version`. */
             resolved_from_latest: boolean;
@@ -507,10 +507,23 @@ export interface components {
             type: string;
             number: number;
         };
+        /** @description Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date. */
+        VersionCode: string;
+        /** @description A referral version whose text is the same as the version it is attached to. It is not a version of its own; its original stays stored. */
+        Referral: {
+            code: components["schemas"]["VersionCode"];
+            /** @description For example `Referred in Senate`. */
+            type: string;
+            /**
+             * Format: date-time
+             * @description Date of the referral.
+             */
+            published_at: string;
+        };
         VersionSummary: {
-            n: number;
-            /** @description Official version code, for example `ih`. */
-            code: string;
+            code: components["schemas"]["VersionCode"];
+            /** @description Referral versions with this version's text, collapsed into it. */
+            referrals?: components["schemas"]["Referral"][];
             /** @description introduced, reported, engrossed, enrolled, ... */
             type: string;
             /** Format: date-time */
@@ -524,7 +537,7 @@ export interface components {
             title: string;
             status: string;
             chamber?: components["schemas"]["Chamber"];
-            latest_version?: number;
+            latest_version?: components["schemas"]["VersionCode"];
             address: string;
         };
         Bill: components["schemas"]["BillSummary"] & {
@@ -596,8 +609,9 @@ export interface components {
         };
         Version: components["schemas"]["Meta"] & {
             bill: components["schemas"]["BillId"];
-            n: number;
-            code: string;
+            code: components["schemas"]["VersionCode"];
+            /** @description Referral versions with this version's text, collapsed into it. */
+            referrals?: components["schemas"]["Referral"][];
             type: string;
             /** Format: date-time */
             published_at: string;
@@ -610,7 +624,7 @@ export interface components {
         };
         SectionResource: components["schemas"]["Meta"] & {
             bill: components["schemas"]["BillId"];
-            n: number;
+            code: components["schemas"]["VersionCode"];
             /** @enum {string} */
             licence: "public-domain";
             address: components["schemas"]["AddressInfo"];
@@ -619,7 +633,7 @@ export interface components {
         };
         LineRangeResource: components["schemas"]["Meta"] & {
             bill: components["schemas"]["BillId"];
-            n: number;
+            code: components["schemas"]["VersionCode"];
             section_id: components["schemas"]["SectionId"];
             section_path: string[];
             from: number;
@@ -640,7 +654,7 @@ export interface components {
         };
         Explanation: components["schemas"]["Meta"] & {
             bill: components["schemas"]["BillId"];
-            n: number;
+            code: components["schemas"]["VersionCode"];
             section_id: components["schemas"]["SectionId"];
             /** @description Existing-law provision this explains, for example `usc/42/1395`. */
             provision_id?: string;
@@ -671,7 +685,7 @@ export interface components {
         };
         BillSummaryDoc: components["schemas"]["Meta"] & {
             bill: components["schemas"]["BillId"];
-            n: number;
+            code: components["schemas"]["VersionCode"];
             headline: string;
             statements: components["schemas"]["Statement"][];
             flags?: ("auto" | "steward-checked" | "bill-only")[];
@@ -679,8 +693,8 @@ export interface components {
         };
         VersionChangeSummary: components["schemas"]["Meta"] & {
             bill: components["schemas"]["BillId"];
-            from_n: number;
-            to_n: number;
+            from_code: components["schemas"]["VersionCode"];
+            to_code: components["schemas"]["VersionCode"];
             headline: string;
             statements: components["schemas"]["Statement"][];
             /** @description `no-differences`: the text equals the previous version's; the answer is built from the stored comparison, not generated. */
@@ -690,7 +704,7 @@ export interface components {
         CitationState: "resolved" | "ambiguous" | "unresolved" | "steward-confirmed";
         Citation: components["schemas"]["Meta"] & {
             bill: components["schemas"]["BillId"];
-            n: number;
+            code: components["schemas"]["VersionCode"];
             section_id: components["schemas"]["SectionId"];
             /** @description Line holding the citation, when known. */
             line?: number;
@@ -710,13 +724,13 @@ export interface components {
         /** @description Present on a pinned older version when a newer one exists and its comparison is stored: what became of the addressed lines in the latest version. `moved` is the same words elsewhere or renumbered, `changed` words altered with a counterpart, `removed` no counterpart (no `new_*` fields). A section is classified over all its lines. Derived from official text; carries none. */
         ChangedSince: {
             /** @description The latest version the lines were compared with. */
-            to_n: number;
+            to_code: components["schemas"]["VersionCode"];
             /** @enum {string} */
             class: "unchanged" | "moved" | "changed" | "removed";
             new_section_id?: components["schemas"]["SectionId"];
             new_from?: number;
             new_to?: number;
-            /** @description Path of the best new location, for example `/v1/bills/<bill>/v/3/s/2/l/4-5`. */
+            /** @description Path of the best new location, for example `/v1/bills/<bill>/v/eh/s/2/l/4-5`. */
             new_address?: string;
             /** @description Fragment of the new location, for example `#s2-l4-5`. */
             new_anchor?: string;
@@ -738,8 +752,8 @@ export interface components {
         };
         VersionComparison: components["schemas"]["Meta"] & {
             bill: components["schemas"]["BillId"];
-            from_n: number;
-            to_n: number;
+            from_code: components["schemas"]["VersionCode"];
+            to_code: components["schemas"]["VersionCode"];
             sections: components["schemas"]["ComparisonSection"][];
         };
         SelectionPolicy: components["schemas"]["Meta"] & {
@@ -888,7 +902,7 @@ export interface components {
     parameters: {
         /** @description Bill id, for example `us-119-hr-4127`. */
         BillPath: components["schemas"]["BillId"];
-        /** @description 1-based position in the bill's version list, or `latest`. */
+        /** @description Lower-case version code, for example `eh`, or `latest`. */
         VersionPath: string;
         /** @description Section id, for example `s4` or `s4.b`. */
         SectionPath: components["schemas"]["SectionId"];
@@ -1042,8 +1056,8 @@ export interface operations {
             path: {
                 /** @description Bill id, for example `us-119-hr-4127`. */
                 bill: components["parameters"]["BillPath"];
-                /** @description 1-based position in the bill's version list, or `latest`. */
-                n: components["parameters"]["VersionPath"];
+                /** @description Lower-case version code, for example `eh`, or `latest`. */
+                version: components["parameters"]["VersionPath"];
             };
             cookie?: never;
         };
@@ -1062,6 +1076,15 @@ export interface operations {
                 };
             };
             304: components["responses"]["NotModified"];
+            /** @description The code is a referral that collapsed into another version; `Location` is the same route on that version. Every route that takes a version code answers this way. */
+            308: {
+                headers: {
+                    /** @description Same route with the code of the version it collapsed into. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimited"];
             503: components["responses"]["Unavailable"];
@@ -1074,8 +1097,8 @@ export interface operations {
             path: {
                 /** @description Bill id, for example `us-119-hr-4127`. */
                 bill: components["parameters"]["BillPath"];
-                /** @description 1-based position in the bill's version list, or `latest`. */
-                n: components["parameters"]["VersionPath"];
+                /** @description Lower-case version code, for example `eh`, or `latest`. */
+                version: components["parameters"]["VersionPath"];
                 /** @description Section id, for example `s4` or `s4.b`. */
                 section: components["parameters"]["SectionPath"];
             };
@@ -1108,8 +1131,8 @@ export interface operations {
             path: {
                 /** @description Bill id, for example `us-119-hr-4127`. */
                 bill: components["parameters"]["BillPath"];
-                /** @description 1-based position in the bill's version list, or `latest`. */
-                n: components["parameters"]["VersionPath"];
+                /** @description Lower-case version code, for example `eh`, or `latest`. */
+                version: components["parameters"]["VersionPath"];
                 /** @description Section id, for example `s4` or `s4.b`. */
                 section: components["parameters"]["SectionPath"];
                 /** @description A line `12` or an inclusive range `12-13`. */
@@ -1216,8 +1239,8 @@ export interface operations {
             path: {
                 /** @description Bill id, for example `us-119-hr-4127`. */
                 bill: components["parameters"]["BillPath"];
-                /** @description 1-based position in the bill's version list, or `latest`. */
-                n: components["parameters"]["VersionPath"];
+                /** @description Lower-case version code, for example `eh`, or `latest`. */
+                version: components["parameters"]["VersionPath"];
             };
             cookie?: never;
         };
@@ -1247,8 +1270,8 @@ export interface operations {
             path: {
                 /** @description Bill id, for example `us-119-hr-4127`. */
                 bill: components["parameters"]["BillPath"];
-                /** @description 1-based position in the bill's version list, or `latest`. */
-                n: components["parameters"]["VersionPath"];
+                /** @description Lower-case version code, for example `eh`, or `latest`. */
+                version: components["parameters"]["VersionPath"];
             };
             cookie?: never;
         };
@@ -1278,8 +1301,8 @@ export interface operations {
             path: {
                 /** @description Bill id, for example `us-119-hr-4127`. */
                 bill: components["parameters"]["BillPath"];
-                /** @description 1-based position in the bill's version list, or `latest`. */
-                n: components["parameters"]["VersionPath"];
+                /** @description Lower-case version code, for example `eh`, or `latest`. */
+                version: components["parameters"]["VersionPath"];
             };
             cookie?: never;
         };
@@ -1314,8 +1337,8 @@ export interface operations {
             path: {
                 /** @description Bill id, for example `us-119-hr-4127`. */
                 bill: components["parameters"]["BillPath"];
-                /** @description 1-based position in the bill's version list, or `latest`. */
-                n: components["parameters"]["VersionPath"];
+                /** @description Lower-case version code, for example `eh`, or `latest`. */
+                version: components["parameters"]["VersionPath"];
             };
             cookie?: never;
         };
@@ -1349,8 +1372,8 @@ export interface operations {
             path: {
                 /** @description Bill id, for example `us-119-hr-4127`. */
                 bill: components["parameters"]["BillPath"];
-                /** @description 1-based position in the bill's version list, or `latest`. */
-                n: components["parameters"]["VersionPath"];
+                /** @description Lower-case version code, for example `eh`, or `latest`. */
+                version: components["parameters"]["VersionPath"];
             };
             cookie?: never;
         };
@@ -1380,9 +1403,10 @@ export interface operations {
             path: {
                 /** @description Bill id, for example `us-119-hr-4127`. */
                 bill: components["parameters"]["BillPath"];
-                /** @description 1-based position in the bill's version list, or `latest`. */
-                n: components["parameters"]["VersionPath"];
-                m: number;
+                /** @description Lower-case version code, for example `eh`, or `latest`. */
+                version: components["parameters"]["VersionPath"];
+                /** @description Version code of the compared version. */
+                other: components["schemas"]["VersionCode"];
             };
             cookie?: never;
         };

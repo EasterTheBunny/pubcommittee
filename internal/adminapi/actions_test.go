@@ -201,11 +201,11 @@ func TestReingestAndReparse(t *testing.T) {
 		t.Fatalf("reingest %d: %s", code, body)
 	}
 	mustContain(t, body, `"changed":true`)
-	code, body = e.call(principalOp1, http.MethodPost, trackPath+"v/1/reparse", reason("parser check"))
+	code, body = e.call(principalOp1, http.MethodPost, trackPath+"v/ih/reparse", reason("parser check"))
 	if code != http.StatusOK {
 		t.Fatalf("reparse %d: %s", code, body)
 	}
-	if code, _ := e.call(principalOp1, http.MethodPost, trackPath+"v/99/reparse", reason("x")); code != http.StatusNotFound {
+	if code, _ := e.call(principalOp1, http.MethodPost, trackPath+"v/zz/reparse", reason("x")); code != http.StatusNotFound {
 		t.Fatalf("reparse of a missing version: %d", code)
 	}
 }
@@ -241,7 +241,7 @@ func TestPublishPolicy(t *testing.T) {
 func TestGenerationsUnavailable(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t)
-	body := map[string]any{"reason": "r", "task": "summary", "bill": "us-119-hr-3062", "version": 1}
+	body := map[string]any{"reason": "r", "task": "summary", "bill": "us-119-hr-3062", "version": "eh"}
 	if code, _ := e.call(principalOp1, http.MethodPost, "/admin/v1/generations", body); code != http.StatusNotImplemented {
 		t.Fatalf("status %d", code)
 	}

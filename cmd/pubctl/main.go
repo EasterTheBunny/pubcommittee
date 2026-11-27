@@ -51,8 +51,8 @@ commands:
   bills catalog patch <bill> --reason R [--title T] [--status S] [--chamber C]
       [--introduced YYYY-MM-DD] [--policy-area A] [--subjects a,b,c]
   bills reingest <bill> --reason R
-  bills reparse <bill> --version N --reason R
-  generations create --task T --bill <bill> --version N --reason R
+  bills reparse <bill> --version CODE --reason R
+  generations create --task T --bill <bill> --version CODE --reason R
   selection-policy publish (--builtin v1 | --file path.json) --reason R
   ingest failures [--source <source/session>]...
   jobs
@@ -172,7 +172,7 @@ func (c cli) billAction(ctx context.Context, action string, args []string) error
 func (c cli) reparse(ctx context.Context, args []string) error {
 	fs := c.flagSet("bills reparse")
 	reason := fs.String("reason", "", "public reason (required)")
-	version := fs.Int("version", 0, "stored version number, 1 or more (required)")
+	version := fs.String("version", "", "stored version code, for example eh (required)")
 	pos, err := parseArgs(fs, args)
 	if err != nil {
 		return ignoreHelp(err)
@@ -184,15 +184,15 @@ func (c cli) reparse(ctx context.Context, args []string) error {
 	if err := requireReason(*reason); err != nil {
 		return err
 	}
-	if *version < 1 {
-		return fmt.Errorf("--version must be 1 or more: %w", errUsage)
+	if (data.VersionRef{Bill: ref, Version: *version}).Validate() != nil {
+		return fmt.Errorf("--version must be a version code such as eh: %w", errUsage)
 	}
 	cl, err := c.connect()
 	if err != nil {
 		return err
 	}
 	var raw json.RawMessage
-	path := fmt.Sprintf("%s/bills/%s/v/%d/reparse", adminapi.PathPrefix, ref.ID(), *version)
+	path := fmt.Sprintf("%s/bills/%s/v/%s/reparse", adminapi.PathPrefix, ref.ID(), *version)
 	if err := cl.do(ctx, http.MethodPost, path, adminapi.Reasoned{Reason: *reason}, &raw); err != nil {
 		return err
 	}
@@ -310,7 +310,7 @@ func (c cli) generations(ctx context.Context, args []string) error {
 	fs := c.flagSet("generations create")
 	task := fs.String("task", "", "generation task name (required)")
 	bill := fs.String("bill", "", "bill id, for example us-119-hr-4313 (required)")
-	version := fs.Int("version", 0, "stored version number, 1 or more (required)")
+	version := fs.String("version", "", "stored version code, for example eh (required)")
 	reason := fs.String("reason", "", "public reason (required)")
 	pos, err := parseArgs(fs, args[1:])
 	if err != nil {
@@ -372,7 +372,7 @@ func (c cli) selectionPolicy(ctx context.Context, args []string) error {
 }
 
 // generationRequest validates the flags of generations create.
-func generationRequest(task, bill string, version int, reason string) (adminapi.GenerationRequest, error) {
+func generationRequest(task, bill string, version, reason string) (adminapi.GenerationRequest, error) {
 	if err := requireReason(reason); err != nil {
 		return adminapi.GenerationRequest{}, err
 	}
@@ -380,8 +380,8 @@ func generationRequest(task, bill string, version int, reason string) (adminapi.
 	if err != nil {
 		return adminapi.GenerationRequest{}, fmt.Errorf("--bill: %w", err)
 	}
-	if task == "" || version < 1 {
-		return adminapi.GenerationRequest{}, fmt.Errorf("--task and --version (1 or more) are required: %w", errUsage)
+	if task == "" || (data.VersionRef{Bill: ref, Version: version}).Validate() != nil {
+		return adminapi.GenerationRequest{}, fmt.Errorf("--task and --version (a code such as eh) are required: %w", errUsage)
 	}
 	var body adminapi.GenerationRequest
 	body.Reason = reason
