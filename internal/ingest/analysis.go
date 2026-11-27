@@ -151,6 +151,7 @@ func Analyze(ctx context.Context, d Deps, o Options, bill data.BillRef) (Report,
 	r := &Run{Deps: d, Options: o, Bill: bill, Decision: Decision{Tracked: true}}
 	r.Report = Report{Bill: bill.ID(), DryRun: o.DryRun, Tracked: true, Stored: []string{}, Present: []string{}}
 	for _, s := range []Step{
+		StepFunc{StepName: StepReferrals, Fn: referralsStep},
 		StepFunc{StepName: StepCitations, Fn: citationsStep},
 		StepFunc{StepName: StepComparisons, Fn: comparisonsStep},
 	} {

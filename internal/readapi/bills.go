@@ -277,7 +277,7 @@ func (s *Server) summaryOf(ctx context.Context, e data.CatalogEntry) (apiv1.Bill
 		out.Chamber = new(apiv1.Chamber(b.Chamber))
 	}
 	if n := len(b.Versions); n > 0 {
-		out.LatestVersion = new(n)
+		out.LatestVersion = new(b.Versions[n-1].Ref.Version)
 	}
 	return out, nil
 }
@@ -314,12 +314,12 @@ func (s *Server) GetBill(w http.ResponseWriter, r *http.Request, bill apiv1.Bill
 		out.PolicyVersion = new(b.PolicyVersion)
 	}
 	if len(vs) > 0 {
-		out.LatestVersion = new(len(vs))
+		out.LatestVersion = new(vs[len(vs)-1].Ref.Version)
 	}
 	for i, v := range vs {
 		out.Versions[i] = apiv1.VersionSummary{
-			N: i + 1, Code: v.Ref.Version, Type: v.Type, PublishedAt: v.PublishedAt.UTC(),
-			Address: versionPath(id, i+1),
+			Code: v.Ref.Version, Type: v.Type, PublishedAt: v.PublishedAt.UTC(),
+			Address: versionPath(id, v.Ref.Version), Referrals: toReferrals(v.Referrals),
 		}
 	}
 	sendJSON(w, r, cacheShort, out)

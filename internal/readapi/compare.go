@@ -3,6 +3,7 @@ package readapi
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	apiv1 "github.com/easterthebunny/pubcommittee/api/v1"
@@ -15,7 +16,7 @@ import (
 // version m. Both versions must exist and a comparison must be stored for the
 // pair, oldest first; otherwise the answer is not found.
 func (s *Server) CompareVersions(
-	w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath, m int,
+	w http.ResponseWriter, r *http.Request, bill apiv1.BillPath, n apiv1.VersionPath, other apiv1.VersionCode,
 ) {
 	ctx := r.Context()
 	res, err := s.resolve(ctx, bill, n, false)
@@ -23,19 +24,22 @@ func (s *Server) CompareVersions(
 		fail(w, r, err)
 		return
 	}
-	if m < 1 || m > res.latest {
-		fail(w, r, fmt.Errorf("version %d of %s: %w", m, res.id, data.ErrNotFound))
+	m := slices.IndexFunc(res.vs, func(v data.VersionSummary) bool { return v.Ref.Version == other }) + 1
+	if m < 1 {
+		// A collapsed referral in the second segment leads, like the first, to
+		// the version it repeats.
+		if to, ok := collapsedInto(res.vs, other); ok {
+			redirectOther(w, r, other, to)
+			return
+		}
+		fail(w, r, fmt.Errorf("version %q of %s: %w", other, res.id, data.ErrNotFound))
 		return
 	}
 	if s.ports.Comparisons == nil {
 		notFound(w, detailNoCompare)
 		return
 	}
-	vs, err := s.listVersions(ctx, res.ref)
-	if err != nil {
-		fail(w, r, err)
-		return
-	}
+	vs := res.vs
 	ref := data.ComparisonRef{
 		Bill: res.ref, From: vs[res.n-1].Ref.Version, To: vs[m-1].Ref.Version,
 		Method: versiondiff.Method(billxml.ParserVersion),
@@ -62,7 +66,7 @@ func (s *Server) CompareVersions(
 		return
 	}
 	out := apiv1.VersionComparison{
-		Bill: res.id, FromN: res.n, ToN: m, Sections: toComparisonSections(c, from, to),
+		Bill: res.id, FromCode: res.code, ToCode: other, Sections: toComparisonSections(c, from, to),
 	}
 	out.Version, out.AsOf, out.Provenance, out.ContentClass = meta(c.Meta)
 	// The stored text is immutable and both versions are explicit.
@@ -115,4 +119,33 @@ func officialText(v data.OfficialVersion, path []string, from, to int) *apiv1.Cl
 	return &apiv1.ClassedText{
 		Text: strings.Join(parts, "\n"), ContentClass: apiv1.TrustedContentClass(data.ContentOfficial),
 	}
+}
+
+// collapsedInto returns the listed version a collapsed referral code
+// collapsed into.
+func collapsedInto(vs []data.VersionSummary, code string) (string, bool) {
+	for _, v := range vs {
+		if slices.ContainsFunc(v.Referrals, func(r data.Referral) bool { return r.Code == code }) {
+			return v.Ref.Version, true
+		}
+	}
+	return "", false
+}
+
+// redirectOther answers 308 to the same comparison with its second version,
+// a collapsed referral, replaced by the version it collapsed into.
+func redirectOther(w http.ResponseWriter, r *http.Request, from, to string) {
+	const marker = "/compare/"
+	p := r.URL.Path
+	if !strings.HasSuffix(p, marker+from) {
+		notFound(w, "no such version")
+		return
+	}
+	loc := strings.TrimSuffix(p, from) + to
+	if r.URL.RawQuery != "" {
+		loc += "?" + r.URL.RawQuery
+	}
+	w.Header().Set("Location", loc)
+	w.Header().Set("Cache-Control", cacheControlShort)
+	w.WriteHeader(http.StatusPermanentRedirect)
 }

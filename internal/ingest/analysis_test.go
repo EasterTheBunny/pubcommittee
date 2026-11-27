@@ -34,8 +34,8 @@ func TestAnalysisStepsStoreCitationsAndComparisons(t *testing.T) {
 	if rep.CitationSets != 0 || len(rep.Notes) != 1 || !strings.Contains(rep.Notes[0], "no existing-law release point") {
 		t.Errorf("first pull: sets=%d notes=%v", rep.CitationSets, rep.Notes)
 	}
-	if rep.Comparisons != 5 {
-		t.Errorf("comparisons = %d, want 5 (3 consecutive pairs plus 2 against the latest)", rep.Comparisons)
+	if rep.Comparisons != 3 {
+		t.Errorf("comparisons = %d, want 3 (2 consecutive pairs plus 1 against the latest; rfs collapsed into eh)", rep.Comparisons)
 	}
 
 	titles, err := src.LawTitles(t.Context(), data.ReleasePoint{ID: "119-142"})
@@ -58,7 +58,7 @@ func checkCaughtUp(t *testing.T, d ingest.Deps, opts ingest.Options) {
 	if err != nil || rep.Failed() {
 		t.Fatalf("pull: %v %+v", err, rep.Failures)
 	}
-	if rep.CitationSets != 4 || rep.Comparisons != 5 || len(rep.Notes) != 0 {
+	if rep.CitationSets != 3 || rep.Comparisons != 3 || len(rep.Notes) != 0 {
 		t.Errorf("pull: sets=%d comparisons=%d notes=%v", rep.CitationSets, rep.Comparisons, rep.Notes)
 	}
 }
@@ -82,7 +82,7 @@ func TestAnalyzeRunsOverStoredData(t *testing.T) {
 		t.Fatal(err)
 	}
 	rep, err := ingest.Analyze(t.Context(), d, ingest.Options{}, bill(4313))
-	if err != nil || rep.Failed() || rep.Comparisons != 5 {
+	if err != nil || rep.Failed() || rep.Comparisons != 3 {
 		t.Fatalf("Analyze = %+v, %v", rep, err)
 	}
 }

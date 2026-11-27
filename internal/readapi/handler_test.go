@@ -9,14 +9,18 @@ import (
 	"net/http"
 	"net/http/httptest"
 	neturl "net/url"
+	"os"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	apiv1 "github.com/easterthebunny/pubcommittee/api/v1"
+	"github.com/easterthebunny/pubcommittee/internal/adapters/fixturesrc"
 	"github.com/easterthebunny/pubcommittee/internal/adapters/memory"
 	"github.com/easterthebunny/pubcommittee/internal/contract"
 	"github.com/easterthebunny/pubcommittee/internal/data"
+	"github.com/easterthebunny/pubcommittee/internal/ingest"
 	"github.com/easterthebunny/pubcommittee/internal/readapi"
 	"github.com/easterthebunny/pubcommittee/internal/readapi/seed"
 )
@@ -81,7 +85,7 @@ func TestContractEveryRoute(t *testing.T) {
 func TestConditionalGet(t *testing.T) {
 	t.Parallel()
 	url, _ := serve(t, readapi.Options{RateLimits: readapi.RateLimits{}})
-	for _, path := range []string{"/v1/bills/" + seed.TrackedBill + "/v/2/s/s4/l/1-2", "/v1/bills", "/v1/selection-policy/1"} {
+	for _, path := range []string{"/v1/bills/" + seed.TrackedBill + "/v/rh/s/s4/l/1-2", "/v1/bills", "/v1/selection-policy/1"} {
 		first := do(t, http.MethodGet, url+path, nil)
 		etag := first.header.Get("ETag")
 		if etag == "" || strings.HasPrefix(etag, "W/") {
@@ -108,10 +112,10 @@ func TestCacheClasses(t *testing.T) {
 	t.Parallel()
 	url, _ := serve(t, readapi.Options{RateLimits: readapi.RateLimits{}})
 	tests := map[string]string{
-		"/v1/bills/" + seed.TrackedBill + "/v/1":              "immutable",
-		"/v1/selection-policy/2":                              "immutable",
-		"/v1/bills/" + seed.TrackedBill + "/v/latest":         "stale-while-revalidate",
-		"/v1/bills/" + seed.TrackedBill + "/v/2/explanations": "stale-while-revalidate",
+		"/v1/bills/" + seed.TrackedBill + "/v/ih":              "immutable",
+		"/v1/selection-policy/2":                               "immutable",
+		"/v1/bills/" + seed.TrackedBill + "/v/latest":          "stale-while-revalidate",
+		"/v1/bills/" + seed.TrackedBill + "/v/rh/explanations": "stale-while-revalidate",
 		"/v1/bills": "stale-while-revalidate",
 		"/v1/feed":  "max-age=900",
 	}
@@ -238,4 +242,128 @@ func TestModerationLogPagesNewestWrittenFirst(t *testing.T) {
 	if want := []string{"a2", "g2", "a1", "g1"}; !slices.Equal(got, want) {
 		t.Errorf("order = %v, want %v", got, want)
 	}
+}
+
+// hr4313Server runs the default ingest pipeline, tracked, over the H.R. 4313
+// fixtures and starts a read-api server over the public ports of that store.
+func hr4313Server(t *testing.T) string {
+	t.Helper()
+	store := memory.New()
+	now := time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
+	src, err := fixturesrc.New(fixturesrc.Config{
+		FS:  os.DirFS("../../fixtures"),
+		Now: func() time.Time { return now },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref, err := data.ParseBillID("us-119-hr-4313")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep, err := ingest.Pull(t.Context(), ingest.Deps{
+		Ports:   store.PlatformPorts(),
+		Fetcher: src,
+		Source:  "fixtures/119",
+		Log:     slog.New(slog.DiscardHandler),
+		Now:     func() time.Time { return now },
+	}, ingest.Options{Track: true}, ingest.DefaultSteps(), ref)
+	if err != nil {
+		t.Fatalf("Pull: %v", err)
+	}
+	if rep.Failed() {
+		t.Fatalf("report failed: %+v", rep.Failures)
+	}
+	h, err := readapi.Handler(readapi.New(store.PublicReadPorts()), readapi.Options{
+		Logger: slog.New(slog.DiscardHandler), RateLimits: readapi.RateLimits{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h)
+	t.Cleanup(srv.Close)
+	return srv.URL
+}
+
+// checkRedirect asserts that GET base+path answers 308 with Location want.
+func checkRedirect(t *testing.T, base, path, want string) {
+	t.Helper()
+	// noFollow returns the 308 itself instead of following it.
+	noFollow := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}}
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, base+path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := noFollow.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusPermanentRedirect {
+		t.Fatalf("%s: status %d, want 308", path, resp.StatusCode)
+	}
+	if loc := resp.Header.Get("Location"); loc != want {
+		t.Errorf("%s: Location %q, want %q", path, loc, want)
+	}
+}
+
+// readFirstSectionID returns the id of the first section of the version at u.
+func readFirstSectionID(t *testing.T, u string) string {
+	t.Helper()
+	got := do(t, http.MethodGet, u, nil)
+	if got.status != http.StatusOK {
+		t.Fatalf("%s: status %d: %s", u, got.status, got.body)
+	}
+	var ver apiv1.Version
+	if err := json.Unmarshal(got.body, &ver); err != nil {
+		t.Fatal(err)
+	}
+	if len(ver.Sections) == 0 {
+		t.Fatalf("%s has no sections", u)
+	}
+	return ver.Sections[0].Id
+}
+
+// checkCollapsedBill asserts the bill at u lists ih, rh and eh, with rfs
+// collapsed into eh as a referral.
+func checkCollapsedBill(t *testing.T, u string) {
+	t.Helper()
+	got := do(t, http.MethodGet, u, nil)
+	if got.status != http.StatusOK {
+		t.Fatalf("bill: status %d: %s", got.status, got.body)
+	}
+	var b apiv1.Bill
+	if err := json.Unmarshal(got.body, &b); err != nil {
+		t.Fatal(err)
+	}
+	codes := make([]string, 0, len(b.Versions))
+	for _, v := range b.Versions {
+		codes = append(codes, v.Code)
+	}
+	if want := []string{"ih", "rh", "eh"}; !slices.Equal(codes, want) {
+		t.Fatalf("version codes = %v, want %v", codes, want)
+	}
+	if b.Versions[2].Referrals == nil || len(*b.Versions[2].Referrals) == 0 {
+		t.Fatalf("eh referrals missing: %+v", b.Versions[2])
+	}
+	ref := (*b.Versions[2].Referrals)[0]
+	if ref.Code != "rfs" || ref.Type != "Referred in Senate" {
+		t.Errorf("referral = code %q type %q, want rfs Referred in Senate", ref.Code, ref.Type)
+	}
+}
+
+// TestCollapsedReferralRedirects: rfs collapsed into eh, so a request for rfs
+// is a 308 to the same route on eh, and the bill lists only ih, rh and eh.
+func TestCollapsedReferralRedirects(t *testing.T) {
+	t.Parallel()
+	base := hr4313Server(t)
+	const bill = "/v1/bills/us-119-hr-4313"
+	checkRedirect(t, base, bill+"/v/rfs", bill+"/v/eh")
+	sec := readFirstSectionID(t, base+bill+"/v/eh")
+	checkRedirect(t, base, bill+"/v/rfs/s/"+sec, bill+"/v/eh/s/"+sec)
+	// The second version of a comparison redirects too.
+	checkRedirect(t, base, bill+"/v/ih/compare/rfs", bill+"/v/ih/compare/eh")
+	checkCollapsedBill(t, base+bill)
 }

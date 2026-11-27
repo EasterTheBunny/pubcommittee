@@ -46,6 +46,8 @@ The amendment loop returns to step 2 for the lines that changed.
 
 ## New official version handling
 
+A bill's versions are ordered by legislative stage (introduced, reported, engrossed, and so on), never by the date on them, and each is addressed by its own stage code, so an address never changes when another version arrives. A version that only records a referral to the other chamber, with the same text as the version before it, is not a version of its own: that version shows a note of the referral and its date (M1-05b).
+
 When a new version arrives:
 
 1. Compute a text mapping from the previous version to the new one, at the line/section level.

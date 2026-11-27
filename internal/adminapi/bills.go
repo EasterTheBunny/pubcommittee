@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"reflect"
 	"slices"
-	"strconv"
 	"time"
 
 	"github.com/easterthebunny/pubcommittee/internal/billxml"
@@ -347,15 +346,15 @@ func (s *Server) reparse(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	n, err := strconv.Atoi(r.PathValue("n"))
-	if err != nil || n < 1 {
-		s.fail(w, fmt.Errorf("version %q: %w", r.PathValue("n"), data.ErrInvalid))
+	code := r.PathValue("version")
+	if (data.VersionRef{Bill: ref, Version: code}).Validate() != nil {
+		s.fail(w, fmt.Errorf("version %q: %w", code, data.ErrInvalid))
 		return
 	}
 	if _, ok := bodyReasoned(w, r); !ok {
 		return
 	}
-	res, err := s.reparseVersion(r.Context(), ref, n)
+	res, err := s.reparseVersion(r.Context(), ref, code)
 	if err != nil {
 		s.fail(w, err)
 		return
@@ -363,20 +362,15 @@ func (s *Server) reparse(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, res)
 }
 
-// reparseVersion parses the n-th stored version again and compares.
-func (s *Server) reparseVersion(ctx context.Context, ref data.BillRef, n int) (ReparseResult, error) {
-	vs, err := s.Ports.BillText.ListVersions(ctx, ref)
-	if err != nil {
-		return ReparseResult{}, fmt.Errorf("list versions: %w", err)
-	}
-	if n > len(vs) {
-		return ReparseResult{}, fmt.Errorf("%s has %d stored versions: %w", ref.ID(), len(vs), data.ErrNotFound)
-	}
-	stored, err := s.Ports.BillText.GetVersion(ctx, vs[n-1].Ref)
+// reparseVersion parses the stored version with the given code again and
+// compares. Any stored version can be reparsed, listed or not.
+func (s *Server) reparseVersion(ctx context.Context, ref data.BillRef, code string) (ReparseResult, error) {
+	vref := data.VersionRef{Bill: ref, Version: code}
+	stored, err := s.Ports.BillText.GetVersion(ctx, vref)
 	if err != nil {
 		return ReparseResult{}, fmt.Errorf("read version: %w", err)
 	}
-	src, err := s.Ports.BillText.GetSource(ctx, vs[n-1].Ref)
+	src, err := s.Ports.BillText.GetSource(ctx, vref)
 	if err != nil {
 		return ReparseResult{}, fmt.Errorf("read original: %w", err)
 	}
@@ -385,7 +379,7 @@ func (s *Server) reparseVersion(ctx context.Context, ref data.BillRef, n int) (R
 		return ReparseResult{}, fmt.Errorf("parse: %w: %w", err, data.ErrInvalid)
 	}
 	res := ReparseResult{
-		Bill: ref.ID(), Version: n, StoredParser: stored.ParserVersion, CurrentParser: billxml.ParserVersion,
+		Bill: ref.ID(), Version: code, StoredParser: stored.ParserVersion, CurrentParser: billxml.ParserVersion,
 	}
 	switch {
 	case stored.ParserVersion != billxml.ParserVersion:

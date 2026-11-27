@@ -57,8 +57,7 @@
 							{bill.ref.number} · {bill.ref.jurisdiction.toUpperCase()}
 							session {bill.ref.session} · {bill.status}{#if bill.chamber}
 								· {bill.chamber}{/if}{#if bill.latest_version}
-								· {bill.latest_version}
-								{bill.latest_version === 1 ? 'version' : 'versions'}{/if}
+								· latest version {bill.latest_version}{/if}
 						</div>
 					</li>
 				{/each}

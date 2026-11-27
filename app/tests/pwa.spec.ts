@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 // worker runs without HTTPS. Desktop Chromium only: CDP reports the browser's own install check.
 test.skip(({ browserName }) => browserName !== 'chromium');
 
-const version = '/bills/us-119-hr-4127/v/2';
+const version = '/bills/us-119-hr-4127/v/rh';
 const line = 'The Secretary shall publish clinic hours';
 
 /** Opens `path`, waits until the service worker controls the page, then loads it again under control. */

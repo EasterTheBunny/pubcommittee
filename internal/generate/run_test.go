@@ -109,15 +109,20 @@ func checkCollect(t *testing.T, d generate.Deps, rep generate.SubmitReport) {
 
 func checkPublished(t *testing.T, store *memory.Store) {
 	t.Helper()
+	// Three listed versions (ih, rh, eh); rfs equals eh and is collapsed.
 	vs, err := store.ListVersions(t.Context(), hr(4313))
-	if err != nil || len(vs) != 4 {
+	if err != nil || len(vs) != 3 {
 		t.Fatalf("versions = %d, %v", len(vs), err)
 	}
 	changes := checkSummaries(t, store, vs)
 	if changes < 2 {
 		t.Errorf("change summaries = %d, want at least 2", changes)
 	}
-	checkExplanations(t, store, vs[0].Ref)
+	// Inline explanations only for the latest version (M1-09c); a superseded one has none.
+	checkExplanations(t, store, vs[len(vs)-1].Ref)
+	if exps, err := store.GetExplanations(t.Context(), vs[0].Ref); err != nil || len(exps) != 0 {
+		t.Errorf("explanations of superseded %s = %d, %v, want none", vs[0].Ref, len(exps), err)
+	}
 }
 
 // checkSummaries checks the published summary of every version and returns
@@ -228,8 +233,9 @@ func TestInvalidAnchorAndInventedNumberAreNotPublished(t *testing.T) {
 		base.Text = `{"headline":"h","statements":[{"text":"The bill spends $987654321.","anchors":["s99-l99"],"provision_ids":[]}]}`
 		return base
 	})
-	if col.ByStatus[data.GenUnverified] != 4 {
-		t.Fatalf("by status = %v, want 4 unverified summaries", col.ByStatus)
+	// Three summaries (one per listed version), all unverified.
+	if col.ByStatus[data.GenUnverified] != 3 {
+		t.Fatalf("by status = %v, want 3 unverified summaries", col.ByStatus)
 	}
 	vs, _ := store.ListVersions(t.Context(), hr(4313))
 	if _, err := store.PublicReadPorts().Generated.GetCurrent(t.Context(), data.TaskBillSummary, vs[0].Ref, ""); err == nil {
@@ -254,7 +260,8 @@ func TestRefusalTruncationAndGarbageAreRecordedNotPublished(t *testing.T) {
 		base.Text = "not json"
 		return base
 	})
-	if col.ByStatus[data.GenRefusal] != 1 || col.ByStatus[data.GenTruncated] != 1 || col.ByStatus[data.GenInvalid] != 2 {
+	// Three summaries: the first refuses, the second is truncated, the third is invalid JSON.
+	if col.ByStatus[data.GenRefusal] != 1 || col.ByStatus[data.GenTruncated] != 1 || col.ByStatus[data.GenInvalid] != 1 {
 		t.Fatalf("by status = %v", col.ByStatus)
 	}
 }
@@ -335,8 +342,8 @@ func collectRejectedSummaries(t *testing.T) (generate.Deps, *memory.Store) {
 	if _, err := generate.Submit(t.Context(), d, hr(4313), false); err != nil {
 		t.Fatal(err)
 	}
-	if col, err := generate.Collect(t.Context(), d); err != nil || col.ByStatus[data.GenUnverified] != 4 {
-		t.Fatalf("Collect = %+v, %v; want 4 unverified summaries", col, err)
+	if col, err := generate.Collect(t.Context(), d); err != nil || col.ByStatus[data.GenUnverified] != 3 {
+		t.Fatalf("Collect = %+v, %v; want 3 unverified summaries", col, err)
 	}
 	return d, store
 }
@@ -358,13 +365,13 @@ func TestRetryReplacesRejectedOutputsOnly(t *testing.T) {
 	if n := submitted(t, d); n != 0 {
 		t.Fatalf("Submit = %d, want nothing submitted", n)
 	}
-	// With Retry only the four rejected summaries are planned again; a good answer replaces them for readers.
+	// With Retry only the three rejected summaries are planned again; a good answer replaces them for readers.
 	d.Retry, d.Gen = true, fakegen.New(fakegen.Config{})
-	if n := submitted(t, d); n != 4 {
-		t.Fatalf("Submit with Retry = %d, want 4", n)
+	if n := submitted(t, d); n != 3 {
+		t.Fatalf("Submit with Retry = %d, want 3", n)
 	}
-	if col, err := generate.Collect(t.Context(), d); err != nil || col.ByStatus[data.GenReady] != 4 {
-		t.Fatalf("Collect = %+v, %v; want 4 ready", col, err)
+	if col, err := generate.Collect(t.Context(), d); err != nil || col.ByStatus[data.GenReady] != 3 {
+		t.Fatalf("Collect = %+v, %v; want 3 ready", col, err)
 	}
 	vs, _ := store.ListVersions(t.Context(), hr(4313))
 	got, err := store.PublicReadPorts().Generated.GetCurrent(t.Context(), data.TaskBillSummary, vs[0].Ref, "")

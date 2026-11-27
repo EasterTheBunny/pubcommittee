@@ -55,10 +55,10 @@ check "publish selection policy v1 through pubctl" sh -c "'$tmp/pubctl' --url $a
 check "track without a reason is refused" sh -c "! '$tmp/pubctl' --url $adm bills track us-119-hr-3062 2>/dev/null"
 check "track a catalog bill with a reason" sh -c "'$tmp/pubctl' --url $adm bills track us-119-hr-3062 --reason 'pilot seed: acceptance' >'$tmp/track.json'"
 check "the bill shows the administrator reason" sh -c "grep -rq administrator '$root/catalog'"
-check "track did not pull: no text yet, and the response names the pull commands" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/1) = 404 ] && grep -q 'bills reingest' '$tmp/track.json' && grep -q 'job-ingest --bill' '$tmp/track.json'"
+check "track did not pull: no text yet, and the response names the pull commands" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/ih) = 404 ] && grep -q 'bills reingest' '$tmp/track.json' && grep -q 'job-ingest --bill' '$tmp/track.json'"
 check "reingest pulls the text (the explicit, logged pull)" sh -c "'$tmp/pubctl' --url $adm bills reingest us-119-hr-3062 --reason 'pull text' >'$tmp/pull.json'"
-check "its text is served" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/1) = 200 ]"
-check "reingest ran the full pipeline: citations stored and served" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/1/citations) = 200 ] && [ \$(find '$root/bills/us/119/hr/3062' -path '*/citations/*' -name '*.json' ! -name '*.meta.json' | wc -l) -ge 1 ]"
+check "its text is served" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/ih) = 200 ]"
+check "reingest ran the full pipeline: citations stored and served" sh -c "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/v1/bills/us-119-hr-3062/v/ih/citations) = 200 ] && [ \$(find '$root/bills/us/119/hr/3062' -path '*/citations/*' -name '*.json' ! -name '*.meta.json' | wc -l) -ge 1 ]"
 check "reingest ran the full pipeline: comparisons stored" sh -c "[ \$(find '$root/bills/us/119/hr/3062' -path '*/compare/*' -name '*.json' ! -name '*.meta.json' | wc -l) -ge 1 ]"
 check "its bill document lists the reason" sh -c "curl -sf http://127.0.0.1:18082/v1/bills/us-119-hr-3062 | grep -q administrator"
 check "the public log shows the operator's public name and the reason" sh -c "curl -sf http://127.0.0.1:18082/v1/moderation-log >'$tmp/log.json' && grep -q 'Local Operator' '$tmp/log.json' && grep -q 'pilot seed: acceptance' '$tmp/log.json'"
@@ -86,7 +86,7 @@ r4=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'X-Local-Principal: local
 
 check "ingest failures and jobs answer" sh -c "pc() { '$tmp/pubctl' --url $adm \"\$@\"; }; pc ingest failures >/dev/null && pc jobs >/dev/null"
 check "reingest re-checks stored originals" sh -c "'$tmp/pubctl' --url $adm bills reingest us-119-hr-3062 --reason 'verify hashes' | grep -q '\"changed\": true'"
-check "generations report unavailable until M1-09" sh -c "! '$tmp/pubctl' --url $adm generations create --task summary --bill us-119-hr-3062 --version 1 --reason r 2>'$tmp/gen.err'; grep -q 501 '$tmp/gen.err'"
+check "generations report unavailable until M1-09" sh -c "! '$tmp/pubctl' --url $adm generations create --task summary --bill us-119-hr-3062 --version ih --reason r 2>'$tmp/gen.err'; grep -q 501 '$tmp/gen.err'"
 
 echo "deferred (cloud phase): Google IAM refusal of a non-operator principal in dev; roster route in dev"
 [ "$fail" -eq 0 ] || { echo "M1-12 acceptance: FAILED"; exit 1; }

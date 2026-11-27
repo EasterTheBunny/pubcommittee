@@ -65,17 +65,22 @@
 		<nav aria-label="Versions" class="mt-5">
 			<h2 class="eyebrow">Versions</h2>
 			<ul class="mt-1 flex flex-wrap gap-2">
-				{#each bill.versions as v (v.n)}
+				{#each bill.versions as v (v.code)}
 					<li>
 						<a
-							href={billHref(bill.id, v.n)}
-							aria-current={v.n === version.n ? 'page' : undefined}
-							class="btn {v.n === version.n
+							href={billHref(bill.id, v.code)}
+							aria-current={v.code === version.code ? 'page' : undefined}
+							class="btn {v.code === version.code
 								? 'border-ink bg-ink text-white hover:text-white'
 								: 'border-line-strong bg-card text-ink hover:bg-subtle hover:text-ink'}"
 						>
 							{v.type} ({v.code}) · {date(v.published_at)}
 						</a>
+						{#each v.referrals ?? [] as r (r.code)}
+							<p class="referral-note mt-1 text-xs text-muted" data-referral={r.code}>
+								{r.type} ({r.code}) · {date(r.published_at)}: same text as this version.
+							</p>
+						{/each}
 					</li>
 				{/each}
 			</ul>
@@ -124,7 +129,7 @@
 					</h2>
 					<p class="mt-0.5 text-xs text-muted">
 						Address:
-						<a href={sectionHref(bill.id, version.n, s.id)}>section page</a>
+						<a href={sectionHref(bill.id, version.code, s.id)}>section page</a>
 						{#if version.address.is_latest}
 							· <a href={latestSectionHref(bill.id, s.id)}>latest</a>
 						{/if}
@@ -133,7 +138,7 @@
 						<h3 class="mb-1 eyebrow">Bill text</h3>
 						<LineList
 							billId={bill.id}
-							version={version.n}
+							version={version.code}
 							sectionId={s.id}
 							lines={s.lines}
 							explanations={ex}
@@ -166,5 +171,5 @@
 			</section>
 		</div>
 	</div>
-	<LineSelectionBar billId={bill.id} version={version.n} />
+	<LineSelectionBar billId={bill.id} version={version.code} />
 {/if}

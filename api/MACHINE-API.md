@@ -18,10 +18,12 @@ Paths mirror the human page addresses. Each piece of text has one canonical addr
 | Part | Form | Example |
 | --- | --- | --- |
 | Bill id | `<jurisdiction>-<session>-<type>-<number>` | `us-119-hr-4127` |
-| Version | `/v/{n}`, where `n` is the 1-based position in the bill's version list, or the word `latest` | `/v1/bills/us-119-hr-4127/v/2` |
+| Version | `/v/{version}`, where `version` is the lower-case version code (`ih`, `rh`, `eh`, ...) or the word `latest` | `/v1/bills/us-119-hr-4127/v/eh` |
 | Section | `/s/{section}`, a section id such as `s4`, or a dotted path such as `s4.b` | `/s/s4.b` |
 | Line or line range | `/l/{range}`, where `range` is `12` (one line) or `12-13` (inclusive) | `/l/12-13` |
 | Page fragment | Same form as the range, prefixed with `#` | `#s4-l12-13` |
+
+Versions. A bill's versions are ordered by legislative stage (the rank of the version code), never by date, and a code never changes address when another version arrives. A referral version (`rfs`, `rfh`) whose text is the same as the version before it is not listed as a version of its own: the version it collapsed into carries it in `referrals` (type, date, code), its original is still stored, and a request for its code answers `308` to the same route on that version. `/v/3` style position addresses are not valid.
 
 Blocks. A line plus every deeper line nested under it is a block. Each line carries `block_to`, the last line of its block. A block is addressed as the range `n-block_to`, taken from the first line's `block_to` field. For example, if line 12 has `block_to` 15, the block is `/l/12-15`.
 
@@ -43,17 +45,17 @@ All routes are `GET`. The cache class comes from the `x-cache` extension in the 
 | `/v1/openapi.yaml` | This specification | short |
 | `/v1/bills` | Tracked bills, or catalog entries with `scope=catalog` | short |
 | `/v1/bills/{bill}` | One bill with its version list | short |
-| `/v1/bills/{bill}/v/{n}` | One official version with sections, lines, and anchors | immutable |
-| `/v1/bills/{bill}/v/{n}/s/{section}` | One section of an official version | immutable (short for a version older than the latest: carries `changed_since`) |
-| `/v1/bills/{bill}/v/{n}/s/{section}/l/{range}` | A line or line range of an official version | immutable (short for a version older than the latest: carries `changed_since`) |
+| `/v1/bills/{bill}/v/{version}` | One official version with sections, lines, and anchors | immutable |
+| `/v1/bills/{bill}/v/{version}/s/{section}` | One section of an official version | immutable (short for a version older than the latest: carries `changed_since`) |
+| `/v1/bills/{bill}/v/{version}/s/{section}/l/{range}` | A line or line range of an official version | immutable (short for a version older than the latest: carries `changed_since`) |
 | `/v1/bills/{bill}/s/{section}` | A section of the latest version (version-less) | short |
 | `/v1/bills/{bill}/s/{section}/l/{range}` | A line range of the latest version (version-less) | short |
-| `/v1/bills/{bill}/v/{n}/explanations` | Change explanations for one version | short |
-| `/v1/bills/{bill}/v/{n}/summary` | Bill summary for one version | short |
-| `/v1/bills/{bill}/v/{n}/changes` | Summary of changes from the previous version | short |
-| `/v1/bills/{bill}/v/{n}/citations` | Citations of existing law, with resolution state | short |
-| `/v1/bills/{bill}/v/{n}/citations/unresolved` | Citations that are unresolved or ambiguous | short |
-| `/v1/bills/{bill}/v/{n}/compare/{m}` | Per-section comparison of version `n` (base) with version `m` | immutable |
+| `/v1/bills/{bill}/v/{version}/explanations` | Change explanations for one version | short |
+| `/v1/bills/{bill}/v/{version}/summary` | Bill summary for one version | short |
+| `/v1/bills/{bill}/v/{version}/changes` | Summary of changes from the previous version | short |
+| `/v1/bills/{bill}/v/{version}/citations` | Citations of existing law, with resolution state | short |
+| `/v1/bills/{bill}/v/{version}/citations/unresolved` | Citations that are unresolved or ambiguous | short |
+| `/v1/bills/{bill}/v/{version}/compare/{other}` | Per-section comparison of version `version` (base) with version `other` | immutable |
 | `/v1/selection-policy` | The current bill selection policy | short |
 | `/v1/selection-policy/{version}` | One policy version | immutable |
 | `/v1/moderation-log` | Public log of administrator actions, newest first | short |
@@ -148,6 +150,7 @@ Please identify automated clients with a descriptive `User-Agent`; it is not req
 
 - The major version is in the path: `/v1`. Clients should pin to it.
 - Additive changes do not bump the major version. These include new optional fields, new resources, new enum values, and new optional query parameters. Clients must ignore unknown fields and must tolerate unknown enum values.
+- Recorded exception (operator, 2026-11-25): version addresses changed in place in `/v1`, from 1-based positions to version codes (the `n` fields became `code`, `from_n` and `to_n` became `from_code` and `to_code`, `pinned_version` and `latest_version` became codes), before M1 exit while readers are invited only. Position addresses already served stop working, with no redirect. This is a one-time exception to the next rule.
 - Breaking changes need a new major version. These include removing or renaming a field or route, changing a type, and tightening validation. A breaking change ships as `/v2`, running beside `/v1`.
 - `/v1` keeps working for at least 12 months after `/v2` is announced. This period is proposed, to be confirmed by the project.
 - A deprecated route or field is marked `deprecated: true` in the spec. Its responses carry `Deprecation` and `Sunset` headers. No route or field is deprecated at M1.

@@ -22,10 +22,10 @@ test('bill page shows the latest version with numbered lines and two distinct la
 test('version switcher opens an older version with a notice', async ({ page }) => {
 	await page.goto(bill);
 	await page.getByRole('navigation', { name: 'Versions' }).getByRole('link').first().click();
-	await expect(page).toHaveURL(/\/v\/1$/);
+	await expect(page).toHaveURL(/\/v\/ih$/);
 	await expect(page.getByText('You are reading an older version.')).toBeVisible();
 	await page.getByRole('link', { name: 'See the current version' }).click();
-	await expect(page).toHaveURL(/\/v\/2$/);
+	await expect(page).toHaveURL(/\/v\/rh$/);
 });
 
 test('every page links to its read-api resource', async ({ page }) => {
@@ -37,22 +37,22 @@ test('every page links to its read-api resource', async ({ page }) => {
 });
 
 test('Accept: application/json answers 303 to the read-api resource', async ({ request }) => {
-	const res = await request.get(bill + '/v/1/s/s4/l/1-2', {
+	const res = await request.get(bill + '/v/ih/s/s4/l/1-2', {
 		headers: { accept: 'application/json' },
 		maxRedirects: 0
 	});
 	expect(res.status()).toBe(303);
-	expect(res.headers()['location']).toMatch(/\/v1\/bills\/us-119-hr-4127\/v\/1\/s\/s4\/l\/1-2$/);
+	expect(res.headers()['location']).toMatch(/\/v1\/bills\/us-119-hr-4127\/v\/ih\/s\/s4\/l\/1-2$/);
 	const html = await request.get(bill, { headers: { accept: 'text/html' }, maxRedirects: 0 });
 	expect(html.status()).toBe(200);
 });
 
 test('a line range address highlights its lines and a fragment selects them', async ({ page }) => {
-	await page.goto(bill + '/v/2/s/s4/l/2-3');
+	await page.goto(bill + '/v/rh/s/s4/l/2-3');
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('lines 2–3');
 	await expect(page.locator('#s4-l2')).toHaveClass(/ln-on/);
 	// a range address shows only its own lines
 	await expect(page.locator('#s4-l1')).toHaveCount(0);
-	await page.goto(bill + '/v/2#s4-l2-3');
+	await page.goto(bill + '/v/rh#s4-l2-3');
 	await expect(page.getByRole('region', { name: 'Selected lines' })).toContainText('lines 2–3');
 });

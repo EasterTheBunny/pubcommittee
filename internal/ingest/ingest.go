@@ -22,6 +22,7 @@ const (
 	StepCatalog      = "catalog"
 	StepPolicy       = "policy"
 	StepVersions     = "versions"
+	StepReferrals    = "referrals"
 	StepAfterStore   = "after-store"
 	StepCitations    = "citations"
 	StepComparisons  = "comparisons"

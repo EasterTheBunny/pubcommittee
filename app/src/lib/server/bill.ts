@@ -1,6 +1,7 @@
 // Loaders shared by the bill pages. Everything comes from read-api; a route the API answers 404 (or
 // empty) for renders its designed unavailable or empty state, never invented data (M1-13).
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
+import { billHref } from '#lib/links.ts';
 import { readApi } from '#lib/server/api.ts';
 import type {
 	Bill,
@@ -18,8 +19,8 @@ import type {
 
 type Fetch = typeof fetch;
 
-/** The version path segment: a 1-based number or the word "latest" (design/10 Canonical addresses). */
-export const isVersionParam = (v: string) => /^(\d+|latest)$/.test(v);
+/** The version path segment: a lower-case version code or the word "latest" (design/10 Canonical addresses). */
+export const isVersionParam = (v: string) => /^([a-z]{2,4}|latest)$/.test(v);
 
 export interface Unavailable {
 	/** Why a part is missing: the API has no such document yet, or it could not be reached. */
@@ -79,12 +80,16 @@ export async function loadBillPage(
 		}
 		error(status === 429 ? 429 : 503, 'This bill is not available right now.');
 	}
-	const n = version.data.n;
+	const code = version.data.code;
+	// A referral that collapsed into another version answers with that version (the API redirects);
+	// the page address follows, so a link to the referral lands on the version it collapsed into.
+	if (versionParam !== 'latest' && versionParam !== code) redirect(308, billHref(billId, code));
+	const first = bill.data.versions[0]?.code === code;
 	const [explanations, summary, changes, citations] = await Promise.all([
-		readApi.listExplanations(f, billId, n),
-		part(readApi.getBillSummary(f, billId, n)),
-		n > 1 ? part(readApi.getVersionChangeSummary(f, billId, n)) : Promise.resolve(null),
-		part(readApi.listCitations(f, billId, n))
+		readApi.listExplanations(f, billId, code),
+		part(readApi.getBillSummary(f, billId, code)),
+		first ? Promise.resolve(null) : part(readApi.getVersionChangeSummary(f, billId, code)),
+		part(readApi.listCitations(f, billId, code))
 	]);
 	return {
 		kind: 'tracked',
@@ -102,11 +107,11 @@ export async function loadBillPage(
 /** What the "changed since" notice says about an old-version address (design/06 Link behavior). */
 export type ChangedSince =
 	| { kind: 'current' }
-	| { kind: 'unknown'; currentVersion: number }
-	| { kind: 'unchanged'; currentVersion: number }
+	| { kind: 'unknown'; currentVersion: string }
+	| { kind: 'unchanged'; currentVersion: string }
 	| {
 			kind: 'changed';
-			currentVersion: number;
+			currentVersion: string;
 			/** Where the same words now live in the current version, when the comparison says so. */
 			now: { sectionId: string; from: number; to: number } | null;
 	  };
@@ -120,7 +125,7 @@ export function changedSince(
 	from: number,
 	to: number
 ): ChangedSince {
-	const currentVersion = cmp.to_n;
+	const currentVersion = cmp.to_code;
 	const sec: ComparisonSection | undefined = cmp.sections.find((s) => s.section_id === sectionId);
 	if (!sec || sec.status === 'unchanged') return { kind: 'unchanged', currentVersion };
 	if (sec.status === 'removed') return { kind: 'changed', currentVersion, now: null };
@@ -141,7 +146,7 @@ export function changedSince(
 export interface AddressPageData {
 	bill: Bill;
 	address: SectionResource['address'];
-	n: number;
+	code: string;
 	sectionId: string;
 	sectionPath: string[];
 	section: SectionResource['section'] | null;
@@ -175,7 +180,7 @@ export async function loadAddressPage(
 						})
 					: await readApi.getLineRange(f, {
 							bill: p.bill,
-							n: p.version,
+							version: p.version,
 							section: p.section,
 							range: rangeStr
 						});
@@ -183,7 +188,7 @@ export async function loadAddressPage(
 			const d: LineRangeResource = r.data;
 			return {
 				ok: true as const,
-				n: d.n,
+				code: d.code,
 				address: d.address,
 				sectionId: d.section_id,
 				sectionPath: d.section_path,
@@ -195,12 +200,12 @@ export async function loadAddressPage(
 		const r =
 			p.version === undefined
 				? await readApi.getSectionLatest(f, { bill: p.bill, section: p.section })
-				: await readApi.getSection(f, { bill: p.bill, n: p.version, section: p.section });
+				: await readApi.getSection(f, { bill: p.bill, version: p.version, section: p.section });
 		if (!r.ok) return r;
 		const d: SectionResource = r.data;
 		return {
 			ok: true as const,
-			n: d.n,
+			code: d.code,
 			address: d.address,
 			sectionId: d.section.id,
 			sectionPath: d.section.path,
@@ -215,11 +220,11 @@ export async function loadAddressPage(
 	if (!res.ok)
 		error(res.status === 404 || res.status === 400 ? res.status : 503, 'No such address.');
 
-	const explanations = await readApi.listExplanations(f, p.bill, res.n);
+	const explanations = await readApi.listExplanations(f, p.bill, res.code);
 	let notice: ChangedSince = { kind: 'current' };
 	if (!res.address.is_latest) {
 		const latest = res.address.latest_version;
-		const cmp = await readApi.compareVersions(f, p.bill, res.n, latest);
+		const cmp = await readApi.compareVersions(f, p.bill, res.code, latest);
 		if (cmp.ok) {
 			const lines = res.section ? res.section.lines : res.lines;
 			const from = res.range?.from ?? lines[0]?.n ?? 1;
@@ -229,11 +234,11 @@ export async function loadAddressPage(
 			notice = { kind: 'unknown', currentVersion: latest };
 		}
 	}
-	const v = bill.data.versions.find((x) => x.n === res.n);
+	const v = bill.data.versions.find((x) => x.code === res.code);
 	return {
 		bill: bill.data,
 		address: res.address,
-		n: res.n,
+		code: res.code,
 		sectionId: res.sectionId,
 		sectionPath: res.sectionPath,
 		section: res.section,
@@ -245,6 +250,6 @@ export async function loadAddressPage(
 				)
 			: [],
 		notice,
-		versionLabel: v ? `${v.type} (${v.code})` : `version ${res.n}`
+		versionLabel: v ? `${v.type} (${v.code})` : `version ${res.code}`
 	};
 }

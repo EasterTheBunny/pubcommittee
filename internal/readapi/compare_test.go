@@ -34,7 +34,7 @@ func TestCompareVersions(t *testing.T) {
 	}
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	path := srv.URL + "/v1/bills/" + seed.TrackedBill + "/v/1/compare/2"
+	path := srv.URL + "/v1/bills/" + seed.TrackedBill + "/v/ih/compare/rh"
 
 	if got := do(t, http.MethodGet, path, nil); got.status != http.StatusNotFound {
 		t.Fatalf("before the step: status %d, want 404", got.status)
@@ -44,7 +44,7 @@ func TestCompareVersions(t *testing.T) {
 		t.Fatalf("Step = %d, %v; want 1 comparison", n, err)
 	}
 	checkCompareBody(t, do(t, http.MethodGet, path, nil))
-	for _, p := range []string{"/v/2/compare/1", "/v/1/compare/1", "/v/1/compare/9"} {
+	for _, p := range []string{"/v/rh/compare/ih", "/v/ih/compare/ih", "/v/ih/compare/zz"} {
 		if r := do(t, http.MethodGet, srv.URL+"/v1/bills/"+seed.TrackedBill+p, nil); r.status != http.StatusNotFound {
 			t.Errorf("%s: status %d, want 404", p, r.status)
 		}
@@ -60,7 +60,7 @@ func checkCompareBody(t *testing.T, got reply) {
 	if err := json.Unmarshal(got.body, &vc); err != nil {
 		t.Fatal(err)
 	}
-	if vc.FromN != 1 || vc.ToN != 2 || len(vc.Sections) == 0 {
+	if vc.FromCode != "ih" || vc.ToCode != "rh" || len(vc.Sections) == 0 {
 		t.Errorf("comparison = %+v", vc)
 	}
 	for _, s := range vc.Sections {
@@ -111,10 +111,10 @@ func TestChangedSinceOnPinnedOldVersion(t *testing.T) {
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	base := srv.URL + "/v1/bills/" + seed.TrackedBill
-	sec := firstSectionID(t, base+"/v/1")
+	sec := firstSectionID(t, base+"/v/ih")
 
 	// Without a stored comparison there is no notice.
-	if got := changedOf(t, base+"/v/1/s/"+sec); got != nil {
+	if got := changedOf(t, base+"/v/ih/s/"+sec); got != nil {
 		t.Fatalf("before the step: changed_since = %+v, want none", got)
 	}
 	if _, err := versiondiff.Step(ctx, store, store, billRef(t, store), billxml.ParserVersion); err != nil {
@@ -125,14 +125,14 @@ func TestChangedSinceOnPinnedOldVersion(t *testing.T) {
 
 func checkChangedSince(t *testing.T, base, sec string) {
 	t.Helper()
-	got := changedOf(t, base+"/v/1/s/"+sec)
-	if got == nil || got.ToN != 2 || got.Class == "" {
-		t.Fatalf("section changed_since = %+v, want to_n 2 and a class", got)
+	got := changedOf(t, base+"/v/ih/s/"+sec)
+	if got == nil || got.ToCode != "rh" || got.Class == "" {
+		t.Fatalf("section changed_since = %+v, want to_code rh and a class", got)
 	}
-	if line := changedOf(t, base+"/v/1/s/"+sec+"/l/1"); line == nil || line.ToN != 2 {
+	if line := changedOf(t, base+"/v/ih/s/"+sec+"/l/1"); line == nil || line.ToCode != "rh" {
 		t.Errorf("line changed_since = %+v", line)
 	}
-	if latest := changedOf(t, base+"/v/2/s/"+sec); latest != nil {
+	if latest := changedOf(t, base+"/v/rh/s/"+sec); latest != nil {
 		t.Errorf("latest version carries changed_since = %+v", latest)
 	}
 }

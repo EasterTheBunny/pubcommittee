@@ -19,7 +19,7 @@ func TestExplanationsArePinnedAndSkipShortTitles(t *testing.T) {
 	t.Parallel()
 	store, base := citationsStore(t)
 	putThirdVersion(t, store)
-	got := do(t, http.MethodGet, base+"/v1/bills/"+seed.TrackedBill+"/v/3/explanations", nil)
+	got := do(t, http.MethodGet, base+"/v1/bills/"+seed.TrackedBill+"/v/eh/explanations", nil)
 	if got.status != http.StatusOK {
 		t.Fatalf("status %d: %s", got.status, got.body)
 	}

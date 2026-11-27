@@ -163,7 +163,7 @@ export const placeholders = {
 		title: 'Data for machines',
 		milestone: 'M1',
 		doc: 'design/10-machine-access.md',
-		body: 'Every page gets a structured form, plus bulk exports, a change feed, and a read-only agent tool interface. Machines can read everything the public can; nothing lets software write on a person’s behalf. User content is always labelled as such. Line ranges already have their own address, e.g. /bills/us-119-hr-4127/v/2/s/s4/l/1-3.'
+		body: 'Every page gets a structured form, plus bulk exports, a change feed, and a read-only agent tool interface. Machines can read everything the public can; nothing lets software write on a person’s behalf. User content is always labelled as such. Line ranges already have their own address, e.g. /bills/us-119-hr-4127/v/eh/s/s4/l/1-3.'
 	},
 	'count-batching': {
 		title: 'Counts update in batches',

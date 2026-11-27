@@ -4,7 +4,6 @@
 package billstatus
 
 import (
-	"cmp"
 	"encoding/xml"
 	"fmt"
 	"path"
@@ -232,8 +231,10 @@ func related(items []relatedItem) []data.RelatedBill {
 	return out
 }
 
-// versions returns the official XML text versions of bill, oldest first. A
-// repeated version code keeps its first entry in document order.
+// versions returns the official XML text versions of bill in stage rank
+// order for its origin chamber (data.VersionCodeOrder), not by date: dates are day-only and
+// BILLSTATUS does not list versions in a dependable order. A repeated version
+// code keeps its first entry in document order.
 func versions(bill data.BillRef, items []textVersion) []data.SourceVersion {
 	var out []data.SourceVersion
 	seen := make(map[string]bool)
@@ -254,8 +255,9 @@ func versions(bill data.BillRef, items []textVersion) []data.SourceVersion {
 			URL:         u,
 		})
 	}
+	order := data.VersionCodeOrder(bill)
 	slices.SortStableFunc(out, func(a, b data.SourceVersion) int {
-		return cmp.Or(a.PublishedAt.Compare(b.PublishedAt), strings.Compare(a.Ref.Version, b.Ref.Version))
+		return order(a.Ref.Version, b.Ref.Version)
 	})
 	return out
 }

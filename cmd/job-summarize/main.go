@@ -41,6 +41,7 @@ var (
 		"--submit (without --dry-run) and --revalidate need at least one --bill <id>, for example --bill us-119-hr-4313")
 	errGenerator = errors.New("--generator must be fake or claude")
 	errLive      = errors.New("--generator claude is a live model run: set " + liveSwitch + "=1 (operator approved)")
+	errExplain   = errors.New("--explain-version needs --submit and exactly one --bill")
 	errFailed    = errors.New("one or more bills failed")
 )
 
@@ -59,6 +60,8 @@ type config struct {
 	Generator string
 	Model     string
 	Live      bool
+	// ExplainVersion plans the inline explanations of one older version of the bill, on top of the normal plan.
+	ExplainVersion string
 }
 
 func main() {
@@ -92,15 +95,31 @@ func (c config) modes() int {
 	return n
 }
 
+// generatorErr is the error of an unknown generator, or of a live one without the switch; nil if fine.
+func (c config) generatorErr() error {
+	switch {
+	case c.Generator != generatorFake && c.Generator != generatorClaude:
+		return errGenerator
+	case c.Generator == generatorClaude && !c.Live:
+		return errLive
+	}
+	return nil
+}
+
+// explainMisused reports --explain-version without --submit or without exactly one bill.
+func (c config) explainMisused(bills int) bool {
+	return c.ExplainVersion != "" && (!c.Submit || bills != 1)
+}
+
 // validate checks the flag combination; bills is the number of --bill values.
 func (c config) validate(bills int) error {
 	switch {
 	case c.modes() != 1:
 		return errMode
-	case c.Generator != generatorFake && c.Generator != generatorClaude:
-		return errGenerator
-	case c.Generator == generatorClaude && !c.Live:
-		return errLive
+	case c.generatorErr() != nil:
+		return c.generatorErr()
+	case c.explainMisused(bills):
+		return errExplain
 	case c.Revalidate && bills == 0, c.Submit && !c.DryRun && bills == 0:
 		// A dry run with no bill plans nothing: it checks the job starts and
 		// reaches its stores (the deploy smoke test).
@@ -120,6 +139,9 @@ func parseArgs(args []string, getenv func(string) string) (config, []data.BillRe
 		"repeat the checks on stored outputs with the current validators; no model call, no regeneration")
 	fs.BoolVar(&cfg.Retry, "retry", false, "with --submit: also plan the stored outputs that are not ready again")
 	fs.BoolVar(&cfg.DryRun, "dry-run", false, "with --submit: plan and count; submit and write nothing")
+	fs.StringVar(&cfg.ExplainVersion, "explain-version", "",
+		"with --submit and one --bill: also plan the inline explanations of this superseded version code "+
+			"(a live run needs operator approval)")
 	fs.StringVar(&cfg.Generator, "generator", generatorFake, "fake (default) or claude (live run)")
 	fs.StringVar(&cfg.Model, "model", generate.DefaultModel, "generating model id")
 	if err := fs.Parse(args); err != nil {
@@ -163,6 +185,7 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 	gc.Model = cfg.Model
 	deps := generate.Deps{
 		Ports: ports, Gen: gen, Cfg: gc, Now: time.Now, Log: logger, Retry: cfg.Retry,
+		ExplainVersion: cfg.ExplainVersion,
 		Record: func(ctx context.Context, task, model, status string, in, outTok int) {
 			tel.Instruments.RecordGeneration(ctx, task, model, status, in, outTok)
 		},

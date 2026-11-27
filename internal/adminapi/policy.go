@@ -62,7 +62,7 @@ func (s *Server) generate(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req, func() string { return req.Reason }) {
 		return
 	}
-	if _, err := data.ParseBillID(req.Bill); err != nil || req.Task == "" || req.Version < 1 {
+	if _, err := data.ParseBillID(req.Bill); err != nil || req.Task == "" || req.Version == "" {
 		s.fail(w, fmt.Errorf("task, bill and version are required: %w", data.ErrInvalid))
 		return
 	}

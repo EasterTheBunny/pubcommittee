@@ -72,7 +72,8 @@ func TestExplanationSpan(t *testing.T) {
 		wantFrom int
 		wantTo   int
 	}{
-		{"stored anchors win", []string{"s2-l4", "s2-l6-7"}, "usc/16/824a/f", 4, 7},
+		{"citation lines win over anchors", []string{"s2-l4", "s2-l6-7"}, "usc/16/824a/f", 5, 6},
+		{"stored anchors when no line cites the provision", []string{"s2-l4", "s2-l6-7"}, "usc/1/1", 4, 7},
 		{"anchors of another section ignored", []string{"s9-l4"}, "usc/16/824a/f", 5, 6},
 		{"citation lines", nil, "usc/16/824a/f", 5, 6},
 		{"no citing line: whole section", nil, "usc/1/1", 3, 7},

@@ -63,6 +63,25 @@ func TestRevalidateAndRetryFlags(t *testing.T) {
 	}
 }
 
+// --explain-version needs --submit and exactly one --bill.
+func TestExplainVersionFlag(t *testing.T) {
+	t.Parallel()
+	cfg, _, err := parseArgs([]string{"--submit", "--dry-run", "--bill", "us-119-hr-4313", "--explain-version", "ih"}, env(nil))
+	if err != nil || cfg.ExplainVersion != "ih" {
+		t.Errorf("cfg = %+v, err = %v", cfg, err)
+	}
+	for name, args := range map[string][]string{
+		"no bill":    {"--submit", "--dry-run", "--explain-version", "ih"},
+		"two bills":  {"--submit", "--bill", "us-119-hr-4313,us-119-hr-3062", "--explain-version", "ih"},
+		"collect":    {"--collect", "--bill", "us-119-hr-4313", "--explain-version", "ih"},
+		"revalidate": {"--revalidate", "--bill", "us-119-hr-4313", "--explain-version", "ih"},
+	} {
+		if _, _, err := parseArgs(args, env(nil)); !errors.Is(err, errExplain) {
+			t.Errorf("%s: err = %v, want errExplain", name, err)
+		}
+	}
+}
+
 // A dry run needs no bill: it plans nothing and checks the job starts (the
 // deploy smoke test). A real submit still needs one.
 func TestDryRunNeedsNoBill(t *testing.T) {

@@ -6,7 +6,7 @@
 
 	// Enhancement for readers with scripts: shows the selected lines and copies their canonical
 	// address. Without scripts the "address of line" links on every line do the same job.
-	let { billId, version }: { billId: string; version: number } = $props();
+	let { billId, version }: { billId: string; version: string } = $props();
 
 	let mounted = $state(false);
 	let copied = $state(false);

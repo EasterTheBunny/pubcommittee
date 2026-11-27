@@ -18,12 +18,13 @@ export type Kind =
 
 /** Routes that carry or will carry per-person data (M2). Never cached, whatever the response says. */
 const CREDENTIALED = /^\/(v1\/me|auth|api\/me)(\/|$)/;
-/** Pages and data for one official version: /bills/{bill}/v/{n}, its sections and lines. */
-const OFFICIAL_PAGE = /^\/bills\/([^/]+)\/v\/(\d+)(\/s\/[^/]+(\/l\/[^/]+)?)?(\/__data\.json)?\/?$/;
+/** Pages and data for one official version: /bills/{bill}/v/{code}, its sections and lines. */
+const OFFICIAL_PAGE =
+	/^\/bills\/([^/]+)\/v\/([a-z]{2,4})(\/s\/[^/]+(\/l\/[^/]+)?)?(\/__data\.json)?\/?$/;
 /** The same version on the read-api origin (immutable resources). */
-const OFFICIAL_API = /^\/v1\/bills\/([^/]+)\/v\/(\d+)(\/|$)/;
+const OFFICIAL_API = /^\/v1\/bills\/([^/]+)\/v\/([a-z]{2,4})(\/|$)/;
 
-/** The eviction unit: one bill version, e.g. /bills/us-119-hr-4127/v/2, or null. */
+/** The eviction unit: one bill version, e.g. /bills/us-119-hr-4127/v/eh, or null. */
 export function versionUnit(pathname: string, sameOrigin: boolean): string | null {
 	const m = (sameOrigin ? OFFICIAL_PAGE : OFFICIAL_API).exec(pathname);
 	return m ? `/bills/${m[1]}/v/${m[2]}` : null;

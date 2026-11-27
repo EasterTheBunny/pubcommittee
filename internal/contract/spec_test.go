@@ -191,12 +191,12 @@ func TestEveryM1RoutePresent(t *testing.T) {
 	t.Parallel()
 	doc := loadSpec(t)
 	for _, p := range []string{
-		"/v1", "/v1/openapi.yaml", "/v1/bills", "/v1/bills/{bill}", "/v1/bills/{bill}/v/{n}",
-		"/v1/bills/{bill}/v/{n}/s/{section}", "/v1/bills/{bill}/v/{n}/s/{section}/l/{range}",
+		"/v1", "/v1/openapi.yaml", "/v1/bills", "/v1/bills/{bill}", "/v1/bills/{bill}/v/{version}",
+		"/v1/bills/{bill}/v/{version}/s/{section}", "/v1/bills/{bill}/v/{version}/s/{section}/l/{range}",
 		"/v1/bills/{bill}/s/{section}", "/v1/bills/{bill}/s/{section}/l/{range}",
-		"/v1/bills/{bill}/v/{n}/explanations", "/v1/bills/{bill}/v/{n}/summary",
-		"/v1/bills/{bill}/v/{n}/changes", "/v1/bills/{bill}/v/{n}/citations",
-		"/v1/bills/{bill}/v/{n}/citations/unresolved", "/v1/bills/{bill}/v/{n}/compare/{m}",
+		"/v1/bills/{bill}/v/{version}/explanations", "/v1/bills/{bill}/v/{version}/summary",
+		"/v1/bills/{bill}/v/{version}/changes", "/v1/bills/{bill}/v/{version}/citations",
+		"/v1/bills/{bill}/v/{version}/citations/unresolved", "/v1/bills/{bill}/v/{version}/compare/{other}",
 		"/v1/selection-policy", "/v1/selection-policy/{version}", "/v1/moderation-log",
 		"/v1/feed", "/v1/exports", "/v1/exports/{export}",
 	} {

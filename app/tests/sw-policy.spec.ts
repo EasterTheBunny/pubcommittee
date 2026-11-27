@@ -26,9 +26,9 @@ const kind = (path: string, over: { method?: string; origin?: string; auth?: boo
 
 test('resource classes', () => {
 	expect(kind('/_app/immutable/a.js')).toBe('shell');
-	expect(kind('/bills/us-119-hr-4127/v/2')).toBe('official');
-	expect(kind('/bills/us-119-hr-4127/v/2/s/s4/l/1-3')).toBe('official');
-	expect(kind('/bills/us-119-hr-4127/v/2/s/s4/__data.json')).toBe('official');
+	expect(kind('/bills/us-119-hr-4127/v/eh')).toBe('official');
+	expect(kind('/bills/us-119-hr-4127/v/eh/s/s4/l/1-3')).toBe('official');
+	expect(kind('/bills/us-119-hr-4127/v/eh/s/s4/__data.json')).toBe('official');
 	expect(kind('/bills/us-119-hr-4127')).toBe('dynamic');
 	expect(kind('/bills/us-119-hr-4127/s/s4')).toBe('dynamic');
 	for (const p of ['/', '/catalog', '/policy', '/log']) expect(kind(p)).toBe('dynamic');
@@ -36,18 +36,18 @@ test('resource classes', () => {
 
 test('writes, credentials, and other origins are never handled', () => {
 	expect(kind('/catalog', { method: 'POST' })).toBe('skip');
-	expect(kind('/bills/x/v/1', { method: 'PUT' })).toBe('skip');
+	expect(kind('/bills/x/v/ih', { method: 'PUT' })).toBe('skip');
 	expect(kind('/catalog', { auth: true })).toBe('skip');
 	expect(kind('/v1/me/inbox')).toBe('skip');
 	expect(kind('/auth/session')).toBe('skip');
 	expect(kind('/v1/bills', { origin: 'https://api.example.test' })).toBe('skip');
-	expect(kind('/v1/bills/x/v/2/s/s1', { origin: 'https://api.example.test' })).toBe('official');
+	expect(kind('/v1/bills/x/v/eh/s/s1', { origin: 'https://api.example.test' })).toBe('official');
 	expect(kind('/v1/me/inbox', { origin: 'https://api.example.test' })).toBe('skip');
 });
 
 test('version units group a version and its resources', () => {
-	expect(versionUnit('/bills/b/v/2/s/s4/l/1', true)).toBe('/bills/b/v/2');
-	expect(versionUnit('/v1/bills/b/v/2/s/s4', false)).toBe('/bills/b/v/2');
+	expect(versionUnit('/bills/b/v/eh/s/s4/l/1', true)).toBe('/bills/b/v/eh');
+	expect(versionUnit('/v1/bills/b/v/eh/s/s4', false)).toBe('/bills/b/v/eh');
 	expect(versionUnit('/bills/b', true)).toBeNull();
 });
 

@@ -217,8 +217,8 @@ func checkTrackedBill(t *testing.T, store *memory.Store) {
 	if err != nil {
 		t.Fatalf("GetBill: %v", err)
 	}
-	if len(doc.Versions) != 4 {
-		t.Errorf("GetBill: %d versions, want 4", len(doc.Versions))
+	if len(doc.Versions) != 3 {
+		t.Errorf("GetBill: %d versions, want 3 (rfs collapsed into eh)", len(doc.Versions))
 	}
 	if !slices.Equal(doc.TrackedReasons, []string{"manual-pull"}) {
 		t.Errorf("GetBill: TrackedReasons = %v, want [manual-pull]", doc.TrackedReasons)
@@ -335,8 +335,8 @@ func TestPullTrackedStoresEverything(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListVersions: %v", err)
 	}
-	if len(versions) != 4 {
-		t.Fatalf("ListVersions returned %d versions, want 4", len(versions))
+	if len(versions) != 3 {
+		t.Fatalf("ListVersions returned %d versions, want 3 (rfs collapsed into eh)", len(versions))
 	}
 	for _, code := range hr4313Codes() {
 		checkStoredVersion(t, store, code)

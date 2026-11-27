@@ -13,9 +13,9 @@ import (
 const (
 	billsPath   = "/v1/bills"
 	scopeParam  = "scope"
-	latestN     = 2 // the fixture bill has two versions
-	catalogSize = 3 // fixture catalog entries
-	trackedSize = 2 // fixture tracked bills
+	latestCode  = "rh" // the fixture bill has two versions, ih and rh
+	catalogSize = 3    // fixture catalog entries
+	trackedSize = 2    // fixture tracked bills
 )
 
 func catalogQuery() url.Values { return url.Values{scopeParam: {"catalog"}} }
@@ -47,28 +47,28 @@ func seededRoutes() []route {
 		{billsPath, url.Values{"cursor": {"!!"}}, http.StatusBadRequest},
 		{bill, nil, http.StatusOK},
 		{"/v1/bills/us-119-hr-1", nil, http.StatusNotFound},
-		{bill + "/v/1", nil, http.StatusOK},
-		{bill + "/v/2", nil, http.StatusOK},
+		{bill + "/v/ih", nil, http.StatusOK},
+		{bill + "/v/rh", nil, http.StatusOK},
 		{bill + "/v/latest", nil, http.StatusOK},
-		{bill + "/v/3", nil, http.StatusNotFound},
-		{bill + "/v/2/s/s4", nil, http.StatusOK},
-		{bill + "/v/2/s/s4.b", nil, http.StatusOK},
-		{bill + "/v/2/s/s9", nil, http.StatusNotFound},
-		{bill + "/v/2/s/s4/l/3", nil, http.StatusOK},
-		{bill + "/v/2/s/s4/l/1-3", nil, http.StatusOK},
-		{bill + "/v/2/s/s4/l/3-1", nil, http.StatusBadRequest},
-		{bill + "/v/2/s/s4/l/99", nil, http.StatusNotFound},
+		{bill + "/v/eh", nil, http.StatusNotFound},
+		{bill + "/v/rh/s/s4", nil, http.StatusOK},
+		{bill + "/v/rh/s/s4.b", nil, http.StatusOK},
+		{bill + "/v/rh/s/s9", nil, http.StatusNotFound},
+		{bill + "/v/rh/s/s4/l/3", nil, http.StatusOK},
+		{bill + "/v/rh/s/s4/l/1-3", nil, http.StatusOK},
+		{bill + "/v/rh/s/s4/l/3-1", nil, http.StatusBadRequest},
+		{bill + "/v/rh/s/s4/l/99", nil, http.StatusNotFound},
 		{bill + "/s/s4", nil, http.StatusOK},
 		{bill + "/s/s4/l/2", nil, http.StatusOK},
 		{bill + "/s/s4/l/x", nil, http.StatusBadRequest},
-		{one + "/v/1", nil, http.StatusOK},
-		{bill + "/v/2/explanations", nil, http.StatusOK},
-		{bill + "/v/1/explanations", nil, http.StatusOK},
-		{bill + "/v/2/summary", nil, http.StatusNotFound},
-		{bill + "/v/2/changes", nil, http.StatusNotFound},
-		{bill + "/v/2/citations", nil, http.StatusNotFound},
-		{bill + "/v/2/citations/unresolved", nil, http.StatusNotFound},
-		{bill + "/v/1/compare/2", nil, http.StatusNotFound},
+		{one + "/v/is", nil, http.StatusOK},
+		{bill + "/v/rh/explanations", nil, http.StatusOK},
+		{bill + "/v/ih/explanations", nil, http.StatusOK},
+		{bill + "/v/rh/summary", nil, http.StatusNotFound},
+		{bill + "/v/rh/changes", nil, http.StatusNotFound},
+		{bill + "/v/rh/citations", nil, http.StatusNotFound},
+		{bill + "/v/rh/citations/unresolved", nil, http.StatusNotFound},
+		{bill + "/v/ih/compare/rh", nil, http.StatusNotFound},
 		{"/v1/selection-policy", nil, http.StatusOK},
 		{"/v1/selection-policy/1", nil, http.StatusOK},
 		{"/v1/selection-policy/9", nil, http.StatusNotFound},
@@ -126,7 +126,7 @@ func checkLatest(t *testing.T, h *Harness) {
 	t.Helper()
 	res := h.MustGet(t, "/v1/bills/"+seed.TrackedBill+"/s/s4/l/2", nil)
 	var body struct {
-		N       int `json:"n"`
+		Code    string `json:"code"`
 		Address struct {
 			ResolvedFromLatest bool   `json:"resolved_from_latest"`
 			IsLatest           bool   `json:"is_latest"`
@@ -134,10 +134,10 @@ func checkLatest(t *testing.T, h *Harness) {
 		} `json:"address"`
 	}
 	decodeBody(t, res, &body)
-	if body.N != latestN || !body.Address.ResolvedFromLatest || !body.Address.IsLatest {
+	if body.Code != latestCode || !body.Address.ResolvedFromLatest || !body.Address.IsLatest {
 		t.Fatalf("latest answer = %+v", body)
 	}
-	if loc := res.Header.Get("Content-Location"); loc != body.Address.Canonical || !strings.Contains(loc, "/v/2/") {
+	if loc := res.Header.Get("Content-Location"); loc != body.Address.Canonical || !strings.Contains(loc, "/v/rh/") {
 		t.Fatalf("Content-Location %q, want pinned %q", loc, body.Address.Canonical)
 	}
 	if cc := res.Header.Get("Cache-Control"); strings.Contains(cc, "immutable") {
@@ -148,7 +148,7 @@ func checkLatest(t *testing.T, h *Harness) {
 func checkOldVersion(t *testing.T, h *Harness) {
 	t.Helper()
 	bill := "/v1/bills/" + seed.TrackedBill
-	res := h.MustGet(t, bill+"/v/1", nil)
+	res := h.MustGet(t, bill+"/v/ih", nil)
 	var body struct {
 		Address struct {
 			IsLatest bool   `json:"is_latest"`
@@ -156,14 +156,14 @@ func checkOldVersion(t *testing.T, h *Harness) {
 		} `json:"address"`
 	}
 	decodeBody(t, res, &body)
-	if body.Address.IsLatest || body.Address.Compare != bill+"/v/1/compare/2" {
+	if body.Address.IsLatest || body.Address.Compare != bill+"/v/ih/compare/rh" {
 		t.Fatalf("address = %+v", body.Address)
 	}
 }
 
 func checkImmutable(t *testing.T, h *Harness) {
 	t.Helper()
-	res := h.MustGet(t, "/v1/bills/"+seed.TrackedBill+"/v/2/s/s4/l/1-3", nil)
+	res := h.MustGet(t, "/v1/bills/"+seed.TrackedBill+"/v/rh/s/s4/l/1-3", nil)
 	cc := res.Header.Get("Cache-Control")
 	if !strings.Contains(cc, "immutable") || !strings.Contains(cc, "max-age=31536000") {
 		t.Fatalf("Cache-Control %q", cc)

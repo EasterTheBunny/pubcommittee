@@ -114,10 +114,10 @@ func TestClassify(t *testing.T) {
 		{path: "/v1/selection-policy", want: classLive},
 		{path: testLivePath, want: classLive},
 		{path: "/v1/bills/us-119-hr-1", want: classLive},
-		{path: "/v1/bills/us-119-hr-1/v/2", want: classText},
-		{path: "/v1/bills/us-119-hr-1/v/2/s/s4", want: classText},
+		{path: "/v1/bills/us-119-hr-1/v/rh", want: classText},
+		{path: "/v1/bills/us-119-hr-1/v/rh/s/s4", want: classText},
 		{path: "/v1/bills/us-119-hr-1/s/s4/l/3", want: classText},
-		{path: "/v1/bills/us-119-hr-1/v/2/explanations", want: classLive},
+		{path: "/v1/bills/us-119-hr-1/v/rh/explanations", want: classLive},
 		{path: "/v1/moderation-log", want: classLive},
 	}
 	for _, tc := range tests {

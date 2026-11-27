@@ -38,7 +38,7 @@ func citationsStore(t *testing.T) (*memory.Store, string) {
 	return store, srv.URL
 }
 
-// storeCitations stores a release and a citation set for version 1 of the
+// storeCitations stores a release and a citation set for version ih of the
 // tracked bill, as the citation step would.
 func storeCitations(t *testing.T, store *memory.Store) {
 	t.Helper()
@@ -54,10 +54,20 @@ func storeCitations(t *testing.T, store *memory.Store) {
 	if err != nil || len(vs) == 0 {
 		t.Fatalf("ListVersions = %d, %v", len(vs), err)
 	}
+	// The memory store lists versions in map order, so pick ih by code.
+	var ih data.VersionRef
+	for _, v := range vs {
+		if v.Ref.Version == "ih" {
+			ih = v.Ref
+		}
+	}
+	if ih.Version != "ih" {
+		t.Fatalf("no ih version in %v", vs)
+	}
 	set := conformance.SampleCitationSet(1, citations.Method(billxml.ParserVersion, release))
-	set.Ref.Version = vs[0].Ref
+	set.Ref.Version = ih
 	for i := range set.Links {
-		set.Links[i].Version = vs[0].Ref
+		set.Links[i].Version = ih
 	}
 	if err := store.PutCitations(ctx, set); err != nil {
 		t.Fatal(err)
@@ -67,7 +77,7 @@ func storeCitations(t *testing.T, store *memory.Store) {
 func TestCitations(t *testing.T) {
 	t.Parallel()
 	store, base := citationsStore(t)
-	bill := base + "/v1/bills/" + seed.TrackedBill + "/v/1/citations"
+	bill := base + "/v1/bills/" + seed.TrackedBill + "/v/ih/citations"
 
 	if got := do(t, http.MethodGet, bill, nil); got.status != http.StatusNotFound {
 		t.Fatalf("no release stored: status %d, want 404", got.status)
@@ -99,9 +109,9 @@ func TestCitations(t *testing.T) {
 	t.Run("other version and bills", func(t *testing.T) {
 		t.Parallel()
 		for _, u := range []string{
-			base + "/v1/bills/" + seed.TrackedBill + "/v/2/citations",
-			base + "/v1/bills/" + seed.TrackedBill + "/v/2/citations/unresolved",
-			base + "/v1/bills/us-119-hr-9999/v/1/citations",
+			base + "/v1/bills/" + seed.TrackedBill + "/v/rh/citations",
+			base + "/v1/bills/" + seed.TrackedBill + "/v/rh/citations/unresolved",
+			base + "/v1/bills/us-119-hr-9999/v/ih/citations",
 		} {
 			if r := do(t, http.MethodGet, u, nil); r.status != http.StatusNotFound {
 				t.Errorf("%s: status %d, want 404", u, r.status)
@@ -138,8 +148,8 @@ func checkCitationList(t *testing.T, bill string) {
 	checkResolvedCitation(t, page.Items[0])
 	checkUnresolvedCitation(t, page.Items[1])
 	for _, c := range page.Items {
-		if c.Bill != seed.TrackedBill || c.N != 1 {
-			t.Errorf("bill %q n %d; want %q and 1", c.Bill, c.N, seed.TrackedBill)
+		if c.Bill != seed.TrackedBill || c.Code != "ih" {
+			t.Errorf("bill %q code %q; want %q and ih", c.Bill, c.Code, seed.TrackedBill)
 		}
 	}
 }

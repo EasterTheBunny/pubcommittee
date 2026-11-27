@@ -176,7 +176,7 @@ func TestAnchors(t *testing.T) {
 		{name: "fragment of one line", got: fragmentOf([]string{"s4"}, 12, 12), want: "#s4-l12"},
 		{name: "fragment of a range", got: fragmentOf([]string{"s4"}, 12, 13), want: "#s4-l12-13"},
 		{name: "bill path", got: billPath("us-119-hr-4127"), want: "/v1/bills/us-119-hr-4127"},
-		{name: "version path", got: versionPath("us-119-hr-4127", 2), want: "/v1/bills/us-119-hr-4127/v/2"},
+		{name: "version path", got: versionPath("us-119-hr-4127", "eh"), want: "/v1/bills/us-119-hr-4127/v/eh"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

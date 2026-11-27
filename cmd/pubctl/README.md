@@ -39,8 +39,8 @@ Every mutating command needs `--reason`.
 | `bills untrack <bill> --reason` | `POST /admin/v1/bills/{bill}/untrack` | Reverses a selection made in error. Stored text is kept. |
 | `bills catalog patch <bill> --reason [--title --status --chamber --introduced YYYY-MM-DD --policy-area --subjects a,b]` | `PATCH /admin/v1/bills/{bill}/catalog` | Corrects ingestion errors. Body fields: `title`, `status`, `chamber`, `introduced`, `policy_area`, `subjects`. Send at least one. |
 | `bills reingest <bill> --reason` | `POST /admin/v1/bills/{bill}/reingest` | Fetches the bill again with the full pull pipeline (text, citations, comparisons, policy step). Each stored original is compared by SHA-256; a mismatch is reported and nothing is overwritten. Missing versions are stored. |
-| `bills reparse <bill> --version <n> --reason` | `POST /admin/v1/bills/{bill}/v/{n}/reparse` | Parses stored version `n` again with the current parser. Reports only (see below). |
-| `generations create --task T --bill <bill> --version N --reason` | `POST /admin/v1/generations` | Requests a regeneration. Body fields: `task`, `bill`, `version`. Returns 501 until M1-09. |
+| `bills reparse <bill> --version <code> --reason` | `POST /admin/v1/bills/{bill}/v/{version}/reparse` | Parses the stored version with that code (for example `eh`) again with the current parser. Reports only (see below). |
+| `generations create --task T --bill <bill> --version <code> --reason` | `POST /admin/v1/generations` | Requests a regeneration. Body fields: `task`, `bill`, `version`. Returns 501 until M1-09. |
 | `selection-policy publish (--builtin v1 \| --file policy.json) --reason` | `POST /admin/v1/selection-policy` | Stores the next immutable policy version. Body: `policy` (the policy document, as in `internal/selection/policies/v1.json`) and `reason`. The version must be the latest plus one; the latest again is a no-op. |
 | `ingest failures [--source <source>/<session>]` | `GET /admin/v1/ingest/failures` | Lists failed items per source. Optional query `source=<source>/<session>` (repeatable). |
 | `jobs` | `GET /admin/v1/jobs` | Lists the last state of each source, without failed items. |

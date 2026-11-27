@@ -115,6 +115,9 @@ type VersionSummary struct {
 	Ref         VersionRef `json:"ref"`
 	Type        string     `json:"type"`
 	PublishedAt time.Time  `json:"published_at"`
+	// Referrals lists the referral versions that collapsed into this one:
+	// same text, so not listed as versions of their own.
+	Referrals []Referral `json:"referrals,omitempty"`
 }
 
 // Anchor is a stable reference to a line or line range in one official

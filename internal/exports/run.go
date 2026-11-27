@@ -190,15 +190,15 @@ func (r *run) trackedBill(ctx context.Context, c data.CatalogEntry) error {
 		}
 		return fmt.Errorf("list versions %s: %w", c.Bill.ID(), err)
 	}
-	for i, vs := range vs {
-		if err := r.version(ctx, i+1, vs.Ref); err != nil {
+	for _, vs := range vs {
+		if err := r.version(ctx, vs.Ref); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *run) version(ctx context.Context, n int, ref data.VersionRef) error {
+func (r *run) version(ctx context.Context, ref data.VersionRef) error {
 	r.rep.Versions++
 	v, err := r.Ports.BillText.GetVersion(ctx, ref)
 	if err != nil {
@@ -215,16 +215,16 @@ func (r *run) version(ctx context.Context, n int, ref data.VersionRef) error {
 		return err
 	}
 	if err := r.put(ctx, entryOf(textID, data.ExportBillText, "Bill text of "+title, jsonType,
-		data.LicencePublicDomain, v.Meta.AsOf, data.ContentOfficial), billTextFile(textID, srcID, n, v), false); err != nil {
+		data.LicencePublicDomain, v.Meta.AsOf, data.ContentOfficial), billTextFile(textID, srcID, v), false); err != nil {
 		return err
 	}
 	if err := r.lawExport(ctx, ref, title, v.Meta.AsOf); err != nil {
 		return err
 	}
-	if err := r.explanationExport(ctx, n, v, title, v.Meta.AsOf); err != nil {
+	if err := r.explanationExport(ctx, v, title, v.Meta.AsOf); err != nil {
 		return err
 	}
-	r.versionEvent(n, ref)
+	r.versionEvent(ref)
 	return nil
 }
 
@@ -257,7 +257,7 @@ func (r *run) lawExport(ctx context.Context, ref data.VersionRef, title string, 
 }
 
 func (r *run) explanationExport(
-	ctx context.Context, n int, v data.OfficialVersion, title string, fallback time.Time,
+	ctx context.Context, v data.OfficialVersion, title string, fallback time.Time,
 ) error {
 	ref := v.Ref
 	xs, err := r.Ports.PublicDocs.GetExplanations(ctx, ref)
@@ -273,7 +273,7 @@ func (r *run) explanationExport(
 		return err
 	}
 	for _, x := range xs {
-		r.explanationEvent(n, ref, x)
+		r.explanationEvent(ref, x)
 	}
 	return nil
 }

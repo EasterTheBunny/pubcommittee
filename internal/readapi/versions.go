@@ -62,10 +62,11 @@ func (s *Server) GetVersion(w http.ResponseWriter, r *http.Request, bill apiv1.B
 		fail(w, r, err)
 		return
 	}
-	canonical := versionPath(res.id, res.n)
+	canonical := versionPath(res.id, res.code)
 	v := res.version
 	out := apiv1.Version{
-		Bill: res.id, N: res.n, Code: v.Ref.Version, Type: v.Type, PublishedAt: v.PublishedAt.UTC(),
+		Bill: res.id, Code: v.Ref.Version, Referrals: toReferrals(res.vs[res.n-1].Referrals),
+		Type: v.Type, PublishedAt: v.PublishedAt.UTC(),
 		SourceSha256: v.SourceSHA256, Licence: licencePublicDomain, Address: res.address(canonical, ""),
 		Sections: make([]apiv1.Section, len(v.Sections)),
 	}
@@ -109,7 +110,7 @@ func (s *Server) section(w http.ResponseWriter, r *http.Request, bill, n, sectio
 		fail(w, r, err)
 		return
 	}
-	canonical := versionPath(res.id, res.n) + "/s/" + sectionID(path)
+	canonical := versionPath(res.id, res.code) + "/s/" + sectionID(path)
 	var changed *apiv1.ChangedSince
 	if len(sec.Lines) > 0 {
 		changed, err = s.changedSince(r.Context(), res, path, sec.Lines[0].N, sec.Lines[len(sec.Lines)-1].N)
@@ -119,7 +120,7 @@ func (s *Server) section(w http.ResponseWriter, r *http.Request, bill, n, sectio
 		}
 	}
 	out := apiv1.SectionResource{
-		ChangedSince: changed, Bill: res.id, N: res.n, Licence: licencePublicDomain,
+		ChangedSince: changed, Bill: res.id, Code: res.code, Licence: licencePublicDomain,
 		Address: res.address(canonical, ""), Section: toSection(sec),
 	}
 	out.Version, out.AsOf, out.Provenance, out.ContentClass = meta(res.version.Meta)
@@ -174,9 +175,9 @@ func (s *Server) lineRange(w http.ResponseWriter, r *http.Request, bill, n, sect
 		return
 	}
 	all := toLines(path, sec.Lines)
-	canonical := versionPath(res.id, res.n) + "/s/" + sectionID(path) + "/l/" + rng
+	canonical := versionPath(res.id, res.code) + "/s/" + sectionID(path) + "/l/" + rng
 	out := apiv1.LineRangeResource{
-		ChangedSince: changed, Bill: res.id, N: res.n, SectionId: sectionID(path), SectionPath: slices.Clone(path),
+		ChangedSince: changed, Bill: res.id, Code: res.code, SectionId: sectionID(path), SectionPath: slices.Clone(path),
 		From: from, To: to, Licence: licencePublicDomain,
 		Address: res.address(canonical, fragmentOf(path, from, to)), Lines: all[i : j+1],
 	}
@@ -193,4 +194,17 @@ func (s *Server) pinnedClass(res resolved) cacheClass {
 		return cacheShort
 	}
 	return res.class()
+}
+
+// toReferrals converts the referral versions collapsed into a version; nil
+// when there are none.
+func toReferrals(rs []data.Referral) *[]apiv1.Referral {
+	if len(rs) == 0 {
+		return nil
+	}
+	out := make([]apiv1.Referral, len(rs))
+	for i, r := range rs {
+		out[i] = apiv1.Referral{Code: r.Code, Type: r.Type, PublishedAt: r.PublishedAt.UTC()}
+	}
+	return &out
 }

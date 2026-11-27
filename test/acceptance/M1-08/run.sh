@@ -38,14 +38,14 @@ check "job-ingest: comparisons stored for every exit-bill pair, rebuilt over sto
 	go build -tags local -o "$d.ji" ./cmd/job-ingest
 	"$d.ji" --law >/dev/null 2>&1
 	"$d.ji" --track --bill us-119-hr-4313,us-119-hr-3062,us-119-hr-3427 2>/dev/null >"$d.out"
-	# 4 versions each: 3 consecutive pairs plus 2 older-versus-latest pairs
-	[ "$(grep -c "\"comparisons\": *5" "$d.out")" = 3 ]
+	# 3 listed versions each: 2 consecutive pairs plus 1 older-versus-latest, plus the rfs-versus-eh comparison that decided the collapse
+	[ "$(grep -c "\"comparisons\": *3" "$d.out")" = 3 ]
 	count() { find "$d/bills" -path "*/compare/*" -name "*.json" ! -name "*.meta.json" | wc -l; }
-	[ "$(count)" = 15 ]
+	[ "$(count)" = 12 ]
 	find "$d/bills" -type d -name compare -exec rm -rf {} +
 	[ "$(count)" = 0 ]
 	"$d.ji" --analyze 2>/dev/null >"$d.out"
-	[ "$(count)" = 15 ]
+	[ "$(count)" = 12 ]
 	rm -f "$d.ji" "$d.out"
 '
 check "job-ingest: pipeline steps" go test -count=1 -tags memory -run Analysis ./internal/ingest/

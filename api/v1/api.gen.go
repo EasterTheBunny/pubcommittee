@@ -644,13 +644,17 @@ type AddressInfo struct {
 	Compare *string `json:"compare,omitempty"`
 
 	// Fragment In-page fragment form, for example `#s4-l12-13`.
-	Fragment      *string `json:"fragment,omitempty"`
-	IsLatest      bool    `json:"is_latest"`
-	LatestVersion int     `json:"latest_version"`
+	Fragment *string `json:"fragment,omitempty"`
+	IsLatest bool    `json:"is_latest"`
+
+	// LatestVersion Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	LatestVersion VersionCode `json:"latest_version"`
 
 	// Page Page path for people; same address shape.
-	Page          *string `json:"page,omitempty"`
-	PinnedVersion int     `json:"pinned_version"`
+	Page *string `json:"page,omitempty"`
+
+	// PinnedVersion Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	PinnedVersion VersionCode `json:"pinned_version"`
 
 	// ResolvedFromLatest True when the request named no version or `latest` and was resolved to `pinned_version`.
 	ResolvedFromLatest bool `json:"resolved_from_latest"`
@@ -679,10 +683,12 @@ type Bill struct {
 	ContentClass TrustedContentClass `json:"content_class"`
 
 	// Id Examples: us-119-hr-4127
-	Id            BillId `json:"id"`
-	LatestVersion *int   `json:"latest_version,omitempty"`
-	OfficialLinks []Link `json:"official_links"`
-	PolicyVersion *int   `json:"policy_version,omitempty"`
+	Id BillId `json:"id"`
+
+	// LatestVersion Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	LatestVersion *VersionCode `json:"latest_version,omitempty"`
+	OfficialLinks []Link       `json:"official_links"`
+	PolicyVersion *int         `json:"policy_version,omitempty"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 	Provenance  Provenance      `json:"provenance"`
@@ -731,8 +737,10 @@ type BillSummary struct {
 	ContentClass TrustedContentClass `json:"content_class"`
 
 	// Id Examples: us-119-hr-4127
-	Id            BillId `json:"id"`
-	LatestVersion *int   `json:"latest_version,omitempty"`
+	Id BillId `json:"id"`
+
+	// LatestVersion Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	LatestVersion *VersionCode `json:"latest_version,omitempty"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 	Provenance Provenance `json:"provenance"`
@@ -753,11 +761,13 @@ type BillSummaryDoc struct {
 	// Bill Examples: us-119-hr-4127
 	Bill BillId `json:"bill"`
 
+	// Code Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	Code VersionCode `json:"code"`
+
 	// ContentClass Classes allowed in summary fields; user text is never allowed there.
 	ContentClass TrustedContentClass    `json:"content_class"`
 	Flags        *[]BillSummaryDocFlags `json:"flags,omitempty"`
 	Headline     string                 `json:"headline"`
-	N            int                    `json:"n"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 	Provenance Provenance  `json:"provenance"`
@@ -834,7 +844,7 @@ type Chamber string
 type ChangedSince struct {
 	Class ChangedSinceClass `json:"class"`
 
-	// NewAddress Path of the best new location, for example `/v1/bills/<bill>/v/3/s/2/l/4-5`.
+	// NewAddress Path of the best new location, for example `/v1/bills/<bill>/v/eh/s/2/l/4-5`.
 	NewAddress *string `json:"new_address,omitempty"`
 
 	// NewAnchor Fragment of the new location, for example `#s2-l4-5`.
@@ -845,8 +855,8 @@ type ChangedSince struct {
 	NewSectionId *SectionId `json:"new_section_id,omitempty"`
 	NewTo        *int       `json:"new_to,omitempty"`
 
-	// ToN The latest version the lines were compared with.
-	ToN int `json:"to_n"`
+	// ToCode The latest version the lines were compared with.
+	ToCode VersionCode `json:"to_code"`
 }
 
 // ChangedSinceClass defines model for ChangedSince.Class.
@@ -859,12 +869,14 @@ type Citation struct {
 	// Bill Examples: us-119-hr-4127
 	Bill BillId `json:"bill"`
 
+	// Code Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	Code VersionCode `json:"code"`
+
 	// ContentClass Classes allowed in summary fields; user text is never allowed there.
 	ContentClass TrustedContentClass `json:"content_class"`
 
 	// Line Line holding the citation, when known.
 	Line *int `json:"line,omitempty"`
-	N    int  `json:"n"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 	Provenance   Provenance `json:"provenance"`
@@ -962,6 +974,9 @@ type Explanation struct {
 	// Bill Examples: us-119-hr-4127
 	Bill BillId `json:"bill"`
 
+	// Code Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	Code VersionCode `json:"code"`
+
 	// ContentClass Classes allowed in summary fields; user text is never allowed there.
 	ContentClass TrustedContentClass `json:"content_class"`
 
@@ -974,7 +989,6 @@ type Explanation struct {
 
 	// LineTo Last line it is pinned to; equals `line_from` for one line.
 	LineTo *int `json:"line_to,omitempty"`
-	N      int  `json:"n"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 	Provenance Provenance `json:"provenance"`
@@ -1106,12 +1120,14 @@ type LineRangeResource struct {
 	// ChangedSince Present on a pinned older version when a newer one exists and its comparison is stored: what became of the addressed lines in the latest version. `moved` is the same words elsewhere or renumbered, `changed` words altered with a counterpart, `removed` no counterpart (no `new_*` fields). A section is classified over all its lines. Derived from official text; carries none.
 	ChangedSince *ChangedSince `json:"changed_since,omitempty"`
 
+	// Code Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	Code VersionCode `json:"code"`
+
 	// ContentClass Classes allowed in summary fields; user text is never allowed there.
 	ContentClass TrustedContentClass      `json:"content_class"`
 	From         int                      `json:"from"`
 	Licence      LineRangeResourceLicence `json:"licence"`
 	Lines        []Line                   `json:"lines"`
-	N            int                      `json:"n"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 	Provenance Provenance `json:"provenance"`
@@ -1239,6 +1255,18 @@ type ProblemType string
 // Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 type Provenance string
 
+// Referral A referral version whose text is the same as the version it is attached to. It is not a version of its own; its original stays stored.
+type Referral struct {
+	// Code Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	Code VersionCode `json:"code"`
+
+	// PublishedAt Date of the referral.
+	PublishedAt time.Time `json:"published_at"`
+
+	// Type For example `Referred in Senate`.
+	Type string `json:"type"`
+}
+
 // ResourceLink defines model for ResourceLink.
 type ResourceLink struct {
 	Href  string `json:"href"`
@@ -1273,10 +1301,12 @@ type SectionResource struct {
 	// ChangedSince Present on a pinned older version when a newer one exists and its comparison is stored: what became of the addressed lines in the latest version. `moved` is the same words elsewhere or renumbered, `changed` words altered with a counterpart, `removed` no counterpart (no `new_*` fields). A section is classified over all its lines. Derived from official text; carries none.
 	ChangedSince *ChangedSince `json:"changed_since,omitempty"`
 
+	// Code Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	Code VersionCode `json:"code"`
+
 	// ContentClass Classes allowed in summary fields; user text is never allowed there.
 	ContentClass TrustedContentClass    `json:"content_class"`
 	Licence      SectionResourceLicence `json:"licence"`
-	N            int                    `json:"n"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 	Provenance Provenance `json:"provenance"`
@@ -1355,20 +1385,24 @@ type Version struct {
 
 	// Bill Examples: us-119-hr-4127
 	Bill BillId `json:"bill"`
-	Code string `json:"code"`
+
+	// Code Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	Code VersionCode `json:"code"`
 
 	// ContentClass Classes allowed in summary fields; user text is never allowed there.
 	ContentClass TrustedContentClass `json:"content_class"`
 	Licence      VersionLicence      `json:"licence"`
-	N            int                 `json:"n"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
-	Provenance     Provenance `json:"provenance"`
-	PublishedAt    time.Time  `json:"published_at"`
-	Sections       []Section  `json:"sections"`
-	SourceSha256   string     `json:"source_sha256"`
-	StewardEntered *bool      `json:"steward_entered,omitempty"`
-	Type           string     `json:"type"`
+	Provenance  Provenance `json:"provenance"`
+	PublishedAt time.Time  `json:"published_at"`
+
+	// Referrals Referral versions with this version's text, collapsed into it.
+	Referrals      *[]Referral `json:"referrals,omitempty"`
+	Sections       []Section   `json:"sections"`
+	SourceSha256   string      `json:"source_sha256"`
+	StewardEntered *bool       `json:"steward_entered,omitempty"`
+	Type           string      `json:"type"`
 
 	// Version Revision of this record, starting at 1.
 	Version int `json:"version"`
@@ -1388,14 +1422,18 @@ type VersionChangeSummary struct {
 	ContentClass TrustedContentClass `json:"content_class"`
 
 	// Flags `no-differences`: the text equals the previous version's; the answer is built from the stored comparison, not generated.
-	Flags    *[]VersionChangeSummaryFlags `json:"flags,omitempty"`
-	FromN    int                          `json:"from_n"`
-	Headline string                       `json:"headline"`
+	Flags *[]VersionChangeSummaryFlags `json:"flags,omitempty"`
+
+	// FromCode Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	FromCode VersionCode `json:"from_code"`
+	Headline string      `json:"headline"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 	Provenance Provenance  `json:"provenance"`
 	Statements []Statement `json:"statements"`
-	ToN        int         `json:"to_n"`
+
+	// ToCode Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	ToCode VersionCode `json:"to_code"`
 
 	// Version Revision of this record, starting at 1.
 	Version int `json:"version"`
@@ -1403,6 +1441,9 @@ type VersionChangeSummary struct {
 
 // VersionChangeSummaryFlags defines model for VersionChangeSummary.Flags.
 type VersionChangeSummaryFlags string
+
+// VersionCode Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+type VersionCode = string
 
 // VersionComparison defines model for VersionComparison.
 type VersionComparison struct {
@@ -1413,12 +1454,16 @@ type VersionComparison struct {
 
 	// ContentClass Classes allowed in summary fields; user text is never allowed there.
 	ContentClass TrustedContentClass `json:"content_class"`
-	FromN        int                 `json:"from_n"`
+
+	// FromCode Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	FromCode VersionCode `json:"from_code"`
 
 	// Provenance How the record was produced. `auto`, `steward-checked`, and `bill-only` are the explanation flags.
 	Provenance Provenance          `json:"provenance"`
 	Sections   []ComparisonSection `json:"sections"`
-	ToN        int                 `json:"to_n"`
+
+	// ToCode Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	ToCode VersionCode `json:"to_code"`
 
 	// Version Revision of this record, starting at 1.
 	Version int `json:"version"`
@@ -1429,10 +1474,12 @@ type VersionSummary struct {
 	// Address API path of the version.
 	Address string `json:"address"`
 
-	// Code Official version code, for example `ih`.
-	Code        string    `json:"code"`
-	N           int       `json:"n"`
-	PublishedAt time.Time `json:"published_at"`
+	// Code Official version code (a GPO bill version code), lower case, for example `ih`, `rh`, `eh`. Versions are ordered by legislative stage, not by date.
+	Code        VersionCode `json:"code"`
+	PublishedAt time.Time   `json:"published_at"`
+
+	// Referrals Referral versions with this version's text, collapsed into it.
+	Referrals *[]Referral `json:"referrals,omitempty"`
 
 	// Type introduced, reported, engrossed, enrolled, ...
 	Type string `json:"type"`
@@ -1623,32 +1670,32 @@ type ServerInterface interface {
 	// (GET /v1/bills/{bill}/s/{section}/l/{range})
 	GetLineRangeLatest(w http.ResponseWriter, r *http.Request, bill BillPath, section SectionPath, pRange RangePath)
 	// GetVersion One official version with sections, lines, and anchors
-	// (GET /v1/bills/{bill}/v/{n})
-	GetVersion(w http.ResponseWriter, r *http.Request, bill BillPath, n VersionPath)
+	// (GET /v1/bills/{bill}/v/{version})
+	GetVersion(w http.ResponseWriter, r *http.Request, bill BillPath, version VersionPath)
 	// GetVersionChangeSummary Summary of what changed from the previous version (M1-09)
-	// (GET /v1/bills/{bill}/v/{n}/changes)
-	GetVersionChangeSummary(w http.ResponseWriter, r *http.Request, bill BillPath, n VersionPath)
+	// (GET /v1/bills/{bill}/v/{version}/changes)
+	GetVersionChangeSummary(w http.ResponseWriter, r *http.Request, bill BillPath, version VersionPath)
 	// ListCitations Citations of existing law in one version, with resolution state (M1-07)
-	// (GET /v1/bills/{bill}/v/{n}/citations)
-	ListCitations(w http.ResponseWriter, r *http.Request, bill BillPath, n VersionPath, params ListCitationsParams)
+	// (GET /v1/bills/{bill}/v/{version}/citations)
+	ListCitations(w http.ResponseWriter, r *http.Request, bill BillPath, version VersionPath, params ListCitationsParams)
 	// ListUnresolvedCitations Citations that are unresolved or ambiguous (M1-07)
-	// (GET /v1/bills/{bill}/v/{n}/citations/unresolved)
-	ListUnresolvedCitations(w http.ResponseWriter, r *http.Request, bill BillPath, n VersionPath, params ListUnresolvedCitationsParams)
+	// (GET /v1/bills/{bill}/v/{version}/citations/unresolved)
+	ListUnresolvedCitations(w http.ResponseWriter, r *http.Request, bill BillPath, version VersionPath, params ListUnresolvedCitationsParams)
 	// CompareVersions Comparison of version n (base) with version m (M1-08)
-	// (GET /v1/bills/{bill}/v/{n}/compare/{m})
-	CompareVersions(w http.ResponseWriter, r *http.Request, bill BillPath, n VersionPath, m int)
+	// (GET /v1/bills/{bill}/v/{version}/compare/{other})
+	CompareVersions(w http.ResponseWriter, r *http.Request, bill BillPath, version VersionPath, other VersionCode)
 	// ListExplanations Change explanations of one version
-	// (GET /v1/bills/{bill}/v/{n}/explanations)
-	ListExplanations(w http.ResponseWriter, r *http.Request, bill BillPath, n VersionPath, params ListExplanationsParams)
+	// (GET /v1/bills/{bill}/v/{version}/explanations)
+	ListExplanations(w http.ResponseWriter, r *http.Request, bill BillPath, version VersionPath, params ListExplanationsParams)
 	// GetSection One section of an official version
-	// (GET /v1/bills/{bill}/v/{n}/s/{section})
-	GetSection(w http.ResponseWriter, r *http.Request, bill BillPath, n VersionPath, section SectionPath)
+	// (GET /v1/bills/{bill}/v/{version}/s/{section})
+	GetSection(w http.ResponseWriter, r *http.Request, bill BillPath, version VersionPath, section SectionPath)
 	// GetLineRange A line or line range of an official version
-	// (GET /v1/bills/{bill}/v/{n}/s/{section}/l/{range})
-	GetLineRange(w http.ResponseWriter, r *http.Request, bill BillPath, n VersionPath, section SectionPath, pRange RangePath)
+	// (GET /v1/bills/{bill}/v/{version}/s/{section}/l/{range})
+	GetLineRange(w http.ResponseWriter, r *http.Request, bill BillPath, version VersionPath, section SectionPath, pRange RangePath)
 	// GetBillSummary Bill summary of one version (M1-09)
-	// (GET /v1/bills/{bill}/v/{n}/summary)
-	GetBillSummary(w http.ResponseWriter, r *http.Request, bill BillPath, n VersionPath)
+	// (GET /v1/bills/{bill}/v/{version}/summary)
+	GetBillSummary(w http.ResponseWriter, r *http.Request, bill BillPath, version VersionPath)
 	// ListExports Index of bulk exports
 	// (GET /v1/exports)
 	ListExports(w http.ResponseWriter, r *http.Request, params ListExportsParams)
@@ -1939,17 +1986,17 @@ func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// ------------- Path parameter "n" -------------
-	var n VersionPath
+	// ------------- Path parameter "version" -------------
+	var version VersionPath
 
-	err = runtime.BindStyledParameterWithOptions("simple", "n", r.PathValue("n"), &n, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "version", r.PathValue("version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetVersion(w, r, bill, n)
+		siw.Handler.GetVersion(w, r, bill, version)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1974,17 +2021,17 @@ func (siw *ServerInterfaceWrapper) GetVersionChangeSummary(w http.ResponseWriter
 		return
 	}
 
-	// ------------- Path parameter "n" -------------
-	var n VersionPath
+	// ------------- Path parameter "version" -------------
+	var version VersionPath
 
-	err = runtime.BindStyledParameterWithOptions("simple", "n", r.PathValue("n"), &n, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "version", r.PathValue("version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetVersionChangeSummary(w, r, bill, n)
+		siw.Handler.GetVersionChangeSummary(w, r, bill, version)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2009,12 +2056,12 @@ func (siw *ServerInterfaceWrapper) ListCitations(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// ------------- Path parameter "n" -------------
-	var n VersionPath
+	// ------------- Path parameter "version" -------------
+	var version VersionPath
 
-	err = runtime.BindStyledParameterWithOptions("simple", "n", r.PathValue("n"), &n, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "version", r.PathValue("version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
 		return
 	}
 
@@ -2061,7 +2108,7 @@ func (siw *ServerInterfaceWrapper) ListCitations(w http.ResponseWriter, r *http.
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListCitations(w, r, bill, n, params)
+		siw.Handler.ListCitations(w, r, bill, version, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2086,12 +2133,12 @@ func (siw *ServerInterfaceWrapper) ListUnresolvedCitations(w http.ResponseWriter
 		return
 	}
 
-	// ------------- Path parameter "n" -------------
-	var n VersionPath
+	// ------------- Path parameter "version" -------------
+	var version VersionPath
 
-	err = runtime.BindStyledParameterWithOptions("simple", "n", r.PathValue("n"), &n, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "version", r.PathValue("version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
 		return
 	}
 
@@ -2125,7 +2172,7 @@ func (siw *ServerInterfaceWrapper) ListUnresolvedCitations(w http.ResponseWriter
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListUnresolvedCitations(w, r, bill, n, params)
+		siw.Handler.ListUnresolvedCitations(w, r, bill, version, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2150,26 +2197,26 @@ func (siw *ServerInterfaceWrapper) CompareVersions(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// ------------- Path parameter "n" -------------
-	var n VersionPath
+	// ------------- Path parameter "version" -------------
+	var version VersionPath
 
-	err = runtime.BindStyledParameterWithOptions("simple", "n", r.PathValue("n"), &n, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "version", r.PathValue("version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "m" -------------
-	var m int
+	// ------------- Path parameter "other" -------------
+	var other VersionCode
 
-	err = runtime.BindStyledParameterWithOptions("simple", "m", r.PathValue("m"), &m, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "other", r.PathValue("other"), &other, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "m", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "other", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CompareVersions(w, r, bill, n, m)
+		siw.Handler.CompareVersions(w, r, bill, version, other)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2194,12 +2241,12 @@ func (siw *ServerInterfaceWrapper) ListExplanations(w http.ResponseWriter, r *ht
 		return
 	}
 
-	// ------------- Path parameter "n" -------------
-	var n VersionPath
+	// ------------- Path parameter "version" -------------
+	var version VersionPath
 
-	err = runtime.BindStyledParameterWithOptions("simple", "n", r.PathValue("n"), &n, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "version", r.PathValue("version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
 		return
 	}
 
@@ -2233,7 +2280,7 @@ func (siw *ServerInterfaceWrapper) ListExplanations(w http.ResponseWriter, r *ht
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListExplanations(w, r, bill, n, params)
+		siw.Handler.ListExplanations(w, r, bill, version, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2258,12 +2305,12 @@ func (siw *ServerInterfaceWrapper) GetSection(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// ------------- Path parameter "n" -------------
-	var n VersionPath
+	// ------------- Path parameter "version" -------------
+	var version VersionPath
 
-	err = runtime.BindStyledParameterWithOptions("simple", "n", r.PathValue("n"), &n, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "version", r.PathValue("version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
 		return
 	}
 
@@ -2277,7 +2324,7 @@ func (siw *ServerInterfaceWrapper) GetSection(w http.ResponseWriter, r *http.Req
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSection(w, r, bill, n, section)
+		siw.Handler.GetSection(w, r, bill, version, section)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2302,12 +2349,12 @@ func (siw *ServerInterfaceWrapper) GetLineRange(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// ------------- Path parameter "n" -------------
-	var n VersionPath
+	// ------------- Path parameter "version" -------------
+	var version VersionPath
 
-	err = runtime.BindStyledParameterWithOptions("simple", "n", r.PathValue("n"), &n, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "version", r.PathValue("version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
 		return
 	}
 
@@ -2330,7 +2377,7 @@ func (siw *ServerInterfaceWrapper) GetLineRange(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLineRange(w, r, bill, n, section, pRange)
+		siw.Handler.GetLineRange(w, r, bill, version, section, pRange)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2355,17 +2402,17 @@ func (siw *ServerInterfaceWrapper) GetBillSummary(w http.ResponseWriter, r *http
 		return
 	}
 
-	// ------------- Path parameter "n" -------------
-	var n VersionPath
+	// ------------- Path parameter "version" -------------
+	var version VersionPath
 
-	err = runtime.BindStyledParameterWithOptions("simple", "n", r.PathValue("n"), &n, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "version", r.PathValue("version"), &version, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetBillSummary(w, r, bill, n)
+		siw.Handler.GetBillSummary(w, r, bill, version)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2730,17 +2777,17 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/openapi.yaml", wrapper.GetOpenAPI)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills", wrapper.ListBills)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}", wrapper.GetBill)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{n}", wrapper.GetVersion)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{n}/s/{section}", wrapper.GetSection)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{n}/s/{section}/l/{range}", wrapper.GetLineRange)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{version}", wrapper.GetVersion)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{version}/s/{section}", wrapper.GetSection)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{version}/s/{section}/l/{range}", wrapper.GetLineRange)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/s/{section}", wrapper.GetSectionLatest)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/s/{section}/l/{range}", wrapper.GetLineRangeLatest)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{n}/explanations", wrapper.ListExplanations)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{n}/summary", wrapper.GetBillSummary)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{n}/changes", wrapper.GetVersionChangeSummary)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{n}/citations", wrapper.ListCitations)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{n}/citations/unresolved", wrapper.ListUnresolvedCitations)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{n}/compare/{m}", wrapper.CompareVersions)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{version}/explanations", wrapper.ListExplanations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{version}/summary", wrapper.GetBillSummary)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{version}/changes", wrapper.GetVersionChangeSummary)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{version}/citations", wrapper.ListCitations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{version}/citations/unresolved", wrapper.ListUnresolvedCitations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/bills/{bill}/v/{version}/compare/{other}", wrapper.CompareVersions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/selection-policy", wrapper.GetSelectionPolicy)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/selection-policy/{version}", wrapper.GetSelectionPolicyVersion)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/moderation-log", wrapper.ListModerationLog)
@@ -2756,155 +2803,161 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

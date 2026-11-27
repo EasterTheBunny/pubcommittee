@@ -23,6 +23,9 @@ type Deps struct {
 	// truncated or invalid). Collect always stores a ready result for a key whose stored output is not ready as
 	// the revised record of the key, so a paid retry is never lost. A ready output is never replaced.
 	Retry bool
+	// ExplainVersion is a version code whose inline explanations are planned although the version is superseded
+	// (job-summarize --explain-version); "" for none. Submit refuses a code that is not in the bill's version list.
+	ExplainVersion string
 	// Record reports one finished generation to telemetry; may be nil.
 	Record func(ctx context.Context, task, model, status string, tokensIn, tokensOut int)
 }
@@ -36,9 +39,22 @@ type SubmitReport struct {
 	BatchID   string   `json:"batch_id,omitempty"`
 	InputChar int      `json:"input_chars"` // characters of source and request of the submitted tasks
 	Notes     []string `json:"notes,omitempty"`
+	// LeftOut counts, per superseded version, the inline explanation tasks not planned because only the latest
+	// version of a bill is explained (stored ones are not counted: they stay stored).
+	LeftOut []LeftOut `json:"explanations_left_out,omitempty"`
 }
 
-// Submit plans every task of every stored version of the bill, drops the
+// LeftOut is the number of inline explanation tasks left out for one superseded version.
+type LeftOut struct {
+	Version string `json:"version"`
+	Tasks   int    `json:"tasks"`
+}
+
+// ErrUnknownVersion means --explain-version names a code that is not in the bill's version list.
+var ErrUnknownVersion = errors.New("version is not in the bill's version list")
+
+// Submit plans every task of every stored version of the bill (the inline explanations of the latest version
+// only, and of Deps.ExplainVersion), drops the
 // keys that already have a stored output or sit in a pending batch, and
 // submits the rest as one batch. A re-run submits nothing new. With dryRun
 // it plans and counts and submits nothing.
@@ -81,31 +97,76 @@ func missingCitations(notes []string) (string, bool) {
 // PlanAll returns every task of every stored version of the bill, stored or
 // not, in version order, with the notes of steps that planned nothing.
 func PlanAll(ctx context.Context, d Deps, bill data.BillRef) ([]Task, []string, error) {
+	all, notes, _, err := planVersions(ctx, d, bill)
+	return all, notes, err
+}
+
+// isExplanation reports whether a task is an inline explanation.
+func isExplanation(t Task) bool {
+	return t.Key.Task == data.TaskChangeExplanation || t.Key.Task == data.TaskBillExplanation
+}
+
+// checkExplainVersion refuses an ExplainVersion that is not in the bill's version list.
+func (d Deps) checkExplainVersion(bill data.BillRef, vs []data.VersionSummary) error {
+	if d.ExplainVersion == "" || slices.ContainsFunc(vs, func(s data.VersionSummary) bool {
+		return s.Ref.Version == d.ExplainVersion
+	}) {
+		return nil
+	}
+	return fmt.Errorf("--explain-version %q for %s: %w", d.ExplainVersion, bill, ErrUnknownVersion)
+}
+
+// leftOut reports whether t is an inline explanation of a superseded version that is not asked for; if it is
+// and has no stored output, it counts in left.
+func (d Deps) leftOut(ctx context.Context, t Task, latest string, left map[string]int) (bool, error) {
+	v := t.Key.Version.Version
+	if !isExplanation(t) || v == latest || v == d.ExplainVersion {
+		return false, nil
+	}
+	stored, err := d.isDone(ctx, t.Key)
+	if err != nil {
+		return true, err
+	}
+	if !stored {
+		left[v]++
+	}
+	return true, nil
+}
+
+// planVersions plans every task of every stored version; latest is the code of the last version of the list
+// (data.PublicVersions order, so the stage order of M1-05b), "" for a bill with no version.
+func planVersions(
+	ctx context.Context, d Deps, bill data.BillRef,
+) (all []Task, notes []string, latest string, err error) {
 	vs, err := d.Ports.BillText.ListVersions(ctx, bill)
 	if err != nil {
-		return nil, nil, fmt.Errorf("list versions %s: %w", bill, err)
+		return nil, nil, "", fmt.Errorf("list versions %s: %w", bill, err)
 	}
-	var all []Task
-	var notes []string
+	if len(vs) > 0 {
+		latest = vs[len(vs)-1].Ref.Version
+	}
+	if err := d.checkExplainVersion(bill, vs); err != nil {
+		return nil, nil, "", err
+	}
 	var prev *data.OfficialVersion
 	for _, s := range vs {
 		ver, err := d.Ports.BillText.GetVersion(ctx, s.Ref)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get version %s: %w", s.Ref, err)
+			return nil, nil, "", fmt.Errorf("get version %s: %w", s.Ref, err)
 		}
 		tasks, n, err := PlanVersion(ctx, d.Ports, ver, prev, d.Cfg)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, "", err
 		}
 		all, notes, prev = append(all, tasks...), append(notes, n...), &ver
 	}
-	return all, notes, nil
+	return all, notes, latest, nil
 }
 
 // plan returns the tasks of the bill that have no stored output and are not
 // in a pending batch, and counts the rest in rep.
 func (d Deps) plan(ctx context.Context, rep *SubmitReport, bill data.BillRef) ([]Task, error) {
-	all, notes, err := PlanAll(ctx, d, bill)
+	all, notes, latest, err := planVersions(ctx, d, bill)
 	if err != nil {
 		return nil, err
 	}
@@ -115,12 +176,20 @@ func (d Deps) plan(ctx context.Context, rep *SubmitReport, bill data.BillRef) ([
 		return nil, err
 	}
 	var todo []Task
+	left := map[string]int{}
 	for _, t := range all {
-		rep.Planned++
+		out, err := d.leftOut(ctx, t, latest, left)
+		if err != nil {
+			return nil, err
+		}
+		if out {
+			continue
+		}
 		stored, err := d.isDone(ctx, t.Key)
 		if err != nil {
 			return nil, err
 		}
+		rep.Planned++
 		if stored || busy[t.Key.String()] {
 			rep.Skipped++
 			continue
@@ -128,7 +197,20 @@ func (d Deps) plan(ctx context.Context, rep *SubmitReport, bill data.BillRef) ([
 		todo = append(todo, t)
 		rep.InputChar += len(t.Req.Source) + len(t.Req.Input) + len(t.Req.Instructions)
 	}
+	rep.LeftOut = leftOutReport(all, left)
 	return todo, nil
+}
+
+// leftOutReport lists the counts of left in version order.
+func leftOutReport(all []Task, left map[string]int) []LeftOut {
+	var out []LeftOut
+	for _, t := range all {
+		if v := t.Key.Version.Version; left[v] > 0 {
+			out = append(out, LeftOut{Version: v, Tasks: left[v]})
+			left[v] = 0
+		}
+	}
+	return out
 }
 
 func (d Deps) submit(ctx context.Context, rep *SubmitReport, todo []Task) error {

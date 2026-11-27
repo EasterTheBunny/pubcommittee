@@ -11,6 +11,7 @@ export type CatalogEntry = S['CatalogEntry'];
 export type VersionSummary = S['VersionSummary'];
 /** The text of one official version, with sections, lines, and anchors. */
 export type OfficialVersion = S['Version'];
+export type Referral = S['Referral'];
 export type Section = S['Section'];
 export type SectionResource = S['SectionResource'];
 export type Line = S['Line'];
@@ -34,7 +35,8 @@ export type Problem = S['Problem'];
 /** A line range inside one section of one official version (design/10 Canonical addresses). */
 export interface Anchor {
 	billId: string;
-	version: number;
+	/** Version code, for example "eh". */
+	version: string;
 	sectionId: string;
 	from: number;
 	to: number;

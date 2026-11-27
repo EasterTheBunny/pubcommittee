@@ -36,7 +36,7 @@ func toExplanation(
 	res resolved, e data.ChangeExplanation, sec data.Section, links []data.CitationLink,
 ) apiv1.Explanation {
 	out := apiv1.Explanation{
-		Bill: res.id, N: res.n, SectionId: sectionID(e.Section),
+		Bill: res.id, Code: res.code, SectionId: sectionID(e.Section),
 		WhatChanges: e.WhatChanges, WhyItMatters: e.WhyMatters, Flags: []apiv1.ExplanationFlags{},
 	}
 	out.Version, out.AsOf, out.Provenance, out.ContentClass = meta(e.Meta)
@@ -124,9 +124,9 @@ func (s *Server) GetBillSummary(w http.ResponseWriter, r *http.Request, bill api
 		return
 	}
 	doc := apiv1.BillSummaryDoc{
-		Address:    res.address(versionPath(res.id, res.n)+"/summary", ""),
+		Address:    res.address(versionPath(res.id, res.code)+"/summary", ""),
 		Bill:       res.id,
-		N:          res.n,
+		Code:       res.code,
 		Headline:   out.Headline,
 		Statements: toStatements(out.Statements),
 		Flags:      new([]apiv1.BillSummaryDocFlags{apiv1.BillSummaryDocFlagsAuto}),
@@ -168,8 +168,8 @@ func (s *Server) GetVersionChangeSummary(
 	}
 	doc := apiv1.VersionChangeSummary{
 		Bill:       res.id,
-		FromN:      res.n - 1,
-		ToN:        res.n,
+		FromCode:   res.vs[res.n-2].Ref.Version,
+		ToCode:     res.code,
 		Headline:   out.Headline,
 		Statements: toStatements(out.Statements),
 		Flags:      new([]apiv1.VersionChangeSummaryFlags{apiv1.VersionChangeSummaryFlagsAuto}),
@@ -200,9 +200,9 @@ func (s *Server) serveNoDifferences(w http.ResponseWriter, r *http.Request, res 
 	}
 	doc := apiv1.VersionChangeSummary{
 		Bill:       res.id,
-		FromN:      res.n - 1,
-		ToN:        res.n,
-		Headline:   fmt.Sprintf("No text changes from version %d.", res.n-1),
+		FromCode:   res.vs[res.n-2].Ref.Version,
+		ToCode:     res.code,
+		Headline:   fmt.Sprintf("No text changes from version %s.", res.vs[res.n-2].Ref.Version),
 		Statements: []apiv1.Statement{},
 		Flags:      new([]apiv1.VersionChangeSummaryFlags{apiv1.VersionChangeSummaryFlagsNoDifferences}),
 	}

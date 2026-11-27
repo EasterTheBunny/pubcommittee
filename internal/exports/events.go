@@ -36,23 +36,23 @@ func (r *run) catalogEvents(e data.CatalogEntry) {
 	}
 }
 
-func (r *run) versionEvent(n int, ref data.VersionRef) {
+func (r *run) versionEvent(ref data.VersionRef) {
 	r.event("version:"+ref.String(), data.FeedVersion,
 		"New official version "+ref.Version+" of bill "+ref.Bill.ID(),
-		"/v1/bills/"+ref.Bill.ID()+"/v/"+strconv.Itoa(n))
+		"/v1/bills/"+ref.Bill.ID()+"/v/"+ref.Version)
 }
 
 // explanationEvent records an explanation revision. Each revision of an
 // explanation has its own id, so a correction reaches clients that already
 // saw the first text.
-func (r *run) explanationEvent(n int, ref data.VersionRef, x data.ChangeExplanation) {
+func (r *run) explanationEvent(ref data.VersionRef, x data.ChangeExplanation) {
 	kind, what := data.FeedExplanation, "New"
 	if x.Meta.Version > 1 {
 		kind, what = data.FeedExplanationCorrected, "Corrected"
 	}
 	id := fmt.Sprintf("explanation:%s:%s:%s:r%d", ref, strings.Join(x.Section, "."), x.ProvisionID, x.Meta.Version)
 	r.event(id, kind, what+" change explanation for version "+ref.Version+" of bill "+ref.Bill.ID(),
-		"/v1/bills/"+ref.Bill.ID()+"/v/"+strconv.Itoa(n)+"/explanations")
+		"/v1/bills/"+ref.Bill.ID()+"/v/"+ref.Version+"/explanations")
 }
 
 // policyEvents records every stored selection policy version, oldest first.

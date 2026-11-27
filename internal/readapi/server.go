@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
+	"slices"
 	"time"
 
 	apiv1 "github.com/easterthebunny/pubcommittee/api/v1"
@@ -36,13 +36,24 @@ func New(ports data.PublicReadPorts) *Server {
 
 // resolved is a bill version named by a request.
 type resolved struct {
-	id         string
-	ref        data.BillRef
+	id  string
+	ref data.BillRef
+	// n and latest are 1-based positions in the version list, for indexing
+	// vs only; they are never served or used in an address.
 	n          int
 	latest     int
+	code       string // version code of the answer
+	latestCode string // version code of the latest version
+	vs         []data.VersionSummary
 	fromLatest bool
 	version    data.OfficialVersion
 }
+
+// redirectError says a requested code is a referral that collapsed into
+// another version; the answer is a redirect to the same route on that code.
+type redirectError struct{ from, to string }
+
+func (e redirectError) Error() string { return "version " + e.from + " collapsed into " + e.to }
 
 // listVersions returns the versions of a bill; a bill with none is ErrNotFound.
 func (s *Server) listVersions(ctx context.Context, ref data.BillRef) ([]data.VersionSummary, error) {
@@ -56,7 +67,8 @@ func (s *Server) listVersions(ctx context.Context, ref data.BillRef) ([]data.Ver
 	return vs, nil
 }
 
-// resolve finds version n (a position or "latest") of a bill and loads it.
+// resolve finds the version named by code (a version code or "latest") of a
+// bill and loads it. A code that is a collapsed referral gives redirectError.
 // loadText false skips reading the text and leaves version zero.
 func (s *Server) resolve(ctx context.Context, bill, n string, loadText bool) (resolved, error) {
 	ref, err := parseBillID(bill)
@@ -67,16 +79,22 @@ func (s *Server) resolve(ctx context.Context, bill, n string, loadText bool) (re
 	if err != nil {
 		return resolved{}, err
 	}
-	out := resolved{id: billID(ref), ref: ref, latest: len(vs)}
+	out := resolved{id: billID(ref), ref: ref, latest: len(vs), latestCode: vs[len(vs)-1].Ref.Version, vs: vs}
 	if n == latestWord {
 		out.n, out.fromLatest = len(vs), true
 	} else {
-		pos, err := strconv.Atoi(n)
-		if err != nil || pos < 1 || pos > len(vs) {
+		pos := slices.IndexFunc(vs, func(v data.VersionSummary) bool { return v.Ref.Version == n })
+		if pos < 0 {
+			for _, v := range vs {
+				if slices.ContainsFunc(v.Referrals, func(r data.Referral) bool { return r.Code == n }) {
+					return resolved{}, redirectError{from: n, to: v.Ref.Version}
+				}
+			}
 			return resolved{}, fmt.Errorf("version %q of %s: %w", n, out.id, data.ErrNotFound)
 		}
-		out.n = pos
+		out.n = pos + 1
 	}
+	out.code = vs[out.n-1].Ref.Version
 	if loadText {
 		if out.version, err = s.ports.BillText.GetVersion(ctx, vs[out.n-1].Ref); err != nil {
 			return resolved{}, fmt.Errorf("get version: %w", err)
@@ -100,8 +118,8 @@ func (r resolved) address(canonical, fragment string) apiv1.AddressInfo {
 	a := apiv1.AddressInfo{
 		Canonical:          canonical,
 		Page:               new(canonical[len("/v1"):]),
-		PinnedVersion:      r.n,
-		LatestVersion:      r.latest,
+		PinnedVersion:      r.code,
+		LatestVersion:      r.latestCode,
 		IsLatest:           r.n == r.latest,
 		ResolvedFromLatest: r.fromLatest,
 	}
@@ -109,7 +127,7 @@ func (r resolved) address(canonical, fragment string) apiv1.AddressInfo {
 		a.Fragment = new(fragment)
 	}
 	if r.n != r.latest {
-		a.Compare = new(versionPath(r.id, r.n) + "/compare/" + strconv.Itoa(r.latest))
+		a.Compare = new(versionPath(r.id, r.code) + "/compare/" + r.latestCode)
 	}
 	return a
 }

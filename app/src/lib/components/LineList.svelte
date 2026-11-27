@@ -16,7 +16,7 @@
 		explanations = []
 	}: {
 		billId: string;
-		version: number;
+		version: string;
 		sectionId: string;
 		lines: Line[];
 		highlight?: { from: number; to: number } | null;
