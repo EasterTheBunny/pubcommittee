@@ -99,8 +99,13 @@ Everything a machine can read is assumed to be read, stored, and compared over t
 ## Open questions
 
 - **Noise or suppression:** add calibrated noise (differential privacy) to published counts, or publish exact counts with batching and suppression? Noise is stronger against differencing but harder to explain to legislators and auditors.
+  - **Decided (operator, 2026-11-28, M2 prototype):** exact counts with batching and suppression.
 - **Batch interval:** hourly, daily, or adaptive to the item's activity?
+  - **Decided (operator, 2026-11-28, M2 prototype):** hourly.
 - **Small-count threshold** for "fewer than N", and whether it matches the brief-eligibility minimum.
+  - **Decided (operator, 2026-11-28, M2 prototype):** a configuration value that grows with the user base, starting at N = 5; separate from the brief-eligibility minimum.
 - **AI-drafted text** submitted by a person: allowed, disclosed, or prohibited?
+  - **Decided (operator, 2026-11-28):** allowed, with no label.
 - **Privileged-role attribution:** principle 4 makes steward and moderator actions public and attributed, which exposes those people to harassment. Attribute to a public role ID with identities held by an oversight body?
+  - **Decided (operator, 2026-11-28):** a stable public role id (for example `moderator-3`) in the public log; the operator holds the mapping to people, later an oversight body.
 - How is detection of generated campaigns described publicly without teaching evasion?

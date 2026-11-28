@@ -135,6 +135,7 @@ Individual signals can leak without any private data being read. Full catalogue 
 - What thresholds define a "spike" worth disclosing?
 - If the rules produce a tracked set heavily weighted to one party's bills, is disclosure enough, or should the topic list be revisited?
 - Add calibrated noise (differential privacy) to published counts, or rely on exact counts with batching and suppression?
+  - **Decided (operator, 2026-11-28, M2 prototype):** exact counts with hourly batching and "fewer than N" suppression; noise can be revisited at M3.
 - How is demographic coverage measured without collecting sensitive data most users will not give?
 - How is the community panel elected, sized, and protected from capture?
 - Retention: how long are withdrawn signals, suspended accounts, and verification records kept?

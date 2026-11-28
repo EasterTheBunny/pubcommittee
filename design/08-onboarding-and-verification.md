@@ -115,5 +115,6 @@ People hear about changes to things they took part in: a suggestion they support
 - Is phone verification required at tier 1, or optional?
 - Will other sign-in options be needed for people without Google or Facebook accounts?
 - Should reviewers be offered a separate pseudonym per bill, to resist cross-bill profiling ([11](11-ai-security.md))?
+  - **Decided (operator, 2026-11-28):** yes, for everyone: pages and exports show a per-bill pseudonym, never one name across bills.
 - Is email worth adding later for people who never install the app or allow device notifications, given that it requires collecting and protecting an address?
 - How long should offline copies of official text be kept on a device?

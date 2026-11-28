@@ -78,6 +78,68 @@ Parallel tracks once 01 lands: contract and read path (02, 10, 13, 14); ingest (
   - Larger local pulls (full catalog, whole US Code release points) go to `.local-data/`, never into git.
 - **Local triggers.** In the local phase each pipeline step is its own command over stored data: `job-ingest --bill <id>` (pull, parse, policy evaluation, citations, version comparison), `job-ingest --publish-policy v1|<file> --reason <text>` and `job-ingest --evaluate` (re-evaluate the stored catalog), `scripts/law-ingest` (US Code release point and citation sets, until wired into a job), `job-summarize`, `job-exports`. Nothing chains steps automatically; automatic chaining, scheduling, and whether a pull is an `admin-api` action are cloud-phase questions.
 
+## M2 — Interactive prototype
+
+Scope and exit criteria: [MILESTONES § M2](../MILESTONES.md#m2--interactive-prototype). Architecture fit: [architecture § Milestone fit](../../architecture/README.md#milestone-fit). Status: [STATUS.md § M2](STATUS.md#m2).
+
+| # | Task | Depends on | Delivers |
+| --- | --- | --- | --- |
+| [M2-00](m2/00-decisions-and-prerequisites.md) | Decisions and prerequisites | — | Operator answers to the decisions M2 tasks cannot assume; domain, OAuth clients, VAPID keys |
+| [M2-01](m2/01-write-ports-and-domain.md) | Write ports and domain types | M1 | Account, session, review item, signal, moderation, role, notification, snapshot types; ports; `Keys` port; memory adapter; conformance suites |
+| [M2-02](m2/02-postgres-adapter.md) | Postgres adapter | 01 | `adapters/postgres`, migrations, Postgres in `compose.yaml`, conformance in CI |
+| [M2-03](m2/03-cloud-keys.md) | Cloud key adapter (cloud phase) | 01 | `adapters/kmsgcp`, key rotation procedure |
+| [M2-04](m2/04-api-contract-writes.md) | API contract for review and writes | 01 | `read-api` review routes and `write-api` routes in `api/openapi.yaml`; `content_class` `user`; generated types; contract tests |
+| [M2-05](m2/05-write-api-sign-in-sessions.md) | `write-api`: sign-in, sessions, write barriers | 02, 04 | `cmd/write-api`, Google and Facebook sign-in (tier 1), local stand-in provider, sessions, Origin and anti-forgery checks, per-account rate limits, test-user gate |
+| [M2-06](m2/06-review-items.md) | Line comments and suggested edits | 04, 05 | Persisted, anchored review items; stale state on new versions; `read-api` review routes |
+| [M2-07](m2/07-signals-and-markup-requests.md) | Support, bill-level signals, markup requests | 05, 06 | One private, withdrawable signal per person per item; markup requests with private reasons; own-signal list |
+| [M2-08](m2/08-batcher-and-published-counts.md) | `job-batcher` and published counts | 07 | Batched counts, "fewer than N", snapshots, brief eligibility, `Snapshots` read port |
+| [M2-09](m2/09-notifications.md) | Inbox and device notifications | 07, 08 | Inbox route, `job-notify`, `adapters/webpush`, content-free pushes, encrypted subscriptions |
+| [M2-10](m2/10-moderation-and-steward-actions.md) | Basic moderation and steward actions | 06 | Flag, remove with reason, public moderation log; mark well formed, wording fix, re-anchor; test role grants |
+| [M2-11](m2/11-brief-page.md) | Brief page from live data | 08 | Brief data route and a page that renders without scripts; no delivery |
+| [M2-12](m2/12-share-links-and-cards.md) | Share links and preview cards | 06, 08 | Links for every shareable target; cards with no sharer identity, position, or user text in preview fields |
+| [M2-13](m2/13-injection-and-inference-defenses.md) | Instruction-injection and inference defenses | 06, 08, 12, 14 | Seeded injection corpus and cross-service checks; generation never reads user content; batch-window privacy test |
+| [M2-14](m2/14-exports-and-feed.md) | Review items in exports and the feed | 06, 08, 10 | Review items in bulk exports with per-bill pseudonyms; review and removal events in the feed |
+| [M2-15](m2/15-web-ui-interactive.md) | Interactive web UI | 05–12 | Sign-in, side-by-side view, comment and suggestion forms, signals, markup requests, inbox, steward and moderator controls, share buttons; writes work without scripts |
+| [M2-16](m2/16-infrastructure.md) | Infrastructure for writes (cloud phase) | 00, 02, 03, 05 | Domain, `write-api`, serverless Postgres, KMS, secrets, schedules for `job-batcher` and `job-notify` |
+| [M2-17](m2/17-testers-and-charter.md) | Tester sessions and draft charter | 15 | Session plan and rubric, tester findings, draft public charter, decided batch interval and N |
+| [M2-18](m2/18-acceptance.md) | M2 acceptance | all | Local gate and hosted gate in `staging`; evidence per exit criterion |
+
+### Phases
+
+M2 is built in two phases, as M1 was ([m2/environments.md](m2/environments.md)):
+
+- **Local phase.** Every task except 03 and 16 is built and accepted on a local machine with the `memory` and `local` build targets: M1's filesystem stores, Postgres in a container, `localkeys`, a stand-in identity provider with seeded test accounts, and a locally generated development VAPID key. No cloud account, domain, or provider client is needed. Each task adds what it builds to `scripts/local.sh`, so the whole prototype runs with `scripts/local.sh up`. The phase closes with the M2-18 local gate and the operator's walkthrough of every feature on the local stack.
+- **Cloud phase.** 03 adds Cloud KMS, 16 the infrastructure for writes, and M2-00's cloud decisions and operator steps the domain and real sign-in. Each task's criteria marked *cloud phase* are then checked in `dev` or `staging`; the tester sessions (17) run in `staging`, and the phase closes with the M2-18 hosted gate.
+
+### Order
+
+```
+Local phase
+00 local decisions ─────────────────────────────────────── (before the tasks they block)
+01 ──┬─► 02 ─┬─► 05 ─► 06 ─┬─► 07 ─► 08 ─┬─► 09
+     │       │             ├─► 10 ───────┼─► 14 ─┐
+     └─► 04 ─┘             │             ├─► 11  ├─► 13
+                           └─────────────┴─► 12 ─┘
+                                   05–12 ─► 15 ─► 17 (materials, charter, walkthrough)
+                                    all local ─► 18 local gate ─► operator walkthrough on scripts/local.sh
+
+Cloud phase
+00 cloud decisions and operator steps ─► 03 ─► 16 ─► cloud-phase criteria of 02, 05–15 ─► 17 tester sessions in staging ─► 18 hosted gate
+```
+
+Parallel tracks once 01 lands: storage (02) and contract (04); then the write path (05, 06, 07, 08) with moderation (10) beside it. The UI (15) can start on the contract's generated types with a memory-target stack. Cloud-phase work may start early, as long as no local-phase task waits on it.
+
+### M2 boundaries that every task respects
+
+- **Local first.** Every task's local acceptance closes without a cloud service, a domain, or a real provider account; cloud connections are cloud-phase criteria ([m2/environments.md](m2/environments.md)).
+- **Viewable locally.** What a task builds runs in `scripts/local.sh up`, so every finished feature can be used on the local stack.
+- **Tier 1 only, test users only.** Google and Facebook sign-in for invited testers; no phone, address, or ID verification (M5) and no email.
+- **No delivery to offices.** The brief is a page; `job-briefs`, delivery, responses, and the responsiveness record are M3.
+- **No two-party sign-off, no steward program.** Steward and moderator roles are test grants for single-person actions ([M2-10](m2/10-moderation-and-steward-actions.md)).
+- **Counts only in batches.** No public count changes between batches or appears in a write's response.
+- **Machines read and people write.** No programmatic write path; generation never takes user content as input.
+- **Nothing private in the repository**, as in M1: placeholders for `<domain>`, project ids, and client ids; secrets only in Secret Manager.
+
 ## Status and running tasks with agents
 
 [STATUS.md](STATUS.md) records each task's state and branch.
