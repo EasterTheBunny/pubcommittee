@@ -143,6 +143,7 @@ Real data, real accounts, persistence beyond a demo session (reset to seed is ac
 - Steward and office tools verified to show no individual signals or supporter lists; appeal requesters private ([09](09-integrity-moderation-and-privacy.md)).
 - Optional read-only agent tool interface ([10](10-machine-access.md)).
 - Public charter published.
+- Release approval gate: a release reaches `staging` and `prod` only after the operator's approval for each ([M1-17b](tasks/m1/17b-release-approval-gate.md)).
 
 **Exit criteria**
 - Measured office response rate and time to respond.

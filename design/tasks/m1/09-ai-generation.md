@@ -82,6 +82,7 @@ Generate bill summaries, change explanations, and version change summaries for t
 ## Open questions
 
 - What starts `job-summarize` after a manual pull? **Decided for the local phase:** each step runs as its own command over stored data; nothing chains steps automatically ([README § Example data and local triggers](../README.md#example-data-and-local-triggers)). Automatic chaining is a cloud-phase question. Remaining for the cloud phase: The architecture starts it from `job-ingest` and runs it on a short interval until batches finish.
+- Contradicted statements and paid retries after M1: **Decided (operator, 2026-11-27):** an output the grader marks *contradicted* stays withheld, as built. Further paid retries are allowed, each only after a dry run, a cost estimate, and the operator's approval.
 - Unreviewed output: **Decided:** in M1, every output that passes the accuracy checks is shown, labelled *auto-generated* ([architecture § Rules](../../../architecture/README.md#rules), rule 6). The bar for later milestones comes from the accuracy report.
 - What effort applies per task in M1? Tune it from the accuracy report; any move to a cheaper model needs the same report to hold.
 - Which model grades? It must differ from the generating model; confirm ids at M1 start.
