@@ -12,8 +12,9 @@ on:
     types: [completed]
     branches: [main]
   push:
-    # Application releases only (vX.Y.Z). Module tags use modules/vX.Y.Z and never match.
-    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    # Application releases only: release candidates (vX.Y.Z-rcN, staging) and releases
+    # (vX.Y.Z, staging then prod; M1-17b). Module tags use modules/vX.Y.Z and never match.
+    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"]
 
 permissions: {}
 

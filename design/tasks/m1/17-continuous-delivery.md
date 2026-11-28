@@ -84,6 +84,7 @@ Deliver every merged change on the public repository's `main` to `dev` with no m
 - A dispatch naming a commit not on the public `main` is refused before any build.
 - `staging` and `prod` run the same digests as the `dev` deploy they were promoted from (checked against the `deployed` records).
 - A `prod` promotion waits for an approval in the `prod` environment.
+  - **Changed (operator, 2026-11-28, [M1-17b](17b-release-approval-gate.md)):** the private repository's plan cannot enforce environment reviewers, so the operator's signed tag is the approval: `vX.Y.Z-rcN` promotes to `staging` only, and `vX.Y.Z` promotes to `staging` then `prod` only for a commit `staging` ran as its candidate; every tag is checked against an approved SSH signer list.
 - A rollback to the previous record restores its digests without a rebuild.
 - The public repository holds no cloud credential and no workflow with cloud permissions.
 - A leak check failure stops the deploy.
