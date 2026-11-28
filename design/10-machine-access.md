@@ -179,9 +179,12 @@ Consistent with [09](09-integrity-moderation-and-privacy.md), suspected automati
 ## Open questions
 
 - **AI-drafted text submitted by a person:** allowed, disclosed, or prohibited? Reliable detection is unlikely, and ordinary residents writing legal text is a known risk. Assisted drafting may help more than it harms.
+  - **Decided (operator, 2026-11-28):** allowed, with no label. Automated submission stays prohibited ([Write barriers](#write-barriers)).
 - **Platform-generated content:** change explanations may be produced automatically ([01](01-bill-ingestion-and-display.md)). This doc treats that as system output with a provenance flag, not as a user write. Confirm that boundary.
 - **Display names on pages:** exports use per-bill pseudonyms; should public pages do the same, at the cost of following one person's argument across bills?
+  - **Decided (operator, 2026-11-28):** per-bill pseudonyms on pages too, as in exports.
 - **Presence checks:** required for every signal, once per session, or only after behavioral detection raises a flag?
 - **Licence** for user content (comments, suggestions) in exports and structured data, before M2 exports review items. Official text and platform-generated content are decided (Read access).
+  - **Decided (operator, 2026-11-28):** CC BY 4.0, attributed to the per-bill pseudonym.
 - What volume or pattern counts as "suspected automation" worth disclosing, and how is the detection method described without teaching evasion?
 - Where is the line between a comment that argues with AI-generated summaries (legitimate) and one written to manipulate automated readers (spam)? The moderation charter needs a test that does not depend on position.

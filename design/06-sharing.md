@@ -68,6 +68,8 @@ Anyone, signed in or not, can share.
 ## Open questions
 
 - Should links be human-readable (bill number and section path) or opaque short codes, or both? [10](10-machine-access.md) requires a human-readable canonical address; short codes would be optional aliases.
+  - **Decided (operator, 2026-11-28):** human-readable canonical links only; no short codes in M2.
 - Do preview counts update live, or freeze at share time for cached cards?
+  - **Decided (operator, 2026-11-28):** live: a card shows the latest published batch when a platform fetches it.
 - What happens when a shared comment thread is later moderated away?
 - Should a share of a stale suggestion show its stale state prominently on the card?

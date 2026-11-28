@@ -1101,7 +1101,9 @@ Rules:
 - **Domain name** for `<domain>` and `api.<domain>`; required before M2 sign-in.
 - **Serverless Postgres vendor**, and whether its resume latency is acceptable for sign-in.
 - **Sessions in the document store or SQL:** the document store avoids a SQL resume on every signed-in request.
+  - **Decided (operator, 2026-11-28):** SQL. The document store is public and readable by `read-api`; sessions stay in private Postgres beside the accounts.
 - **Batch interval**, shared with [11](../design/11-ai-security.md).
+  - **Decided (operator, 2026-11-28, M2 prototype):** hourly; final value at M2 exit.
 - **Static page structure for script readers** ([option](#rendering-option-static-page-structure-proposed-not-scheduled)): decide after the M4 load test.
 - **Review-item freshness on the UI:** CDN TTL for pages showing comments and suggestions.
 - **Email notifications:** deferred. Revisit only if device notifications and the inbox leave too many people unreachable; it would need verified, encrypted addresses and a mail provider under a data processing agreement.
@@ -1117,3 +1119,4 @@ Rules:
 - **AI display policy:** per task, whether unreviewed output is shown, and the accuracy bar: from the accuracy checks in M1, and the evaluation set once stewards exist.
 - **Effort level per task**, and whether any task moves to a cheaper model, both decided from evaluation results.
 - **Key rotation** for HMAC keys: rotating `k_signal` requires re-keying every signal; plan the procedure before M2.
+  - **Decided (operator, 2026-11-28):** versioned keys: every HMAC result carries its key version from M2-01 on; a later re-keying job decrypts each person's `my_signals` and rewrites their keys under the new version. M2 runs on version 1.

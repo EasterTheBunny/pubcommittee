@@ -124,6 +124,8 @@ The only way to push back on a suggestion is to write a better one or explain th
 - **Support-only blind spot:** should the brief also count line comments that raise concerns on the same lines as a suggestion?
 - **Delivery minimum:** is 25 right, and should it scale with jurisdiction size?
 - **Small-count threshold and batch interval:** what N and what interval ([11](11-ai-security.md))?
+  - **Decided (operator, 2026-11-28, M2 prototype):** batches hourly; N is a configuration value that grows with the user base, starting at 5. Exact counts with batching and suppression, no noise. Final values are an M2 exit decision ([M2-00](tasks/m2/00-decisions-and-prerequisites.md)).
 - **Rider threshold:** how many tags before the brief calls out a section, and should a steward first confirm the section is unrelated?
 - Can a suggested edit span multiple non-contiguous ranges or sections?
+  - **Decided (operator, 2026-11-28):** no. A suggested edit replaces one contiguous line range in one section; several changes are several suggestions.
 - Are line comments allowed on sections tagged as riders, linked to the tags?
