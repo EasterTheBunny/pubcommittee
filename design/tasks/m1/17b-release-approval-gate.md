@@ -15,7 +15,7 @@ A release tag never reaches `staging` or `prod` without the operator's approval 
 
 - 2026-11-27 (operator): a release promotion appears not to wait for approval.
 - The workflow wiring is as M1-17 describes: every `staging` and `prod` deploy runs in a job that names its GitHub environment, so the environment's protection rules apply if they exist.
-- Not yet checked: the protection rules of the private repository's `staging` and `prod` environments. One possible cause: GitHub enforces required reviewers on private repositories only on some plans.
+- Checked 2026-11-28 (operator, `gh api`): `staging` and `prod` carry only a deployment branch policy, no required-reviewers rule, and administrators may bypass; the `v0.5.4` promote run recorded no approvals. The private repository's organization is on GitHub Team, and GitHub's documentation limits required reviewers on Free, Pro, and Team plans to public repositories. So no reviewer rule can be enforced there, and `v0.5.4` reached `prod` five minutes after `staging` with no stop.
 
 ## Scope
 
@@ -32,11 +32,22 @@ A release tag never reaches `staging` or `prod` without the operator's approval 
 
 ## Acceptance criteria
 
-- A signed release tag on a `main` commit with a `dev` record stops before `staging` until the operator approves, or starts no `staging` deploy, as chosen.
-- `prod` changes only after an explicit operator action for that release.
+- A signed `vX.Y.Z-rcN` on a `main` commit with a `dev` record deploys `staging` only, never `prod`.
+- A signed `vX.Y.Z` deploys `staging`, then `prod`, only for a commit that `staging` already ran as a `vX.Y.Z-rcN`; on any other commit it is refused before any deploy.
+- A tag that is lightweight, unsigned, or signed by a key outside the deployment repository's approved signers is refused before any deploy.
+- Only the operator can create, move, or delete `v*` tags in this repository (tag ruleset).
 - A rollback by hand still restores an earlier record without a rebuild (M1-17).
 
 ## Open questions
 
 - Which gate: environment reviewers (needs a plan that enforces them on the private repository), or a manual `prod` promotion? Operator decision (spending).
+  - **Decided (operator, 2026-11-28):** a manual `prod` promotion; no plan change.
+  - **Changed (operator, 2026-11-28):** the operator's signed tag is the approval. Release candidates `vX.Y.Z-rcN` go to `staging`; a final `vX.Y.Z` goes to `staging` then `prod` only for a commit `staging` ran as its candidate. Tags are verified against an approved SSH signer list in the deployment repository, and a tag ruleset here limits `v*` tags to the operator.
 - Does `staging` keep an approval, or deploy automatically on a release tag?
+  - **Decided (operator, 2026-11-28):** `staging` deploys automatically on a release tag.
+
+## Proposed change (private repository)
+
+A deployment-repository diff, applied by the operator (it replaces the earlier manual-`prod` draft): `promote.yml` accepts `vX.Y.Z` and `vX.Y.Z-rcN`, sends a candidate to `staging` only, refuses a candidate for `prod`, verifies every tag with `git tag -v` against `operators/allowed_signers` (SSH), and refuses a final tag unless `staging`'s record for its commit names one of its candidates (or the release itself, on a re-run). The README and an `operators/allowed_signers.example` say the same. The signature check was tested in a container: a tag signed by the approved key passes; one signed by another key, an unsigned annotated tag, and a lightweight tag are refused.
+
+In this repository: `dispatch-deploy.yml` also dispatches `vX.Y.Z-rcN` tags; a tag ruleset restricts creating, updating, and deleting `refs/tags/v*` to the repository admin role (created by the operator, 2026-11-28). Not yet applied; the acceptance criteria are checked on the next candidate and release after it is applied.
