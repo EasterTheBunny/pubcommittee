@@ -111,4 +111,19 @@ H.R. 3062 rfs `s2`: every provision cites a single, distinct line (717a 42; 717b
 
 Re-list H.R. 3062 explanations from `dev` or `staging` `read-api` after deploying the rule, and record per-section overlap here. This needs the citation set of each version to be present (a version with no stored citation set falls back to the anchors, as before).
 
+**Measured (`staging`, 2026-11-28, after the release with this rule and `job-ingest --analyze`):** `/v1/bills/us-119-hr-3062/v/eh/explanations` serves 10 explanations, all in section `s2`, each pinned to one line (before: all started at line 3 and ended between lines 33 and 45).
+
+| Provision | Lines |
+| --- | --- |
+| 49 U.S.C. 60502 | 21 |
+| 15 U.S.C. 717b(c) | 22 |
+| 16 U.S.C. 824a(f) | 26 |
+| 16 U.S.C. 824a-4(b) | 27 |
+| 15 U.S.C. 717b, 3 U.S.C. 301, 42 U.S.C. 7151 | 33 |
+| 15 U.S.C. 717a | 42 |
+| 16 U.S.C. 824o | 44 |
+| 16 U.S.C. 796 | 45 |
+
+Overlap: only line 33, shared by three explanations whose provisions are cited on that same line. No two explanations overlap otherwise. `rfs` is now a collapsed referral of `eh` (`/v/rfs` answers 308 to `/v/eh`), so `eh` is the version served.
+
 **Decided (operator, 2026-11-27):** part 2 (an additive `line_spans` field and UI placement by runs) is skipped. The four multi-run pairs in the fixtures are served first-to-last, never wider than before.

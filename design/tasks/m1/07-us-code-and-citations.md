@@ -59,6 +59,7 @@ Load the US Code from official release points, extract citations to existing law
 - Every citation in the three M1 exit bills has a state; unresolved ones appear in the public list.
 - Resolution rate measured on the labelled sample and recorded, with precision of `resolved` reported separately from coverage.
 - Freshness flags appear for provisions amended after the release point in the sample.
+  - **Accepted as deferred (operator, 2026-11-28):** no exit bill cites a provision amended after the release point, so no real flag exists yet. The flags are built and tested on constructed data (`<set>.freshness.json`); the criterion is rechecked when a real case appears.
 
 ## Open questions
 

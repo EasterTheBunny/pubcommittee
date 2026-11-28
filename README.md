@@ -24,6 +24,10 @@ It is not a vote and it does not change bill text. It gives existing representat
 
 The M0 proof of concept (a static SvelteKit site on mocked data with no backend) is archived in [`demo/`](demo/README.md). The M1 web app in [`app/`](app/README.md) renders real bill text from `read-api`. See [`design/MILESTONES.md`](design/MILESTONES.md) for the roadmap.
 
+## Related projects
+
+- [The Floor](https://thefloorhq.com/) (The Floor HQ): an iOS, Android, and web app where people cast their own Yes or No vote on real House and Senate bills, read short summaries, and compare their votes with how their representative and senators voted. Bill data comes from Congress.gov.
+
 ## Guide for AI agents
 
 Start here, then read only the files your task needs.

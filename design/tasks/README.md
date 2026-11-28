@@ -34,6 +34,7 @@ Scope and exit criteria: [MILESTONES § M1](../MILESTONES.md#m1--real-bill-text-
 | [M1-15](m1/15-infrastructure-and-deploy.md) | Infrastructure (cloud phase) | 01, 03b | Public modules in `infra/`; private deployment repository roots for `dev`, `staging`, `prod`; shared registry; API edge; scheduled jobs; secret and pattern checks |
 | [M1-16](m1/16-acceptance.md) | M1 acceptance | all | Local gate: every exit criterion proved on a local machine. Hosted gate: the same in `staging` for invited readers. Measured targets for M3, recorded answers to M1 open questions |
 | [M1-17](m1/17-continuous-delivery.md) | Continuous delivery (cloud phase) | 01, 15 | GitHub App trigger from this repository; private deploy workflows: build, push, deploy `dev` by digest, promote to `staging` and `prod` behind approvals, rollback, deploy records |
+| [M1-17b](m1/17b-release-approval-gate.md) | Release approval gate (required for the M3 pilot release) | 17 | A release tag never reaches `staging` or `prod` without the operator's approval for that environment |
 
 ### Phases
 
